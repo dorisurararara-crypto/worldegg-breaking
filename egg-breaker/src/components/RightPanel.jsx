@@ -12,49 +12,49 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
           <div className="icon">🔨</div>
           <div className="info">
             <h4>{lang.item1}</h4>
-            <div className="price">100 P</div>
+            <div className="price">100 P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+1 {lang.atk})</span></div>
           </div>
         </div>
         <div className="shop-item" onClick={() => buyItem(500, 5, 'pickaxe')}>
           <div className="icon">⛏️</div>
           <div className="info">
             <h4>{lang.item2}</h4>
-            <div className="price">500 P</div>
+            <div className="price">500 P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+5 {lang.atk})</span></div>
           </div>
         </div>
         <div className="shop-item" onClick={() => buyItem(2000, 25, 'dynamite')}>
           <div className="icon">🧨</div>
           <div className="info">
             <h4>{lang.item3}</h4>
-            <div className="price">2k P</div>
+            <div className="price">2k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+25 {lang.atk})</span></div>
           </div>
         </div>
         <div className="shop-item" onClick={() => buyItem(10000, 100, 'drill')}>
           <div className="icon">🔩</div>
           <div className="info">
             <h4>{lang.item4}</h4>
-            <div className="price">10k P</div>
+            <div className="price">10k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+100 {lang.atk})</span></div>
           </div>
         </div>
         <div className="shop-item" onClick={() => buyItem(50000, 500, 'excavator')}>
           <div className="icon">🚜</div>
           <div className="info">
             <h4>{lang.item5}</h4>
-            <div className="price">50k P</div>
+            <div className="price">50k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+500 {lang.atk})</span></div>
           </div>
         </div>
         <div className="shop-item" onClick={() => buyItem(200000, 2500, 'laser')}>
           <div className="icon">🔫</div>
           <div className="info">
             <h4>{lang.item6}</h4>
-            <div className="price">200k P</div>
+            <div className="price">200k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+2.5k {lang.atk})</span></div>
           </div>
         </div>
         <div className="shop-item" onClick={() => buyItem(1000000, 15000, 'nuke')}>
           <div className="icon">☢️</div>
           <div className="info">
             <h4>{lang.item7}</h4>
-            <div className="price">1M P</div>
+            <div className="price">1M P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+15k {lang.atk})</span></div>
           </div>
         </div>
       </div>
