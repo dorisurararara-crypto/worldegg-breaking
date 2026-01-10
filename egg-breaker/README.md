@@ -1,16 +1,31 @@
-# React + Vite
+# Egg Breaker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a simple web-based clicker game where users from all over the world can collaborate to break a giant egg.
 
-Currently, two official plugins are available:
+## How to Play
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Click the egg:** Every click reduces the egg's HP.
+- **Earn points:** You get points for each click.
+- **Buy items:** Use your points to buy items from the shop to increase your click power.
+- **Break the egg:** The goal is to get the egg's HP down to 0.
+- **Become the winner:** The user who makes the final click that breaks the egg is the winner and can submit their email to claim a prize.
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Real-time collaboration:** See the egg's HP decrease in real-time as users from around the world click it.
+- **Live user count:** See how many users are currently online and where they are from.
+- **Shop:** Use your points to buy items and increase your clicking power.
+- **Multi-language support:** The user interface is available in English, Korean, Japanese, and Chinese.
 
-## Expanding the ESLint configuration
+## How to Run
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1.  Clone this repository.
+2.  Run `npm install` in the `egg-breaker` directory.
+3.  Set up your Firebase configuration in `src/firebase.js`.
+4.  Run `npm run dev` to start the development server.
+
+## Tech Stack
+
+- React
+- Firebase Realtime Database
+- Vite
