@@ -48,16 +48,42 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
 
 const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
-    setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem
+    setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification
 }) => {
     return (
         <main className="game-area">
+            {notification && (
+                <div style={{
+                    position: 'absolute',
+                    top: '20%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    background: 'rgba(0, 255, 0, 0.8)',
+                    color: 'white',
+                    padding: '10px 20px',
+                    borderRadius: '20px',
+                    fontWeight: 'bold',
+                    zIndex: 100,
+                    pointerEvents: 'none',
+                    animation: 'floatUp 2s ease-out forwards'
+                }}>
+                    {notification}
+                </div>
+            )}
+
             <div className="header-glow">
                 <h1 className="title">{lang.title}</h1>
                 <p className="subtitle">{lang.subtitle}</p>
             </div>
 
-            <div className="egg-stage" onClick={handleClick}>
+            <div 
+                className="egg-stage" 
+                onPointerDown={(e) => {
+                    // Prevent default touch actions like zooming or scrolling while tapping rapidly
+                    // only if it's a direct interaction with the egg area
+                    handleClick();
+                }}
+            >
                 <CrackedEgg hp={hp} maxHp={1000000} isShaking={isShaking} tool={currentTool} />
                 {isShaking && <span className="damage-float">-{clickPower}</span>}
 

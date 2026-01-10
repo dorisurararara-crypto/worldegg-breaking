@@ -16,7 +16,7 @@ const TRANSLATIONS = {
   },
   KR: { 
     label: "한국어", title: "100만 클릭의 알", subtitle: "전 세계가 함께 깨부수는 전설의 알", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요:", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 강력한 한방", logo: "알 깨기 🔨",
-    gameRuleTitle: "게임 방법", gameRule1: "- 알을 클릭해서 HP를 깎으세요.", gameRule2: "- 포인트를 모아 상점에서 아이템을 구매하세요.", gameRule3: "- 전 세계 유저들과 함께 알을 부수세요!", noticeTitle: "주의사항", notice1: "- 비정상적인 플레이는 제재될 수 있습니다.", notice2: "- 이 게임은 초기화될 수 있습니다.", prizeTitle: "이번 회차 상품", contactTitle: "제휴문의", myInfoTitle: "내 정보", totalClick: "총 클릭"
+    gameRuleTitle: "게임 방법", gameRule1: "- 알을 클릭해서 HP를 깎으세요.", gameRule2: "- 포인트를 모아 상점에서 아이템을 구매하세요.", gameRule3: "- 전 세계 유저들과 함께 알을 부수세요!", noticeTitle: "주의사항", notice1: "- 비정상적인 플레이는 제재될 수 있습니다.", notice2: "- 새로고침 시 초기화될 수 있습니다.", prizeTitle: "이번 회차 상품", contactTitle: "제휴문의", myInfoTitle: "내 정보", totalClick: "총 클릭"
   },
   JP: { 
     label: "日本語", title: "ミリオン・クリック・エッグ", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", item4: "ドリル", item5: "ショベルカー", item6: "レーザー銃", item7: "核爆弾", modalTitle: "🎉 おめでとうございます！ 🎉", modalDesc: "最後の一撃で卵を割りました！あなたが伝説の破壊者です。", modalPrize: "賞品を受け取るためにメールアドレスを入力してください：", send: "送信する", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグブレーク 🔨",
@@ -221,6 +221,7 @@ function App() {
       setMyPoints(prev => prev - cost);
       setClickPower(prev => prev + powerAdd);
       setCurrentTool(toolName);
+      showNotification(`Bought ${toolName}!`);
     } else {
       alert("Not enough points!");
     }
@@ -254,6 +255,12 @@ function App() {
   
   // Mobile Panel State: 'none', 'left', 'right'
   const [mobilePanel, setMobilePanel] = useState('none');
+  const [notification, setNotification] = useState(''); // Purchase notification
+
+  const showNotification = (msg) => {
+      setNotification(msg);
+      setTimeout(() => setNotification(''), 2000);
+  };
 
   const toggleMobilePanel = (panel) => {
     if (mobilePanel === panel) {
@@ -361,6 +368,7 @@ function App() {
           handleClick={handleClick}
           currentTool={currentTool}
           buyItem={buyItem}
+          notification={notification}
         />
 
         {/* 오른쪽: 상점 (고정 너비) */}
