@@ -74,9 +74,17 @@ function App() {
     // Initialize Kakao SDK
     if (window.Kakao && !window.Kakao.isInitialized()) {
         const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
+        console.log("Trying to init Kakao with key:", kakaoKey ? kakaoKey.substring(0, 5) + "..." : "undefined");
+        
         if(kakaoKey && kakaoKey !== 'YOUR_KAKAO_JAVASCRIPT_KEY') {
-             window.Kakao.init(kakaoKey); 
-             console.log("Kakao Initialized with env key");
+             try {
+                window.Kakao.init(kakaoKey); 
+                console.log("Kakao Initialized successfully");
+             } catch(e) {
+                console.error("Kakao Init Failed:", e);
+             }
+        } else {
+             console.warn("Kakao Key is missing or default placeholder.");
         }
     }
   }, []);
@@ -241,7 +249,26 @@ function App() {
     return Object.entries(stats).sort((a, b) => b[1] - a[1]);
   };
 
+  // Track the last round the user shared in (per session)
+  const [lastSharedRound, setLastSharedRound] = useState(0);
+  
+  // Mobile Panel State: 'none', 'left', 'right'
+  const [mobilePanel, setMobilePanel] = useState('none');
+
+  const toggleMobilePanel = (panel) => {
+    if (mobilePanel === panel) {
+        setMobilePanel('none');
+    } else {
+        setMobilePanel(panel);
+    }
+  };
+
   const handleKakaoShare = () => {
+    if (lastSharedRound === round) {
+        alert("이번 라운드에는 이미 공유 보상을 받으셨습니다!");
+        return;
+    }
+
     if (!window.Kakao || !window.Kakao.isInitialized()) {
         alert("Kakao SDK not initialized. Please check your key.");
         return;
@@ -252,7 +279,7 @@ function App() {
       content: {
         title: lang.title,
         description: lang.subtitle,
-        imageUrl: 'https://egg-break-412ae.web.app/vite.svg', // Replace with your actual OG image
+        imageUrl: 'https://egg-break-412ae.web.app/vite.svg', 
         link: {
           mobileWebUrl: window.location.href,
           webUrl: window.location.href,
@@ -269,9 +296,10 @@ function App() {
       ],
     });
     
-    // Reward points (optimistic reward)
+    // Reward points and update state
     setMyPoints(prev => prev + 2000);
-    alert("2000 Points Added!");
+    setLastSharedRound(round);
+    alert("공유 완료! 2000 포인트가 지급되었습니다.");
   };
 
   if (route === '#admin') {
@@ -286,7 +314,8 @@ function App() {
         getFlagEmoji={getFlagEmoji} 
         setShowCountrySelect={setShowCountrySelect} 
         showCountrySelect={showCountrySelect} 
-        changeCountry={changeCountry} 
+        changeCountry={changeCountry}
+        toggleMobilePanel={toggleMobilePanel} 
       />
       
       {announcement && (
@@ -312,7 +341,9 @@ function App() {
           onlineUsers={onlineUsers} 
           prize={prize}
           prizeUrl={prizeUrl}
-          getFlagEmoji={getFlagEmoji} 
+          getFlagEmoji={getFlagEmoji}
+          isOpen={mobilePanel === 'left'}
+          toggleMobilePanel={toggleMobilePanel}
         />
 
         {/* 중앙: 게임 (남은 공간 모두 차지 flex-grow) */}
@@ -340,6 +371,8 @@ function App() {
           clickPower={clickPower}
           myTotalClicks={myTotalClicks}
           handleKakaoShare={handleKakaoShare}
+          isOpen={mobilePanel === 'right'}
+          toggleMobilePanel={toggleMobilePanel}
         />
       </div>
     </div>

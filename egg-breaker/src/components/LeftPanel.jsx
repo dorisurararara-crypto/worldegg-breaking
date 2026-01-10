@@ -1,12 +1,16 @@
 import React from 'react';
 
-const LeftPanel = ({ lang, getCountryStats, onlineUsers, prize, prizeUrl, getFlagEmoji }) => {
+const LeftPanel = ({ lang, getCountryStats, onlineUsers, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
   const stats = getCountryStats();
-  const top1 = stats[0]; // [code, count]
+  const top1 = stats[0];
   const top2 = stats[1];
 
   return (
-    <aside className="panel left-panel glass">
+    <aside className={`panel left-panel glass ${isOpen ? 'active' : ''}`}>
+      <div className="panel-header">
+        <h3>Menu</h3>
+        <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
+      </div>
       {/* --- 🔥 국가 대항전 위젯 (신규 추가) --- */}
       <div className="rivalry-widget" style={{ padding: '20px 10px', background: 'rgba(0,0,0,0.3)', marginBottom: '10px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
         <h4 style={{ margin: '0 0 15px 0', color: '#ffd700', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>🏆 TOP RIVALRY</h4>

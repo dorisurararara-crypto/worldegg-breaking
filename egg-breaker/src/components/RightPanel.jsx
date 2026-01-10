@@ -1,9 +1,12 @@
 import React from 'react';
 
-const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handleKakaoShare }) => {
+const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handleKakaoShare, isOpen, toggleMobilePanel }) => {
   return (
-    <aside className="panel right-panel glass">
-      <h3>🛒 {lang.shop}</h3>
+    <aside className={`panel right-panel glass ${isOpen ? 'active' : ''}`}>
+      <div className="panel-header">
+         <h3>🛒 {lang.shop}</h3>
+         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
+      </div>
       <div className="shop-list">
         <div className="shop-item" onClick={() => buyItem(100, 1, 'hammer')}>
           <div className="icon">🔨</div>
