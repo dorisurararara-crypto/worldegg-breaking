@@ -1,0 +1,119 @@
+/* src/App.css */
+body {
+  margin: 0;
+  background-color: #1a1a1a;
+  color: white;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none; /* 드래그 방지 */
+}
+
+.container {
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title {
+  color: #fbbf24;
+  text-shadow: 0 0 10px #f59e0b;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin-bottom: 30px;
+}
+
+/* 체력바 */
+.hp-box {
+  width: 100%;
+  height: 20px;
+  background-color: #374151;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #4b5563;
+  margin-bottom: 10px;
+}
+
+.hp-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444, #b91c1c);
+  transition: width 0.2s ease-out;
+}
+
+.hp-text {
+  font-size: 2.5rem;
+  margin: 0 0 30px 0;
+  font-family: monospace;
+}
+
+/* 알 스타일 */
+.egg-wrapper {
+  margin: 20px 0;
+  cursor: pointer;
+  /* 클릭 시 파란색 하이라이트 제거 */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.egg {
+  font-size: 8rem;
+  transition: transform 0.1s;
+  line-height: 1;
+}
+
+/* 쉐이크 애니메이션 */
+.shake {
+  animation: shake-animation 0.1s infinite;
+}
+
+@keyframes shake-animation {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-5px, 5px) rotate(-5deg); }
+  50% { transform: translate(0, -5px) rotate(0deg); }
+  75% { transform: translate(5px, 5px) rotate(5deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* 버튼 및 기타 */
+.stats {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.item-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  transition: transform 0.1s;
+}
+
+.item-btn:active {
+  transform: scale(0.95);
+}
+
+.ad-banner {
+  margin-top: 40px;
+  width: 100%;
+  height: 60px;
+  background-color: #333;
+  color: #666;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  border: 2px dashed #555;
+}
