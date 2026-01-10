@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { db } from './firebase';
-import { ref, onValue, runTransaction, push, onDisconnect, set, remove } from 'firebase/database';
+import { ref, onValue, runTransaction, push, onDisconnect, set } from 'firebase/database';
 import './App.css';
 
 // --- 다국어 데이터 ---
@@ -17,6 +17,51 @@ const getFlagEmoji = (countryCode) => {
   return String.fromCodePoint(...codePoints);
 };
 
+// --- 🔥 [신규] 깨지는 알 SVG 컴포넌트 ---
+const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
+  const percentage = (hp / maxHp) * 100;
+  
+  // 체력에 따른 금(Crack) 단계 결정
+  const showCrack1 = percentage < 80; // 80% 미만일 때 잔금
+  const showCrack2 = percentage < 50; // 50% 미만일 때 큰금
+  const showCrack3 = percentage < 20; // 20% 미만일 때 박살
+
+  return (
+    <div className={`egg-svg-container ${isShaking ? 'shake' : ''} cursor-${tool}`}>
+      <svg viewBox="0 0 200 250" className="egg-svg">
+        <defs>
+          <radialGradient id="eggGradient" cx="40%" cy="30%" r="80%">
+            <stop offset="0%" stopColor="#ffd700" />
+            <stop offset="100%" stopColor="#ffa500" />
+          </radialGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        {/* 1. 알 본체 */}
+        <ellipse cx="100" cy="125" rx="80" ry="110" fill="url(#eggGradient)" filter="url(#glow)" />
+
+        {/* 2. 금(Cracks) - 체력에 따라 보임/숨김 */}
+        {showCrack1 && (
+          <path d="M100 30 L110 50 L90 60 L105 80" fill="none" stroke="#664400" strokeWidth="3" strokeLinecap="round" opacity="0.6" />
+        )}
+        {showCrack2 && (
+          <path d="M50 100 L80 110 L60 130 L90 140 L70 160" fill="none" stroke="#664400" strokeWidth="4" strokeLinecap="round" opacity="0.7" />
+        )}
+        {showCrack3 && (
+          <path d="M130 90 L110 110 L140 130 L120 160 L150 180" fill="none" stroke="#664400" strokeWidth="4" strokeLinecap="round" opacity="0.8" />
+        )}
+        {/* HP 0일 때 (완전 깨짐) */}
+        {hp <= 0 && (
+           <path d="M20 125 L180 125" fill="none" stroke="#000" strokeWidth="10" />
+        )}
+      </svg>
+    </div>
+  );
+};
+
 function App() {
   const [hp, setHp] = useState(1000000);
   const [isShaking, setIsShaking] = useState(false);
@@ -26,58 +71,36 @@ function App() {
   const [isWinner, setIsWinner] = useState(false);
   const [winnerEmail, setWinnerEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
-  
-  // 국가 및 언어 설정
   const [myCountry, setMyCountry] = useState("US");
   const [lang, setLang] = useState(TRANSLATIONS.US);
   const [currentTool, setCurrentTool] = useState("fist");
-  const [showCountrySelect, setShowCountrySelect] = useState(false); // 국가 선택창 표시 여부
-
+  const [showCountrySelect, setShowCountrySelect] = useState(false);
   const userId = useRef("user_" + Math.random().toString(36).substr(2, 9));
 
-  // 1. 접속 시 IP로 국가 자동 감지 (최초 1회)
   useEffect(() => {
-    fetch('https://ipapi.co/json/')
-      .then(res => res.json())
-      .then(data => {
-        const code = data.country_code || "US";
-        changeCountry(code); // 국가 설정 함수 호출
-      })
-      .catch(() => {
-        changeCountry("US");
-      });
+    fetch('https://ipapi.co/json/').then(res => res.json())
+      .then(data => changeCountry(data.country_code || "US"))
+      .catch(() => changeCountry("US"));
 
-    // 실시간 접속자 수신
     const usersRef = ref(db, 'onlineUsers');
-    return onValue(usersRef, (snapshot) => {
-      setOnlineUsers(snapshot.val() || {});
-    });
+    return onValue(usersRef, (snapshot) => setOnlineUsers(snapshot.val() || {}));
   }, []);
 
-  // 2. 국가 변경 함수
   const changeCountry = (code) => {
-    // 지원하지 않는 나라는 US(영어)로 설정하되 국기는 유지
     const targetLang = ["KR", "JP", "CN"].includes(code) ? code : "US";
-    
     setMyCountry(code);
     setLang(TRANSLATIONS[targetLang]);
-    setShowCountrySelect(false); // 선택창 닫기
-
-    // DB에 내 정보 업데이트
+    setShowCountrySelect(false);
     const userRef = ref(db, `onlineUsers/${userId.current}`);
     set(userRef, { country: code, lastActive: Date.now() });
     onDisconnect(userRef).remove();
   };
 
-  // 3. 체력 수신
   useEffect(() => {
     const hpRef = ref(db, 'eggHP');
-    return onValue(hpRef, (snapshot) => {
-      setHp(snapshot.val() === null ? 1000000 : snapshot.val());
-    });
+    return onValue(hpRef, (snapshot) => setHp(snapshot.val() === null ? 1000000 : snapshot.val()));
   }, []);
 
-  // 4. 클릭 액션
   const handleClick = () => {
     if (hp <= 0) return;
     setIsShaking(true);
@@ -119,17 +142,8 @@ function App() {
     return Object.entries(stats).sort((a, b) => b[1] - a[1]);
   };
 
-  const getEggEmoji = () => {
-    if (hp <= 0) return "🐣";
-    if (hp < 250000) return "🦴";
-    if (hp < 500000) return "🔥";
-    if (hp < 750000) return "🍳";
-    return "🥚";
-  };
-
   return (
     <div className="app-container">
-      {/* 상단 네비게이션 (국가 선택) */}
       <nav className="navbar">
         <div className="logo">EGG BREAK 🔨</div>
         <div className="lang-selector">
@@ -147,8 +161,10 @@ function App() {
         </div>
       </nav>
 
+      {/* 메인 레이아웃: 화면 꽉 채우기 */}
       <div className="main-layout">
-        {/* 왼쪽 패널 */}
+        
+        {/* 왼쪽: 접속자 (고정 너비) */}
         <aside className="panel left-panel glass">
           <h3>🌐 {lang.users}</h3>
           <div className="scroll-box">
@@ -162,20 +178,16 @@ function App() {
           <div className="total-badge">{lang.total}: {Object.keys(onlineUsers).length}</div>
         </aside>
 
-        {/* 중앙 게임 영역 */}
+        {/* 중앙: 게임 (남은 공간 모두 차지 flex-grow) */}
         <main className="game-area">
           <div className="header-glow">
             <h1 className="title">{lang.title}</h1>
             <p className="subtitle">{lang.subtitle}</p>
           </div>
 
-          <div className="egg-stage">
-            <div 
-              className={`egg ${isShaking ? 'shake' : ''} cursor-${currentTool}`} 
-              onClick={handleClick}
-            >
-              {getEggEmoji()}
-            </div>
+          <div className="egg-stage" onClick={handleClick}>
+            {/* SVG 알 컴포넌트 사용 */}
+            <CrackedEgg hp={hp} maxHp={1000000} isShaking={isShaking} tool={currentTool} />
             {isShaking && <span className="damage-float">-{clickPower}</span>}
           </div>
 
@@ -186,7 +198,6 @@ function App() {
              <div className="hp-text">{hp.toLocaleString()} HP</div>
           </div>
 
-          {/* 파워 클릭 버튼 (그라데이션) */}
           <button className="power-btn" onClick={() => buyItem(0, 0, 'fist')}>
             <span className="btn-title">{lang.powerClick}</span>
             <span className="btn-sub">{lang.watchAd}</span>
@@ -200,7 +211,7 @@ function App() {
           <div className="ad-banner">{lang.adText}</div>
         </main>
 
-        {/* 오른쪽 상점 */}
+        {/* 오른쪽: 상점 (고정 너비) */}
         <aside className="panel right-panel glass">
           <h3>🛒 {lang.shop}</h3>
           <div className="shop-list">
