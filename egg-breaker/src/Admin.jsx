@@ -22,6 +22,7 @@ function Admin() {
     const [hp, setHp] = useState(0);
     const [newHp, setNewHp] = useState(0);
     const [round, setRound] = useState(0);
+    const [newRoundInput, setNewRoundInput] = useState(''); // Added state
     const [announcement, setAnnouncement] = useState('');
     const [newAnnouncement, setNewAnnouncement] = useState('');
     const [onlineUsers, setOnlineUsers] = useState({});
@@ -145,6 +146,20 @@ function Admin() {
         }
     };
 
+    const handleRoundSet = () => {
+        const r = parseInt(newRoundInput, 10);
+        if (isNaN(r)) {
+            alert("유효한 라운드 번호를 입력하세요.");
+            return;
+        }
+        if (window.confirm(`정말로 라운드를 ${r}로 설정하시겠습니까? HP가 초기화됩니다.`)) {
+            set(roundRef, r);
+            set(hpRef, 1000000)
+                .then(() => alert(`라운드가 ${r}로 설정되었습니다.`))
+                .catch(e => alert(e.message));
+        }
+    };
+
     const handleStartNewRound = () => {
         if (window.confirm('정말로 새 라운드를 시작하시겠습니까? HP가 초기화됩니다.')) {
             runTransaction(roundRef, (currentRound) => (currentRound || 0) + 1);
@@ -227,6 +242,20 @@ function Admin() {
 
                     <hr style={{borderColor: '#404040', margin: '1.5rem 0'}} />
                     
+                    <div className="admin-form-group">
+                        <label className="admin-label">라운드 직접 설정 (초기화 포함)</label>
+                        <div style={{display:'flex', gap:'5px'}}>
+                            <input
+                                className="admin-input"
+                                type="number"
+                                value={newRoundInput}
+                                onChange={(e) => setNewRoundInput(e.target.value)}
+                                placeholder="라운드 번호"
+                            />
+                            <button className="admin-btn" onClick={handleRoundSet} style={{width:'auto', whiteSpace:'nowrap'}}>설정</button>
+                        </div>
+                    </div>
+
                     <button className="admin-btn success" onClick={handleStartNewRound}>
                         🚀 {round + 1} 라운드 시작
                     </button>
