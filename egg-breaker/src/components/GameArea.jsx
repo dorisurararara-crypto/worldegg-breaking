@@ -227,7 +227,19 @@ const GameArea = ({
             <div>{lang.atk}: <span>x{clickPower}</span></div>
           </div>
 
-          <div className="ad-banner" style={{ marginTop: '20px', textAlign: 'center' }}>
+          <p style={{
+            marginTop: '20px',
+            fontSize: '0.9rem',
+            color: '#ffd700',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
+            animation: 'pulse 2s infinite'
+          }}>
+            ✨ {lang.shopGuide} ✨
+          </p>
+
+          <div className="ad-banner" style={{ marginTop: '10px', textAlign: 'center' }}>
              {/* Ad Placeholder (e.g., 320x50 or 320x100 for mobile) */}
              <div style={{ display: 'inline-block', width: '320px', height: '100px', background: 'rgba(255,255,255,0.1)', border: '1px dashed #aaa', lineHeight: '100px', color: '#fff' }}>
                 Google AdSense (320x100)

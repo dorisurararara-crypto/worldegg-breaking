@@ -6,7 +6,7 @@ const Header = ({ lang, myCountry, getFlagEmoji, setShowCountrySelect, showCount
       <div className="nav-left">
         {/* Mobile Hamburger (Left Panel) */}
         <button className="mobile-toggle-btn" onClick={() => toggleMobilePanel('left')}>
-          ☰
+          ☰ <span style={{fontSize: '0.8rem', marginLeft: '2px'}}>{lang.users}</span>
         </button>
         <div className="logo">{lang.logo}</div>
       </div>
@@ -28,7 +28,7 @@ const Header = ({ lang, myCountry, getFlagEmoji, setShowCountrySelect, showCount
         
         {/* Mobile Shop (Right Panel) */}
         <button className="mobile-toggle-btn" onClick={() => toggleMobilePanel('right')}>
-          🛒
+          🛒 <span style={{fontSize: '0.8rem', marginLeft: '2px'}}>{lang.shop}</span>
         </button>
       </div>
     </nav>

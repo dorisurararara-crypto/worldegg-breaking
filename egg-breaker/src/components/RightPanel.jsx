@@ -8,53 +8,53 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
          <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
       <div className="shop-list">
-        <div className="shop-item" onClick={() => buyItem(100, 1, 'hammer')}>
+        <div className="shop-item" onClick={() => buyItem(500, 1, 'hammer')}>
           <div className="icon">🔨</div>
           <div className="info">
             <h4>{lang.item1}</h4>
-            <div className="price">100 P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+1 {lang.atk})</span></div>
+            <div className="price">500 P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+1 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(500, 2, 'pickaxe')}>
+        <div className="shop-item" onClick={() => buyItem(2500, 6, 'pickaxe')}>
           <div className="icon">⛏️</div>
           <div className="info">
             <h4>{lang.item2}</h4>
-            <div className="price">500 P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+2 {lang.atk})</span></div>
+            <div className="price">2.5k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+6 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(2000, 5, 'dynamite')}>
+        <div className="shop-item" onClick={() => buyItem(12000, 35, 'dynamite')}>
           <div className="icon">🧨</div>
           <div className="info">
             <h4>{lang.item3}</h4>
-            <div className="price">2k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+5 {lang.atk})</span></div>
+            <div className="price">12k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+35 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(10000, 20, 'drill')}>
+        <div className="shop-item" onClick={() => buyItem(60000, 200, 'drill')}>
           <div className="icon">🔩</div>
           <div className="info">
             <h4>{lang.item4}</h4>
-            <div className="price">10k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+20 {lang.atk})</span></div>
+            <div className="price">60k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+200 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(50000, 50, 'excavator')}>
+        <div className="shop-item" onClick={() => buyItem(300000, 1200, 'excavator')}>
           <div className="icon">🚜</div>
           <div className="info">
             <h4>{lang.item5}</h4>
-            <div className="price">50k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+50 {lang.atk})</span></div>
+            <div className="price">300k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+1200 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(200000, 200, 'laser')}>
+        <div className="shop-item" onClick={() => buyItem(1500000, 7000, 'laser')}>
           <div className="icon">🔫</div>
           <div className="info">
             <h4>{lang.item6}</h4>
-            <div className="price">200k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+200 {lang.atk})</span></div>
+            <div className="price">1.5M P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+7000 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(1000000, 1000, 'nuke')}>
+        <div className="shop-item" onClick={() => buyItem(10000000, 60000, 'nuke')}>
           <div className="icon">☢️</div>
           <div className="info">
             <h4>{lang.item7}</h4>
-            <div className="price">1M P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+1000 {lang.atk})</span></div>
+            <div className="price">10M P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+60000 {lang.atk})</span></div>
           </div>
         </div>
       </div>
