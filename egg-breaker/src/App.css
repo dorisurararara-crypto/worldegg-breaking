@@ -417,15 +417,31 @@ body {
     text-align: center;
 }
 
-/* Cursors */
-.cursor-fist { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">👊</text></svg>') 16 16, auto; }
-.cursor-hammer { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🔨</text></svg>') 16 16, auto; }
-.cursor-pickaxe { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">⛏️</text></svg>') 16 16, auto; }
-.cursor-dynamite { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🧨</text></svg>') 16 16, auto; }
-.cursor-drill { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🔩</text></svg>') 16 16, auto; }
-.cursor-excavator { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🚜</text></svg>') 16 16, auto; }
-.cursor-laser { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🔫</text></svg>') 16 16, auto; }
-.cursor-nuke { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">☢️</text></svg>') 16 16, auto; }
+/* Cursors - Removed SVG cursors to use the floating tool emoji instead */
+.egg-stage {
+  cursor: default; /* Remove crosshair (+) */
+}
+
+.tool-float {
+  pointer-events: none;
+  z-index: 5;
+  filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+}
+
+@keyframes toolPop {
+  0% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(0.5) rotate(-20deg); 
+  }
+  30% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1.1) rotate(0deg); 
+  }
+  100% { 
+    opacity: 0; 
+    transform: translate(-50%, -80%) scale(1.2) rotate(10deg); 
+  }
+}
 
 .damage-float {
   position: absolute;

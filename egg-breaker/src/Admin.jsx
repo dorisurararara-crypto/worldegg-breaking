@@ -15,6 +15,8 @@ function Admin() {
     const [newPrize, setNewPrize] = useState('');
     const [prizeUrl, setPrizeUrl] = useState('');
     const [newPrizeUrl, setNewPrizeUrl] = useState('');
+    const [adUrl, setAdUrl] = useState('');
+    const [newAdUrl, setNewAdUrl] = useState('');
     const [winners, setWinners] = useState([]);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -30,6 +32,7 @@ function Admin() {
 
     const prizeRef = ref(db, 'prize');
     const prizeUrlRef = ref(db, 'prizeUrl');
+    const adUrlRef = ref(db, 'adUrl');
     const winnersRef = ref(db, 'winners');
     const hpRef = ref(db, 'eggHP');
     const roundRef = ref(db, 'round');
@@ -53,6 +56,10 @@ function Admin() {
         onValue(prizeUrlRef, (snapshot) => {
             setPrizeUrl(snapshot.val() || '');
             setNewPrizeUrl(snapshot.val() || '');
+        });
+        onValue(adUrlRef, (snapshot) => {
+            setAdUrl(snapshot.val() || '');
+            setNewAdUrl(snapshot.val() || '');
         });
         onValue(announcementRef, (snapshot) => {
             setAnnouncement(snapshot.val() || '');
@@ -113,6 +120,12 @@ function Admin() {
             .catch((error) => alert(error.message));
     };
 
+    const handleAdUrlUpdate = () => {
+        set(adUrlRef, newAdUrl)
+            .then(() => alert('광고 링크가 업데이트되었습니다!'))
+            .catch((error) => alert(error.message));
+    };
+
     const handleAnnouncementUpdate = () => {
         set(announcementRef, newAnnouncement)
             .then(() => alert('공지사항이 업데이트되었습니다!'))
@@ -152,8 +165,10 @@ function Admin() {
             alert("유효한 라운드 번호를 입력하세요.");
             return;
         }
-        if (window.confirm(`정말로 라운드를 ${r}로 설정하시겠습니까? HP가 초기화됩니다.`)) {
+        if (window.confirm(`정말로 라운드를 ${r}로 설정하시겠습니까? HP, 접속자, 클릭 기록이 초기화됩니다.`)) {
             set(roundRef, r);
+            set(usersRef, null); // Clear online users
+            set(ref(db, `roundClicks/${r}`), null); // Clear click stats for this round
             set(hpRef, 1000000)
                 .then(() => alert(`라운드가 ${r}로 설정되었습니다.`))
                 .catch(e => alert(e.message));
@@ -161,10 +176,15 @@ function Admin() {
     };
 
     const handleStartNewRound = () => {
-        if (window.confirm('정말로 새 라운드를 시작하시겠습니까? HP가 초기화됩니다.')) {
-            runTransaction(roundRef, (currentRound) => (currentRound || 0) + 1);
+        if (window.confirm('정말로 새 라운드를 시작하시겠습니까? HP와 모든 기록이 초기화됩니다.')) {
+            runTransaction(roundRef, (currentRound) => {
+                const nextRound = (currentRound || 0) + 1;
+                set(ref(db, `roundClicks/${nextRound}`), null); // Clear next round's stats just in case
+                return nextRound;
+            });
+            set(usersRef, null);
             set(hpRef, 1000000)
-                .then(() => alert('새로운 라운드가 시작되었습니다! HP가 초기화되었습니다.'))
+                .then(() => alert('새로운 라운드가 시작되었습니다! 모든 기록이 초기화되었습니다.'))
                 .catch((error) => alert(error.message));
         }
     };
@@ -285,6 +305,18 @@ function Admin() {
                             placeholder="https://..."
                         />
                         <button className="admin-btn" onClick={handlePrizeUpdate}>상품 정보 저장</button>
+                    </div>
+
+                    <div className="admin-form-group">
+                        <label className="admin-label">광고(Power Link) 연결 URL</label>
+                        <input
+                            className="admin-input"
+                            type="text"
+                            value={newAdUrl}
+                            onChange={(e) => setNewAdUrl(e.target.value)}
+                            placeholder="https://..."
+                        />
+                        <button className="admin-btn" onClick={handleAdUrlUpdate}>광고 링크 저장</button>
                     </div>
 
                     <hr style={{borderColor: '#404040', margin: '1.5rem 0'}} />

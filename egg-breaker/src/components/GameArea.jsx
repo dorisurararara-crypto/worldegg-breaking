@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 // --- 깨지는 알 SVG 컴포넌트 ---
 const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
@@ -45,21 +45,24 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
     );
 };
 
-
-import { useState } from 'react';
-
-// ... (CrackedEgg component remains unchanged, assuming it is defined above in the file)
+const TOOL_EMOJIS = {
+    hammer: '🔨',
+    pickaxe: '⛏️',
+    dynamite: '🧨',
+    drill: '🔩',
+    excavator: '🚜',
+    laser: '🔫',
+    nuke: '☢️',
+    fist: '👊'
+};
 
 const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
-    setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification
+    setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch
 }) => {
     const [clickEffects, setClickEffects] = useState([]);
 
     const handlePointerDown = (e) => {
-        // Prevent default browser zooming/scrolling behavior on rapid taps
-        // e.preventDefault(); // Optional: might block scrolling if user misses
-
         // 1. Trigger Game Logic
         handleClick();
 
@@ -68,11 +71,28 @@ const GameArea = ({
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
+        // Determine scale based on tool (Increased scaling for high-tier items)
+        let scale = 1;
+        let toolSize = 2; // Default emoji size
+        switch(currentTool) {
+            case 'hammer': scale = 1.2; toolSize = 2.5; break;
+            case 'pickaxe': scale = 1.5; toolSize = 3.5; break;
+            case 'dynamite': scale = 2.0; toolSize = 5.0; break;
+            case 'drill': scale = 2.5; toolSize = 7.0; break;
+            case 'excavator': scale = 3.0; toolSize = 10.0; break;
+            case 'laser': scale = 4.0; toolSize = 14.0; break;
+            case 'nuke': scale = 6.0; toolSize = 20.0; break;
+            default: scale = 1; toolSize = 2;
+        }
+
         const newEffect = { 
             id: Date.now() + Math.random(), 
             x, 
             y, 
-            val: clickPower 
+            val: clickPower,
+            scale,
+            toolSize,
+            toolEmoji: TOOL_EMOJIS[currentTool] || '👊'
         };
 
         // 3. Add to state
@@ -116,15 +136,40 @@ const GameArea = ({
             >
                 <CrackedEgg hp={hp} maxHp={1000000} isShaking={isShaking} tool={currentTool} />
                 
-                {/* Render Multiple Click Effects */}
+                {/* Render Multiple Click Effects (Damage + Tool Icon) */}
                 {clickEffects.map(effect => (
-                    <span 
-                        key={effect.id} 
-                        className="damage-float"
-                        style={{ left: effect.x, top: effect.y }}
-                    >
-                        -{effect.val}
-                    </span>
+                    <React.Fragment key={effect.id}>
+                        <span 
+                            className="damage-float"
+                            style={{ 
+                                left: effect.x, 
+                                top: effect.y - 40,
+                                fontSize: `${2 * effect.scale}rem`,
+                                fontWeight: 'bold',
+                                color: '#ff4444',
+                                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                                pointerEvents: 'none',
+                                zIndex: 10
+                            }}
+                        >
+                            -{effect.val}
+                        </span>
+                        <span 
+                            className="tool-float"
+                            style={{ 
+                                left: effect.x, 
+                                top: effect.y,
+                                fontSize: `${effect.toolSize}rem`,
+                                position: 'absolute',
+                                transform: 'translate(-50%, -50%)',
+                                pointerEvents: 'none',
+                                zIndex: 5,
+                                animation: 'toolPop 0.5s ease-out forwards'
+                            }}
+                        >
+                            {effect.toolEmoji}
+                        </span>
+                    </React.Fragment>
                 ))}
 
             {/* 모달 */}
@@ -173,9 +218,9 @@ const GameArea = ({
                 <div className="hp-text">{hp.toLocaleString()} HP</div>
             </div>
 
-            <button className="power-btn" onClick={() => buyItem(0, 0, 'fist')}>
-                <span className="btn-title">{lang.powerClick}</span>
-                <span className="btn-sub">{lang.watchAd}</span>
+            <button className="power-btn" onClick={handleAdWatch}>
+                <span className="btn-title">📺 {lang.watchAd || "AD Watch"}</span>
+                <span className="btn-sub">+2000 Points</span>
             </button>
           <div className="status-row glass">
             <div>{lang.myPoint}: <span>{myPoints}</span></div>

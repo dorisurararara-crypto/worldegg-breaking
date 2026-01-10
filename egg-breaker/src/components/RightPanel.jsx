@@ -15,46 +15,46 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
             <div className="price">100 P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+1 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(500, 5, 'pickaxe')}>
+        <div className="shop-item" onClick={() => buyItem(500, 2, 'pickaxe')}>
           <div className="icon">⛏️</div>
           <div className="info">
             <h4>{lang.item2}</h4>
-            <div className="price">500 P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+5 {lang.atk})</span></div>
+            <div className="price">500 P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+2 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(2000, 25, 'dynamite')}>
+        <div className="shop-item" onClick={() => buyItem(2000, 5, 'dynamite')}>
           <div className="icon">🧨</div>
           <div className="info">
             <h4>{lang.item3}</h4>
-            <div className="price">2k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+25 {lang.atk})</span></div>
+            <div className="price">2k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+5 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(10000, 100, 'drill')}>
+        <div className="shop-item" onClick={() => buyItem(10000, 20, 'drill')}>
           <div className="icon">🔩</div>
           <div className="info">
             <h4>{lang.item4}</h4>
-            <div className="price">10k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+100 {lang.atk})</span></div>
+            <div className="price">10k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+20 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(50000, 500, 'excavator')}>
+        <div className="shop-item" onClick={() => buyItem(50000, 50, 'excavator')}>
           <div className="icon">🚜</div>
           <div className="info">
             <h4>{lang.item5}</h4>
-            <div className="price">50k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+500 {lang.atk})</span></div>
+            <div className="price">50k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+50 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(200000, 2500, 'laser')}>
+        <div className="shop-item" onClick={() => buyItem(200000, 200, 'laser')}>
           <div className="icon">🔫</div>
           <div className="info">
             <h4>{lang.item6}</h4>
-            <div className="price">200k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+2.5k {lang.atk})</span></div>
+            <div className="price">200k P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+200 {lang.atk})</span></div>
           </div>
         </div>
-        <div className="shop-item" onClick={() => buyItem(1000000, 15000, 'nuke')}>
+        <div className="shop-item" onClick={() => buyItem(1000000, 1000, 'nuke')}>
           <div className="icon">☢️</div>
           <div className="info">
             <h4>{lang.item7}</h4>
-            <div className="price">1M P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+15k {lang.atk})</span></div>
+            <div className="price">1M P <span style={{color:'#ff4444', marginLeft:'5px', fontSize:'0.8em'}}>(+1000 {lang.atk})</span></div>
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
         }}
       >
         <span style={{fontSize: '1.2rem'}}>💬</span> 
-        Kakao Share (+2000P)
+        공유하고 800P 받기 (최대 5회)
       </button>
 
       <div className="info-box">

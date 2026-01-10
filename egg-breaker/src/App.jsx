@@ -11,15 +11,15 @@ import GameArea from './components/GameArea';
 // --- 다국어 데이터 ---
 const TRANSLATIONS = {
   US: { 
-    label: "English", title: "THE MILLION CLICK EGG", subtitle: "Let's crack this egg together!", users: "Live Users", total: "Total", shop: "Shop", myPoint: "Points", atk: "ATK", item1: "Dual Hammer", item2: "Pickaxe", item3: "TNT", item4: "Drill", item5: "Excavator", item6: "Laser Gun", item7: "Nuclear Bomb", modalTitle: "🎉 Congratulations! 🎉", modalDesc: "You delivered the final blow and broke the egg! You are the Legendary Destroyer.", modalPrize: "Please enter your email address to receive the prize:", send: "Submit to Claim Prize", adText: "Ad Banner Area", powerClick: "⚡ Power Click (+100) ⚡", watchAd: "Watch an Ad", logo: "EGG BREAK 🔨",
-    gameRuleTitle: "How to Play", gameRule1: "- Click the egg to reduce its HP.", gameRule2: "- Collect points to buy items.", gameRule3: "- Break the egg with the world!", noticeTitle: "Notice", notice1: "- Abnormal play may result in a ban.", notice2: "- This game may be reset.", prizeTitle: "Current Prize", contactTitle: "Contact", myInfoTitle: "My Info", totalClick: "Total Clicks",
+    label: "English", title: "LEGENDARY EGG", subtitle: "Let's crack this egg together!", users: "Live Users", total: "Total", shop: "Shop", myPoint: "Points", atk: "ATK", item1: "Dual Hammer", item2: "Pickaxe", item3: "TNT", item4: "Drill", item5: "Excavator", item6: "Laser Gun", item7: "Nuclear Bomb", modalTitle: "🎉 Congratulations! 🎉", modalDesc: "You delivered the final blow and broke the egg! You are the Legendary Destroyer.", modalPrize: "Please enter your email address to receive the prize:", send: "Submit to Claim Prize", adText: "Ad Banner Area", powerClick: "⚡ Power Click (+100) ⚡", watchAd: "Watch an Ad", logo: "LEGENDARY EGG 🔨",
+    gameRuleTitle: "How to Play", gameRule1: "- Click the egg to reduce its HP.", gameRule2: "- Collect points to buy items. The stronger you get, the greater the rewards!", gameRule3: "- Break the egg with the world!", noticeTitle: "Notice", notice1: "- Abnormal play may result in a ban.", notice2: "- This game may be reset.", prizeTitle: "Current Prize", contactTitle: "Contact", myInfoTitle: "My Info", totalClick: "Total Clicks",
     notEnoughPoints: "Not enough points!", alreadyShared: "You already received the share reward for this round!", shareSuccess: "Shared! 2000 points added.", sent: "Sent successfully!", bought: "Bought",
     newRoundReset: "New Round Started! All progress has been reset."
   },
   KR: { 
-    label: "한국어", title: "100만 클릭의 알", subtitle: "전 세계가 함께 깨부수는 전설의 알", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요:", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 강력한 한방", logo: "알 깨기 🔨",
-    gameRuleTitle: "게임 방법", gameRule1: "- 알을 클릭해서 HP를 깎으세요.", gameRule2: "- 포인트를 모아 상점에서 아이템을 구매하세요.", gameRule3: "- 전 세계 유저들과 함께 알을 부수세요!", noticeTitle: "주의사항", notice1: "- 비정상적인 플레이는 제재될 수 있습니다.", notice2: "- 새로고침 시 초기화될 수 있습니다.", prizeTitle: "이번 회차 상품", contactTitle: "제휴문의", myInfoTitle: "내 정보", totalClick: "총 클릭",
-    notEnoughPoints: "포인트가 부족합니다!", alreadyShared: "이번 라운드에는 이미 공유 보상을 받으셨습니다!", shareSuccess: "공유 완료! 2000 포인트가 지급되었습니다.", sent: "전송되었습니다!", bought: "구매 완료:",
+    label: "한국어", title: "전설의 알", subtitle: "전 세계가 함께 깨부수는 전설의 알", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요:", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 강력한 한방", logo: "전설의 알 🔨",
+    gameRuleTitle: "게임 방법", gameRule1: "- 알을 클릭해서 HP를 깎으세요.", gameRule2: "- 포인트를 모아 상점에서 아이템을 구매하세요. 깨면 깰수록 더 강력해지고 더 큰 보상을 받을 수 있습니다!", gameRule3: "- 전 세계 유저들과 함께 알을 부수세요!", noticeTitle: "주의사항", notice1: "- 비정상적인 플레이는 제재될 수 있습니다.", notice2: "- 새로고침 시 초기화될 수 있습니다.", prizeTitle: "이번 회차 상품", contactTitle: "제휴문의", myInfoTitle: "내 정보", totalClick: "총 클릭",
+    notEnoughPoints: "포인트가 부족합니다!", alreadyShared: "이번 라운드에는 이미 공유 보상을 받으셨습니다!", shareSuccess: "공유 완료! 800 포인트가 지급되었습니다.", sent: "전송되었습니다!", bought: "구매 완료:",
     newRoundReset: "새로운 라운드가 시작되었습니다! 모든 진행 상황이 초기화되었습니다."
   },
   JP: { 
@@ -70,28 +70,40 @@ function App() {
   const [showCountrySelect, setShowCountrySelect] = useState(false);
   const [prize, setPrize] = useState('');
   const [prizeUrl, setPrizeUrl] = useState('');
-  const [round, setRound] = useState(1);
+  const [adUrl, setAdUrl] = useState(''); // New State
+  const [round, setRound] = useState(0); // Changed from 1 to 0 to prevent refresh alert
   const [announcement, setAnnouncement] = useState('');
+  const [shareCount, setShareCount] = useState(0); // New State: 5 times limit per round
+  const [adWatchCount, setAdWatchCount] = useState(0); // New State: 1 time limit per round
   const [myTotalClicks, setMyTotalClicks] = useState(() => {
     return parseInt(localStorage.getItem('egg_breaker_clicks') || '0', 10);
   });
 
-  // Use localStorage to persist user ID across refreshes to prevent "ghost" users
+  // Use localStorage to prevent ghost users
   const userId = useRef(localStorage.getItem('egg_breaker_uid') || "user_" + Math.random().toString(36).substr(2, 9));
   
   // Track previous round to detect changes
   const prevRound = useRef(null);
 
   useEffect(() => {
-    // Check if round changed (and it's not the first load)
-    if (prevRound.current !== null && round !== prevRound.current) {
+    // Only trigger if prevRound exists and round actually changes from one valid number to another
+    if (prevRound.current && round && round !== prevRound.current) {
         setMyPoints(0);
         setClickPower(1);
         setCurrentTool('fist');
         setLastSharedRound(0); 
+        setShareCount(0); // Reset share count
+        setAdWatchCount(0); // Reset ad watch count
+        
+        // Reset Total Clicks for new round
+        setMyTotalClicks(0);
+        localStorage.setItem('egg_breaker_clicks', '0');
+
         alert(lang.newRoundReset);
     }
-    prevRound.current = round;
+    if (round) {
+        prevRound.current = round;
+    }
   }, [round, lang]);
 
   useEffect(() => {
@@ -184,6 +196,7 @@ function App() {
 
     const prizeRef = ref(db, 'prize');
     const prizeUrlRef = ref(db, 'prizeUrl');
+    const adUrlRef = ref(db, 'adUrl'); // New Ref
     const roundRef = ref(db, 'round');
     const announcementRef = ref(db, 'announcement');
 
@@ -192,6 +205,9 @@ function App() {
     });
     onValue(prizeUrlRef, (snapshot) => {
         setPrizeUrl(snapshot.val() || '');
+    });
+    onValue(adUrlRef, (snapshot) => { // Sync Ad URL
+        setAdUrl(snapshot.val() || '');
     });
     onValue(roundRef, (snapshot) => {
         setRound(snapshot.val() || 1);
@@ -319,8 +335,8 @@ function App() {
   };
 
   const handleKakaoShare = () => {
-    if (lastSharedRound === round) {
-        alert(lang.alreadyShared);
+    if (shareCount >= 5) {
+        alert("이번 라운드 공유 횟수(5회)를 모두 소진하셨습니다!");
         return;
     }
 
@@ -352,9 +368,29 @@ function App() {
     });
     
     // Reward points and update state
+    setMyPoints(prev => prev + 800);
+    setShareCount(prev => prev + 1);
+    setLastSharedRound(round); // Keep this for legacy or single-check if needed, but shareCount handles the limit now.
+    alert(`공유 완료! 800 포인트가 지급되었습니다. (${shareCount + 1}/5)`);
+  };
+
+  const handleAdWatch = () => {
+    if (adWatchCount >= 1) {
+        alert("이번 라운드 광고 시청(1회)을 이미 완료하셨습니다!");
+        return;
+    }
+    
+    if (adUrl) {
+        window.open(adUrl, '_blank');
+    } else {
+        alert("현재 연결된 광고가 없습니다.");
+        return; // Don't give reward if no ad
+    }
+
+    // Reward
     setMyPoints(prev => prev + 2000);
-    setLastSharedRound(round);
-    alert(lang.shareSuccess);
+    setAdWatchCount(prev => prev + 1);
+    alert("광고 시청 완료! 2000 포인트가 지급되었습니다.");
   };
 
   if (route === '#admin') {
@@ -418,6 +454,7 @@ function App() {
           currentTool={currentTool}
           buyItem={buyItem}
           notification={notification}
+          handleAdWatch={handleAdWatch}
         />
 
         {/* 오른쪽: 상점 (고정 너비) */}
