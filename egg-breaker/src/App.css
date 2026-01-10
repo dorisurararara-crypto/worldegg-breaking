@@ -1,119 +1,262 @@
 /* src/App.css */
+:root {
+  --bg-color: #0f172a;
+  --panel-bg: #1e293b;
+  --accent: #f59e0b; /* Amber */
+  --text-main: #f8fafc;
+  --text-sub: #94a3b8;
+  --danger: #ef4444;
+}
+
 body {
   margin: 0;
-  background-color: #1a1a1a;
-  color: white;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  overflow-x: hidden;
   user-select: none; /* 드래그 방지 */
 }
 
-.container {
-  text-align: center;
-  width: 100%;
-  max-width: 500px;
+/* --- 레이아웃 (반응형 그리드) --- */
+.main-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr 300px; /* 좌(250) - 중(나머지) - 우(300) */
+  min-height: 100vh;
+  gap: 20px;
   padding: 20px;
+  box-sizing: border-box;
+}
+
+/* 모바일 대응 (화면 좁을 때) */
+@media (max-width: 900px) {
+  .main-layout {
+    grid-template-columns: 1fr; /* 1열로 변경 */
+    grid-template-rows: auto auto auto;
+  }
+  /* 모바일에서는 순서 변경 (게임이 제일 위로) */
+  .game-area { order: 1; }
+  .right-panel { order: 2; }
+  .left-panel { order: 3; }
+}
+
+/* --- 공통 패널 스타일 --- */
+.sidebar {
+  background: var(--panel-bg);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  height: fit-content;
+  border: 1px solid #334155;
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  color: var(--accent);
+  border-bottom: 2px solid #334155;
+  padding-bottom: 10px;
+}
+
+/* --- 왼쪽: 접속자 목록 --- */
+.total-users {
+  font-weight: bold;
+  color: #10b981; /* Green */
+  margin-bottom: 15px;
+}
+.country-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.country-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #334155;
+  font-size: 1.1rem;
+}
+
+/* --- 중앙: 게임 영역 --- */
+.game-area {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
 .title {
-  color: #fbbf24;
-  text-shadow: 0 0 10px #f59e0b;
-  margin-bottom: 5px;
+  font-size: 2.5rem;
+  margin: 0;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #facc15, #f59e0b);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
 }
 
-.subtitle {
-  color: #9ca3af;
-  font-size: 0.9rem;
-  margin-bottom: 30px;
-}
+.subtitle { color: var(--text-sub); margin-bottom: 30px; }
 
-/* 체력바 */
-.hp-box {
+.hp-container {
   width: 100%;
-  height: 20px;
-  background-color: #374151;
-  border-radius: 10px;
+  max-width: 500px;
+  height: 25px;
+  background: #334155;
+  border-radius: 12px;
   overflow: hidden;
-  border: 2px solid #4b5563;
-  margin-bottom: 10px;
+  border: 2px solid #475569;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
 }
 
 .hp-bar {
   height: 100%;
-  background: linear-gradient(90deg, #ef4444, #b91c1c);
-  transition: width 0.2s ease-out;
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+  transition: width 0.1s linear;
 }
 
 .hp-text {
-  font-size: 2.5rem;
-  margin: 0 0 30px 0;
-  font-family: monospace;
+  font-size: 2rem;
+  font-family: 'Courier New', monospace;
+  margin: 10px 0 30px;
 }
 
-/* 알 스타일 */
-.egg-wrapper {
-  margin: 20px 0;
-  cursor: pointer;
-  /* 클릭 시 파란색 하이라이트 제거 */
-  -webkit-tap-highlight-color: transparent;
+/* 알 (클릭 대상) */
+.egg-container {
+  position: relative;
+  margin: 20px;
 }
 
 .egg {
   font-size: 8rem;
-  transition: transform 0.1s;
-  line-height: 1;
-}
-
-/* 쉐이크 애니메이션 */
-.shake {
-  animation: shake-animation 0.1s infinite;
-}
-
-@keyframes shake-animation {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-5px, 5px) rotate(-5deg); }
-  50% { transform: translate(0, -5px) rotate(0deg); }
-  75% { transform: translate(5px, 5px) rotate(5deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
-}
-
-/* 버튼 및 기타 */
-.stats {
-  margin-bottom: 20px;
-  font-size: 1.1rem;
-}
-
-.item-btn {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 50px;
-  font-size: 1rem;
-  font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
   transition: transform 0.1s;
+  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.1));
+}
+.egg:active { transform: scale(0.95); }
+
+.damage-float {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ef4444;
+  font-weight: bold;
+  font-size: 2rem;
+  animation: floatUp 0.5s ease-out forwards;
+  pointer-events: none;
 }
 
-.item-btn:active {
-  transform: scale(0.95);
+@keyframes floatUp {
+  0% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -50px); }
 }
 
-.ad-banner {
-  margin-top: 40px;
+.shake {
+  animation: shake 0.1s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+  40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
+.my-status {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px 30px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.ad-box {
   width: 100%;
-  height: 60px;
-  background-color: #333;
-  color: #666;
+  max-width: 400px;
+  height: 80px;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  border: 1px dashed #444;
+  font-size: 0.8rem;
+}
+
+/* --- 오른쪽: 상점 --- */
+.warning-text {
+  font-size: 0.8rem;
+  color: var(--danger);
+  margin-bottom: 15px;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+  border: 1px solid transparent;
+}
+
+.shop-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+
+.shop-item .icon { font-size: 2rem; margin-right: 15px; }
+.shop-item .info h4 { margin: 0; color: var(--text-main); }
+.shop-item .info p { margin: 3px 0 0; font-size: 0.8rem; color: var(--text-sub); }
+.shop-item .price {
+  margin-left: auto;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+/* --- 막타 모달 --- */
+.winner-modal {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 8px;
-  border: 2px dashed #555;
+  z-index: 1000;
+  animation: fadeIn 0.3s;
 }
+
+.modal-content {
+  background: #1e293b;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+  max-width: 90%;
+}
+
+.modal-content h2 { color: var(--accent); margin-top: 0; }
+.modal-content input {
+  width: 80%;
+  padding: 10px;
+  margin: 20px 0;
+  border-radius: 5px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: white;
+}
+.modal-content button {
+  background: var(--accent);
+  color: black;
+  border: none;
+  padding: 10px 30px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
