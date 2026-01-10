@@ -1,9 +1,15 @@
 import React from 'react';
 
-const LeftPanel = ({ lang, getCountryStats, onlineUsers, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
-  const stats = getCountryStats();
-  const top1 = stats[0];
-  const top2 = stats[1];
+const LeftPanel = ({ lang, getCountryStats, onlineUsers, roundClicks, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
+  // Stats for User List (Online Users)
+  const userStats = getCountryStats();
+
+  // Stats for Rivalry Widget (Round Clicks)
+  const clickStats = Object.entries(roundClicks || {})
+    .sort((a, b) => b[1] - a[1]); // Sort by clicks descending
+
+  const top1 = clickStats[0];
+  const top2 = clickStats[1];
 
   return (
     <aside className={`panel left-panel glass ${isOpen ? 'active' : ''}`}>
@@ -20,7 +26,7 @@ const LeftPanel = ({ lang, getCountryStats, onlineUsers, prize, prizeUrl, getFla
             {top1 ? (
                 <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '2.5rem', lineHeight: 1, marginBottom: '5px' }}>{getFlagEmoji(top1[0])}</div>
-                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#fff' }}>{top1[1]}</div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#fff' }}>{top1[1].toLocaleString()}</div>
                 </div>
             ) : (
                 <div style={{ color: '#aaa' }}>Waiting...</div>
@@ -32,7 +38,7 @@ const LeftPanel = ({ lang, getCountryStats, onlineUsers, prize, prizeUrl, getFla
             {top2 ? (
                 <div style={{ textAlign: 'center' }}>
                      <div style={{ fontSize: '2rem', lineHeight: 1, marginBottom: '5px', opacity: 0.8 }}>{getFlagEmoji(top2[0])}</div>
-                     <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#ccc' }}>{top2[1]}</div>
+                     <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#ccc' }}>{top2[1].toLocaleString()}</div>
                 </div>
             ) : (
                 <div style={{ color: '#555', fontSize: '0.8rem' }}>No Rival</div>
@@ -41,14 +47,14 @@ const LeftPanel = ({ lang, getCountryStats, onlineUsers, prize, prizeUrl, getFla
         
         {top1 && top2 && (
             <div style={{ marginTop: '10px', fontSize: '0.8rem', color: '#00ff88' }}>
-                Gap: {top1[1] - top2[1]}
+                Gap: {(top1[1] - top2[1]).toLocaleString()}
             </div>
         )}
       </div>
 
       <h3>🌐 {lang.users}</h3>
       <div className="scroll-box">
-        {stats.map(([code, count], index) => (
+        {userStats.map(([code, count], index) => (
           <div key={code} className="user-row" style={index === 0 ? { background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)' } : {}}>
             <span className="flag">
                 {index === 0 && '🥇 '}

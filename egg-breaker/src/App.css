@@ -295,6 +295,156 @@ body {
   margin-left: 5px;
 }
 
+/* Lists (Users, Shop) */
+.scroll-box {
+  flex: 1; /* 남은 공간 차지 */
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.shop-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.user-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.flag { font-size: 1.2rem; }
+.count { font-weight: bold; color: #00ff88; }
+
+/* Improved Shop Item Styling */
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 15px;
+  padding: 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.shop-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #ffd700;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+}
+
+.shop-item .icon { font-size: 2rem; }
+.shop-item .info h4 { margin: 0; font-size: 1rem; }
+.shop-item .price { color: #ffd700; font-size: 0.9rem; margin-top: 3px; }
+
+.info-box {
+  padding: 15px;
+  background: rgba(0,0,0,0.2);
+  margin: 10px;
+  border-radius: 8px;
+}
+.info-box h4 { margin: 0 0 5px 0; color: #aaa; font-size: 0.9rem; }
+.info-box p { margin: 0; font-size: 0.85rem; line-height: 1.4; color: #ddd; }
+.info-box a { color: #00c6ff; text-decoration: underline; word-break: break-all; }
+
+.total-badge {
+  text-align: center;
+  padding: 10px;
+  background: rgba(0, 255, 136, 0.1);
+  color: #00ff88;
+  font-weight: bold;
+}
+
+/* Modal */
+.modal-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: #222;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-content input {
+  display: block;
+  width: 100%;
+  margin: 15px 0;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  background: #333;
+  color: white;
+}
+
+.send-btn {
+  background: #ffd700;
+  color: #000;
+  border: none;
+  padding: 10px 30px;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.round-over-message {
+    color: white;
+    text-align: center;
+}
+
+/* Cursors */
+.cursor-fist { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">👊</text></svg>') 16 16, auto; }
+.cursor-hammer { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🔨</text></svg>') 16 16, auto; }
+.cursor-pickaxe { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">⛏️</text></svg>') 16 16, auto; }
+.cursor-dynamite { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🧨</text></svg>') 16 16, auto; }
+.cursor-drill { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🔩</text></svg>') 16 16, auto; }
+.cursor-excavator { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🚜</text></svg>') 16 16, auto; }
+.cursor-laser { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">🔫</text></svg>') 16 16, auto; }
+.cursor-nuke { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text y="20" font-size="20">☢️</text></svg>') 16 16, auto; }
+
+.damage-float {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ff4444;
+  font-weight: bold;
+  font-size: 2rem;
+  animation: floatUp 0.8s ease-out forwards;
+  pointer-events: none;
+  text-shadow: 2px 2px 0 #000;
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); }
+}
+
 /* --- Mobile Responsive Styles --- */
 @media (min-width: 901px) {
     .title { font-size: 2.5rem; }

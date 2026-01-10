@@ -56,6 +56,7 @@ function App() {
   const [myPoints, setMyPoints] = useState(0);
   const [clickPower, setClickPower] = useState(1);
   const [onlineUsers, setOnlineUsers] = useState({});
+  const [roundClicks, setRoundClicks] = useState({});
   const [isWinner, setIsWinner] = useState(false);
   const [winnerEmail, setWinnerEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -181,6 +182,13 @@ function App() {
     });
   }, []);
 
+  useEffect(() => {
+    const clicksRef = ref(db, `roundClicks/${round}`);
+    return onValue(clicksRef, (snapshot) => {
+        setRoundClicks(snapshot.val() || {});
+    });
+  }, [round]);
+
   const changeCountry = (code) => {
     const targetLang = ["KR", "JP", "CN"].includes(code) ? code : "US";
     setMyCountry(code);
@@ -217,6 +225,10 @@ function App() {
     const newTotalClicks = myTotalClicks + 1;
     setMyTotalClicks(newTotalClicks);
     localStorage.setItem('egg_breaker_clicks', newTotalClicks.toString());
+
+    // Increment Country Clicks for this round
+    const countryClickRef = ref(db, `roundClicks/${round}/${myCountry}`);
+    runTransaction(countryClickRef, (current) => (current || 0) + 1);
 
     const hpRef = ref(db, 'eggHP');
     runTransaction(hpRef, (currentHP) => {
@@ -363,6 +375,7 @@ function App() {
           lang={lang} 
           getCountryStats={getCountryStats} 
           onlineUsers={onlineUsers} 
+          roundClicks={roundClicks}
           prize={prize}
           prizeUrl={prizeUrl}
           getFlagEmoji={getFlagEmoji}
