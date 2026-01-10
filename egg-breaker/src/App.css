@@ -324,22 +324,22 @@ body {
   align-items: center;
   gap: 15px;
   background: rgba(255, 255, 255, 0.05);
-  margin-bottom: 15px;
-  padding: 15px;
+  margin-bottom: 15px; /* Increased margin */
+  padding: 15px; /* Increased padding */
   border-radius: 10px;
   cursor: pointer;
   transition: 0.2s;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  position: relative;
-  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Visible border */
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* Stronger shadow */
+  position: relative; /* Added */
+  overflow: hidden; /* Added */
 }
 
 .shop-item:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: #ffd700;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+  background: rgba(255, 255, 255, 0.15); /* Changed from 0.1 */
+  border-color: #ffd700; /* Changed from rgba(255, 255, 255, 0.2) */
+  transform: translateY(-2px); /* Changed from translateX(5px) */
+  box-shadow: 0 8px 15px rgba(0,0,0,0.4); /* Added */
 }
 
 .shop-item .icon { font-size: 2rem; }
@@ -429,9 +429,8 @@ body {
 
 .damage-float {
   position: absolute;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  /* Top and Left are set dynamically via inline style */
+  transform: translate(-50%, -50%); /* Start centered on the click */
   color: #ff4444;
   font-weight: bold;
   font-size: 2rem;
@@ -467,6 +466,17 @@ body {
     pointer-events: none;
     transition: transform 0.3s ease, opacity 0.3s ease;
     border: none;
+    /* Improved Scrolling behavior for mobile menu */
+    display: block; /* Remove flex constraint to allow full content scrolling */
+    overflow-y: auto;
+  }
+
+  /* When display is block, flex-shrink/grow on children won't work the same.
+     We rely on natural document flow. */
+  .shop-list {
+    flex: none;
+    height: auto;
+    overflow: visible; /* Let the panel scrollbar handle it */
   }
 
   /* Right panel slides from right */

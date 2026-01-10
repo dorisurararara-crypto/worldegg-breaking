@@ -46,10 +46,44 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
 };
 
 
+import { useState } from 'react';
+
+// ... (CrackedEgg component remains unchanged, assuming it is defined above in the file)
+
 const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification
 }) => {
+    const [clickEffects, setClickEffects] = useState([]);
+
+    const handlePointerDown = (e) => {
+        // Prevent default browser zooming/scrolling behavior on rapid taps
+        // e.preventDefault(); // Optional: might block scrolling if user misses
+
+        // 1. Trigger Game Logic
+        handleClick();
+
+        // 2. Visuals: Calculate relative position
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const newEffect = { 
+            id: Date.now() + Math.random(), 
+            x, 
+            y, 
+            val: clickPower 
+        };
+
+        // 3. Add to state
+        setClickEffects(prev => [...prev, newEffect]);
+
+        // 4. Cleanup after animation (800ms matches CSS)
+        setTimeout(() => {
+            setClickEffects(prev => prev.filter(item => item.id !== newEffect.id));
+        }, 800);
+    };
+
     return (
         <main className="game-area">
             {notification && (
@@ -78,14 +112,20 @@ const GameArea = ({
 
             <div 
                 className="egg-stage" 
-                onPointerDown={(e) => {
-                    // Prevent default touch actions like zooming or scrolling while tapping rapidly
-                    // only if it's a direct interaction with the egg area
-                    handleClick();
-                }}
+                onPointerDown={handlePointerDown}
             >
                 <CrackedEgg hp={hp} maxHp={1000000} isShaking={isShaking} tool={currentTool} />
-                {isShaking && <span className="damage-float">-{clickPower}</span>}
+                
+                {/* Render Multiple Click Effects */}
+                {clickEffects.map(effect => (
+                    <span 
+                        key={effect.id} 
+                        className="damage-float"
+                        style={{ left: effect.x, top: effect.y }}
+                    >
+                        -{effect.val}
+                    </span>
+                ))}
 
             {/* 모달 */}
             {isWinner && !emailSubmitted && (
