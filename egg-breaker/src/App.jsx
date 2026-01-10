@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { db } from './firebase';
 import { ref, onValue, runTransaction, push, onDisconnect, set } from 'firebase/database';
 import './App.css';
+import Admin from './Admin'; // Import the Admin component
 
 // --- 다국어 데이터 ---
 const TRANSLATIONS = {
-  US: { label: "English", title: "THE MILLION CLICK EGG", subtitle: "Let's crack this egg together!", users: "Live Users", total: "Total", shop: "Shop", myPoint: "My Points", atk: "ATK", item1: "Dual Hammer", item2: "Pickaxe", item3: "TNT", modalTitle: "Legendary Destroyer!", send: "Submit", adText: "Ad Banner Area", powerClick: "⚡ Power Click (+100) ⚡", watchAd: "Watch an Ad" },
-  KR: { label: "한국어", title: "100만 클릭의 알", subtitle: "전 세계가 함께 깨부수는 전설의 알", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", modalTitle: "전설의 파괴자!", send: "전송", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 강력한 한방" },
-  JP: { label: "日本語", title: "ミリオン・クリック・エッグ", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", modalTitle: "伝説の破壊者！", send: "送信", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃" },
-  CN: { label: "中文", title: "百万点击大挑战", subtitle: "全世界一起击碎传说之蛋", users: "在线", total: "总计", shop: "商店", myPoint: "积分", atk: "攻击力", item1: "双锤", item2: "钢镐", item3: "炸药", modalTitle: "传说破坏者！", send: "发送", adText: "广告区域", powerClick: "⚡ 超级点击 (+100) ⚡", watchAd: "看广告强力攻击" }
+  US: { label: "English", title: "THE MILLION CLICK EGG", subtitle: "Let's crack this egg together!", users: "Live Users", total: "Total", shop: "Shop", myPoint: "My Points", atk: "ATK", item1: "Dual Hammer", item2: "Pickaxe", item3: "TNT", modalTitle: "Legendary Destroyer!", send: "Submit", adText: "Ad Banner Area", powerClick: "⚡ Power Click (+100) ⚡", watchAd: "Watch an Ad", logo: "EGG BREAK 🔨" },
+  KR: { label: "한국어", title: "100만 클릭의 알", subtitle: "전 세계가 함께 깨부수는 전설의 알", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", modalTitle: "전설의 파괴자!", send: "전송", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 강력한 한방", logo: "알 깨기 🔨" },
+  JP: { label: "日本語", title: "ミリオン・クリック・エッグ", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", modalTitle: "伝説の破壊者！", send: "送信", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグブレーク 🔨" },
+  CN: { label: "中文", title: "百万点击大挑战", subtitle: "全世界一起击碎传说之蛋", users: "在线", total: "总计", shop: "商店", myPoint: "积分", atk: "攻击力", item1: "双锤", item2: "钢镐", item3: "炸药", modalTitle: "传说破坏者！", send: "发送", adText: "广告区域", powerClick: "⚡ 超级点击 (+100) ⚡", watchAd: "看广告强力攻击", logo: "击碎鸡蛋 🔨" }
 };
 
 const getFlagEmoji = (countryCode) => {
@@ -16,6 +17,7 @@ const getFlagEmoji = (countryCode) => {
   const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt());
   return String.fromCodePoint(...codePoints);
 };
+
 
 // --- 🔥 [신규] 깨지는 알 SVG 컴포넌트 ---
 const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
@@ -63,6 +65,7 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
 };
 
 function App() {
+  const [route, setRoute] = useState(window.location.hash);
   const [hp, setHp] = useState(1000000);
   const [isShaking, setIsShaking] = useState(false);
   const [myPoints, setMyPoints] = useState(0);
@@ -75,15 +78,54 @@ function App() {
   const [lang, setLang] = useState(TRANSLATIONS.US);
   const [currentTool, setCurrentTool] = useState("fist");
   const [showCountrySelect, setShowCountrySelect] = useState(false);
+  const [prize, setPrize] = useState('');
+  const [round, setRound] = useState(1);
   const userId = useRef("user_" + Math.random().toString(36).substr(2, 9));
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setRoute(window.location.hash);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    const userRef = ref(db, `onlineUsers/${userId.current}`);
+    
+    // Set user online status
+    set(userRef, { country: myCountry, lastActive: Date.now() });
+    
+    // Set up disconnect handler
+    onDisconnect(userRef).remove();
+
+    // Listen for online users
+    const usersRef = ref(db, 'onlineUsers');
+    const unsubscribe = onValue(usersRef, (snapshot) => {
+        setOnlineUsers(snapshot.val() || {});
+    });
+
+    return () => {
+        unsubscribe();
+        set(userRef, null); // Clean up on unmount
+    };
+  }, []);
 
   useEffect(() => {
     fetch('https://ipapi.co/json/').then(res => res.json())
       .then(data => changeCountry(data.country_code || "US"))
       .catch(() => changeCountry("US"));
 
-    const usersRef = ref(db, 'onlineUsers');
-    return onValue(usersRef, (snapshot) => setOnlineUsers(snapshot.val() || {}));
+    const prizeRef = ref(db, 'prize');
+    const roundRef = ref(db, 'round');
+
+    onValue(prizeRef, (snapshot) => {
+        setPrize(snapshot.val() || '');
+    });
+    onValue(roundRef, (snapshot) => {
+        setRound(snapshot.val() || 1);
+    });
   }, []);
 
   const changeCountry = (code) => {
@@ -93,13 +135,23 @@ function App() {
     setShowCountrySelect(false);
     const userRef = ref(db, `onlineUsers/${userId.current}`);
     set(userRef, { country: code, lastActive: Date.now() });
-    onDisconnect(userRef).remove();
   };
 
   useEffect(() => {
     const hpRef = ref(db, 'eggHP');
-    return onValue(hpRef, (snapshot) => setHp(snapshot.val() === null ? 1000000 : snapshot.val()));
-  }, []);
+    return onValue(hpRef, (snapshot) => {
+      const currentHp = snapshot.val();
+      if (currentHp === null) {
+        setHp(1000000);
+      } else {
+        setHp(currentHp);
+        if (currentHp === 0 && !isWinner) {
+          // This ensures that if a user loads the page and the egg is already broken,
+          // they don't become a winner. `isWinner` is only set for the user who makes the last click.
+        }
+      }
+    });
+  }, [isWinner]);
 
   const handleClick = () => {
     if (hp <= 0) return;
@@ -110,9 +162,13 @@ function App() {
     const hpRef = ref(db, 'eggHP');
     runTransaction(hpRef, (currentHP) => {
       if (currentHP === null) return 1000000;
+      if (currentHP <= 0) return 0; // Already broken, no change
       return Math.max(0, currentHP - clickPower);
     }).then((result) => {
-      if (result.committed && result.snapshot.val() === 0) setIsWinner(true);
+      if (result.committed && result.snapshot.val() === 0) {
+        // Only the user who makes the final click becomes the winner
+        if(!isWinner) setIsWinner(true);
+      }
     });
   };
 
@@ -128,24 +184,35 @@ function App() {
 
   const submitWinnerEmail = () => {
     if (!winnerEmail.includes("@")) return;
-    push(ref(db, 'winners'), { email: winnerEmail, date: new Date().toString(), country: myCountry });
+    push(ref(db, 'winners'), { 
+      email: winnerEmail, 
+      date: new Date().toString(), 
+      country: myCountry,
+      round: round 
+    });
     setEmailSubmitted(true);
     alert("Sent!");
   };
 
   const getCountryStats = () => {
     const stats = {};
-    Object.values(onlineUsers).forEach(user => {
-      const c = user.country || "Unknown";
-      stats[c] = (stats[c] || 0) + 1;
-    });
+    if (onlineUsers) {
+      Object.values(onlineUsers).forEach(user => {
+        const c = user.country || "Unknown";
+        stats[c] = (stats[c] || 0) + 1;
+      });
+    }
     return Object.entries(stats).sort((a, b) => b[1] - a[1]);
   };
+
+  if (route === '#admin') {
+    return <Admin />;
+  }
 
   return (
     <div className="app-container">
       <nav className="navbar">
-        <div className="logo">EGG BREAK 🔨</div>
+        <div className="logo">{lang.logo}</div>
         <div className="lang-selector">
           <button className="lang-btn" onClick={() => setShowCountrySelect(!showCountrySelect)}>
             {getFlagEmoji(myCountry)} {myCountry} ▼
@@ -176,6 +243,27 @@ function App() {
             ))}
           </div>
           <div className="total-badge">{lang.total}: {Object.keys(onlineUsers).length}</div>
+
+          <div className="info-box">
+            <h4>게임 방법</h4>
+            <p>
+              - 알을 클릭해서 HP를 깎으세요.<br/>
+              - 포인트를 모아 상점에서 아이템을 구매하세요.<br/>
+              - 전 세계 유저들과 함께 알을 부수세요!
+            </p>
+          </div>
+          <div className="info-box">
+            <h4>주의사항</h4>
+            <p>
+              - 비정상적인 플레이는 제재될 수 있습니다.<br/>
+              - 이 게임은 초기화될 수 있습니다.
+            </p>
+          </div>
+
+          <div className="info-box">
+            <h4>이번 회차 상품</h4>
+            <p>{prize}</p>
+          </div>
         </aside>
 
         {/* 중앙: 게임 (남은 공간 모두 차지 flex-grow) */}
@@ -189,6 +277,31 @@ function App() {
             {/* SVG 알 컴포넌트 사용 */}
             <CrackedEgg hp={hp} maxHp={1000000} isShaking={isShaking} tool={currentTool} />
             {isShaking && <span className="damage-float">-{clickPower}</span>}
+
+            {/* 모달 */}
+            {isWinner && !emailSubmitted && (
+              <div className="modal-overlay">
+                <div className="modal-content glass">
+                  <h2>{lang.modalTitle}</h2>
+                  <input 
+                    type="email" 
+                    placeholder="Email"
+                    value={winnerEmail}
+                    onChange={(e) => setWinnerEmail(e.target.value)}
+                  />
+                  <button className="send-btn" onClick={submitWinnerEmail}>{lang.send}</button>
+                </div>
+              </div>
+            )}
+            
+            {hp <= 0 && !isWinner && (
+              <div className="modal-overlay">
+                <div className="round-over-message">
+                  <h2>Round Over!</h2>
+                  <p>Waiting for the next round to begin.</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="hp-wrapper">
@@ -239,22 +352,6 @@ function App() {
           </div>
         </aside>
       </div>
-
-      {/* 모달 */}
-      {isWinner && !emailSubmitted && (
-        <div className="modal-overlay">
-          <div className="modal-content glass">
-            <h2>{lang.modalTitle}</h2>
-            <input 
-              type="email" 
-              placeholder="Email"
-              value={winnerEmail}
-              onChange={(e) => setWinnerEmail(e.target.value)}
-            />
-            <button className="send-btn" onClick={submitWinnerEmail}>{lang.send}</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
