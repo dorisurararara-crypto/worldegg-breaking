@@ -6,14 +6,14 @@ import { getAuth } from "firebase/auth";
 // 🔴 여기에 아까 Firebase 사이트에서 복사한 본인의 설정 코드를 덮어씌우세요!
 // (apiKey, authDomain 등등 들어있는 부분)
 const firebaseConfig = {
-  apiKey: "AIzaSyAle9zTJ1EMJfK3uqCiEjQp2aTk14WbfX4",
-  authDomain: "egg-break-412ae.firebaseapp.com",
-  databaseURL: "https://egg-break-412ae-default-rtdb.firebaseio.com",
-  projectId: "egg-break-412ae",
-  storageBucket: "egg-break-412ae.firebasestorage.app",
-  messagingSenderId: "916101940082",
-  appId: "1:916101940082:web:b649703c0f4a07533bd3eb",
-  measurementId: "G-RPBD2LFVY3"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

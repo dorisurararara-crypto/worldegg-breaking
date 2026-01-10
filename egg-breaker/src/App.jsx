@@ -71,6 +71,17 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Initialize Kakao SDK
+    if (window.Kakao && !window.Kakao.isInitialized()) {
+        const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
+        if(kakaoKey && kakaoKey !== 'YOUR_KAKAO_JAVASCRIPT_KEY') {
+             window.Kakao.init(kakaoKey); 
+             console.log("Kakao Initialized with env key");
+        }
+    }
+  }, []);
+
+  useEffect(() => {
     const userRef = ref(db, `onlineUsers/${userId.current}`);
     
     // Set user online status
@@ -97,17 +108,36 @@ function App() {
   }, [myCountry]); // Re-run if country changes to update the flag
 
   useEffect(() => {
-    // CORS 이슈가 적은 ipwho.is API로 변경
-    fetch('https://ipwho.is/')
-      .then(res => res.json())
-      .then(data => {
-        if(data.success) {
-            changeCountry(data.country_code || "US");
-        } else {
-            changeCountry("US");
+    // Improved Country Detection with Fallback
+    const detectCountry = async () => {
+        try {
+            // 1st Try: ipwho.is
+            const res1 = await fetch('https://ipwho.is/');
+            const data1 = await res1.json();
+            if (data1.success && data1.country_code) {
+                console.log("Detected Country (ipwho.is):", data1.country_code);
+                changeCountry(data1.country_code);
+                return;
+            }
+            throw new Error("ipwho.is failed");
+        } catch (e) {
+            console.warn("Primary geo-api failed, trying fallback...", e);
+            try {
+                // 2nd Try: ipapi.co
+                const res2 = await fetch('https://ipapi.co/json/');
+                const data2 = await res2.json();
+                if (data2.country_code) {
+                    console.log("Detected Country (ipapi.co):", data2.country_code);
+                    changeCountry(data2.country_code);
+                    return;
+                }
+            } catch (e2) {
+                console.warn("All geo-apis failed, defaulting to US", e2);
+            }
         }
-      })
-      .catch(() => changeCountry("US"));
+        changeCountry("US");
+    };
+    detectCountry();
 
     const prizeRef = ref(db, 'prize');
     const prizeUrlRef = ref(db, 'prizeUrl');
@@ -211,6 +241,39 @@ function App() {
     return Object.entries(stats).sort((a, b) => b[1] - a[1]);
   };
 
+  const handleKakaoShare = () => {
+    if (!window.Kakao || !window.Kakao.isInitialized()) {
+        alert("Kakao SDK not initialized. Please check your key.");
+        return;
+    }
+
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: lang.title,
+        description: lang.subtitle,
+        imageUrl: 'https://egg-break-412ae.web.app/vite.svg', // Replace with your actual OG image
+        link: {
+          mobileWebUrl: window.location.href,
+          webUrl: window.location.href,
+        },
+      },
+      buttons: [
+        {
+          title: 'Play Now',
+          link: {
+            mobileWebUrl: window.location.href,
+            webUrl: window.location.href,
+          },
+        },
+      ],
+    });
+    
+    // Reward points (optimistic reward)
+    setMyPoints(prev => prev + 2000);
+    alert("2000 Points Added!");
+  };
+
   if (route === '#admin') {
     return <Admin />;
   }
@@ -276,6 +339,7 @@ function App() {
           myPoints={myPoints}
           clickPower={clickPower}
           myTotalClicks={myTotalClicks}
+          handleKakaoShare={handleKakaoShare}
         />
       </div>
     </div>

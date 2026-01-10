@@ -1,6 +1,6 @@
 import React from 'react';
 
-const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks }) => {
+const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handleKakaoShare }) => {
   return (
     <aside className="panel right-panel glass">
       <h3>🛒 {lang.shop}</h3>
@@ -61,6 +61,28 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks }) => {
         <div>{lang.atk}: <span>x{clickPower}</span></div>
       </div>
       
+      <button 
+        onClick={handleKakaoShare}
+        style={{
+            width: '100%',
+            background: '#FEE500',
+            color: '#000000',
+            border: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            marginTop: '10px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+        }}
+      >
+        <span style={{fontSize: '1.2rem'}}>💬</span> 
+        Kakao Share (+2000P)
+      </button>
+
       <div className="info-box">
         <h4>📊 {lang.myInfoTitle}</h4>
         <p>
