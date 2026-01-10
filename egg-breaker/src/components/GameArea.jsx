@@ -47,7 +47,7 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
 
 
 const GameArea = ({
-    lang, hp, isShaking, clickPower, isWinner, emailSubmitted, winnerEmail,
+    lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem
 }) => {
     return (
@@ -61,20 +61,34 @@ const GameArea = ({
                 <CrackedEgg hp={hp} maxHp={1000000} isShaking={isShaking} tool={currentTool} />
                 {isShaking && <span className="damage-float">-{clickPower}</span>}
 
-                {isWinner && !emailSubmitted && (
-                    <div className="modal-overlay">
-                        <div className="modal-content glass">
-                            <h2>{lang.modalTitle}</h2>
-                            <input
-                                type="email"
-                                placeholder="Email"
-                                value={winnerEmail}
-                                onChange={(e) => setWinnerEmail(e.target.value)}
-                            />
-                            <button className="send-btn" onClick={submitWinnerEmail}>{lang.send}</button>
-                        </div>
-                    </div>
-                )}
+            {/* 모달 */}
+            {isWinner && !emailSubmitted && (
+              <div className="modal-overlay">
+                <div className="modal-content glass" style={{ maxWidth: '500px', width: '90%' }}>
+                  <h2 style={{ color: '#ffd700', fontSize: '2rem', marginBottom: '10px' }}>{lang.modalTitle}</h2>
+                  <p style={{ fontSize: '1.1rem', lineHeight: '1.5', color: '#fff', marginBottom: '20px' }}>
+                    {lang.modalDesc}
+                  </p>
+                  
+                  <div style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '20px', borderRadius: '10px', marginBottom: '20px' }}>
+                    <p style={{ margin: '0 0 10px 0', color: '#00ff88', fontWeight: 'bold' }}>
+                      {lang.modalPrize}
+                    </p>
+                    <input 
+                        type="email" 
+                        placeholder="example@email.com"
+                        value={winnerEmail}
+                        onChange={(e) => setWinnerEmail(e.target.value)}
+                        style={{ width: '80%', padding: '12px', borderRadius: '5px', border: '1px solid #555', background: '#333', color: 'white', textAlign: 'center', fontSize: '1rem' }}
+                    />
+                  </div>
+
+                  <button className="send-btn" onClick={submitWinnerEmail} style={{ fontSize: '1.1rem', padding: '12px 40px' }}>
+                    {lang.send}
+                  </button>
+                </div>
+              </div>
+            )}
 
                 {hp <= 0 && !isWinner && (
                     <div className="modal-overlay">
@@ -97,6 +111,17 @@ const GameArea = ({
                 <span className="btn-title">{lang.powerClick}</span>
                 <span className="btn-sub">{lang.watchAd}</span>
             </button>
+          <div className="status-row glass">
+            <div>{lang.myPoint}: <span>{myPoints}</span></div>
+            <div>{lang.atk}: <span>x{clickPower}</span></div>
+          </div>
+
+          <div className="ad-banner" style={{ marginTop: '20px', textAlign: 'center' }}>
+             {/* Ad Placeholder (e.g., 320x50 or 320x100 for mobile) */}
+             <div style={{ display: 'inline-block', width: '320px', height: '100px', background: 'rgba(255,255,255,0.1)', border: '1px dashed #aaa', lineHeight: '100px', color: '#fff' }}>
+                Google AdSense (320x100)
+             </div>
+          </div>
         </main>
     );
 };

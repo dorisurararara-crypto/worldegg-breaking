@@ -1,0 +1,234 @@
+:root {
+  --admin-bg: #1a1a1a;
+  --admin-card-bg: #2d2d2d;
+  --admin-text: #e0e0e0;
+  --admin-accent: #646cff;
+  --admin-danger: #ff4444;
+  --admin-success: #4caf50;
+  --admin-border: #404040;
+}
+
+.admin-container {
+  background-color: var(--admin-bg);
+  color: var(--admin-text);
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: var(--admin-accent);
+}
+
+.admin-logout-btn {
+  background: var(--admin-danger);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.admin-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-card {
+  background: var(--admin-card-bg);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-card h2 {
+  margin-top: 0;
+  border-bottom: 1px solid var(--admin-border);
+  padding-bottom: 0.8rem;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-form-group {
+  margin-bottom: 1rem;
+}
+
+.admin-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.admin-input {
+  width: 100%;
+  padding: 0.6rem;
+  background: #111;
+  border: 1px solid var(--admin-border);
+  border-radius: 4px;
+  color: white;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: var(--admin-accent);
+}
+
+.admin-btn {
+  background: var(--admin-accent);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+
+.admin-btn:hover {
+  opacity: 0.9;
+}
+
+.admin-btn.danger {
+  background: var(--admin-danger);
+}
+
+.admin-btn.success {
+  background: var(--admin-success);
+}
+
+.hp-bar-container {
+  width: 100%;
+  height: 20px;
+  background: #111;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff4444, #ff8800);
+  transition: width 0.3s ease;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+.stat-item {
+  background: #222;
+  padding: 0.8rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  display: block;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.winners-list {
+  list-style: none;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.winner-item {
+  background: #222;
+  padding: 0.8rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.winner-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.winner-delete {
+  background: transparent;
+  color: var(--admin-danger);
+  border: 1px solid var(--admin-danger);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.winner-delete:hover {
+  background: var(--admin-danger);
+  color: white;
+}
+
+.online-users-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.country-badge {
+  background: #333;
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Login Page specific */
+.admin-login-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.admin-login-box {
+  background: var(--admin-card-bg);
+  padding: 2rem;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}

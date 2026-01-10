@@ -1,6 +1,6 @@
 import React from 'react';
 
-const RightPanel = ({ lang, buyItem, myPoints, clickPower }) => {
+const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks }) => {
   return (
     <aside className="panel right-panel glass">
       <h3>🛒 {lang.shop}</h3>
@@ -40,6 +40,20 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower }) => {
             <div className="price">50k P</div>
           </div>
         </div>
+        <div className="shop-item" onClick={() => buyItem(200000, 2500, 'laser')}>
+          <div className="icon">🔫</div>
+          <div className="info">
+            <h4>{lang.item6}</h4>
+            <div className="price">200k P</div>
+          </div>
+        </div>
+        <div className="shop-item" onClick={() => buyItem(1000000, 15000, 'nuke')}>
+          <div className="icon">☢️</div>
+          <div className="info">
+            <h4>{lang.item7}</h4>
+            <div className="price">1M P</div>
+          </div>
+        </div>
       </div>
 
       <div className="status-row glass">
@@ -48,13 +62,18 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower }) => {
       </div>
       
       <div className="info-box">
-        <h4>📊 내 정보</h4>
+        <h4>📊 {lang.myInfoTitle}</h4>
         <p>
-          총 클릭: (준비중)
+          {lang.totalClick}: {myTotalClicks}
         </p>
       </div>
 
-      <div className="ad-banner">{lang.adText}</div>
+      <div className="ad-banner" style={{ marginTop: '20px', textAlign: 'center' }}>
+          {/* Ad Placeholder (e.g., Vertical Skyscraper) */}
+           <div style={{ display: 'inline-block', width: '100%', height: '250px', background: 'rgba(255,255,255,0.1)', border: '1px dashed #aaa', lineHeight: '250px', color: '#fff' }}>
+              Google AdSense (Vertical)
+           </div>
+      </div>
 
     </aside>
   );

@@ -5,15 +5,27 @@ import './App.css';
 import Admin from './Admin';
 import Header from './components/Header';
 import LeftPanel from './components/LeftPanel';
-import GameArea from './components/GameArea';
 import RightPanel from './components/RightPanel';
+import GameArea from './components/GameArea';
 
 // --- 다국어 데이터 ---
 const TRANSLATIONS = {
-  US: { label: "English", title: "THE MILLION CLICK EGG", subtitle: "Let's crack this egg together!", users: "Live Users", total: "Total", shop: "Shop", myPoint: "My Points", atk: "ATK", item1: "Dual Hammer", item2: "Pickaxe", item3: "TNT", item4: "Drill", item5: "Excavator", modalTitle: "Legendary Destroyer!", send: "Submit", adText: "Ad Banner Area", powerClick: "⚡ Power Click (+100) ⚡", watchAd: "Watch an Ad", logo: "EGG BREAK 🔨" },
-  KR: { label: "한국어", title: "100만 클릭의 알", subtitle: "전 세계가 함께 깨부수는 전설의 알", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "굴착기", modalTitle: "전설의 파괴자!", send: "전송", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 강력한 한방", logo: "알 깨기 🔨" },
-  JP: { label: "日本語", title: "ミリオン・クリック・エッグ", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", item4: "ドリル", item5: "ショベル", modalTitle: "伝説の破壊者！", send: "送信", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグブレーク 🔨" },
-  CN: { label: "中文", title: "百万点击大挑战", subtitle: "全世界一起击碎传说之蛋", users: "在线", total: "总计", shop: "商店", myPoint: "积分", atk: "攻击力", item1: "双锤", item2: "钢镐", item3: "炸药", item4: "电钻", item5: "挖掘机", modalTitle: "传说破坏者！", send: "发送", adText: "广告区域", powerClick: "⚡ 超级点击 (+100) ⚡", watchAd: "看广告强力攻击", logo: "击碎鸡蛋 🔨" }
+  US: { 
+    label: "English", title: "THE MILLION CLICK EGG", subtitle: "Let's crack this egg together!", users: "Live Users", total: "Total", shop: "Shop", myPoint: "Points", atk: "ATK", item1: "Dual Hammer", item2: "Pickaxe", item3: "TNT", item4: "Drill", item5: "Excavator", item6: "Laser Gun", item7: "Nuclear Bomb", modalTitle: "🎉 Congratulations! 🎉", modalDesc: "You delivered the final blow and broke the egg! You are the Legendary Destroyer.", modalPrize: "Please enter your email address to receive the prize:", send: "Submit to Claim Prize", adText: "Ad Banner Area", powerClick: "⚡ Power Click (+100) ⚡", watchAd: "Watch an Ad", logo: "EGG BREAK 🔨",
+    gameRuleTitle: "How to Play", gameRule1: "- Click the egg to reduce its HP.", gameRule2: "- Collect points to buy items.", gameRule3: "- Break the egg with the world!", noticeTitle: "Notice", notice1: "- Abnormal play may result in a ban.", notice2: "- This game may be reset.", prizeTitle: "Current Prize", contactTitle: "Contact", myInfoTitle: "My Info", totalClick: "Total Clicks"
+  },
+  KR: { 
+    label: "한국어", title: "100만 클릭의 알", subtitle: "전 세계가 함께 깨부수는 전설의 알", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요:", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 강력한 한방", logo: "알 깨기 🔨",
+    gameRuleTitle: "게임 방법", gameRule1: "- 알을 클릭해서 HP를 깎으세요.", gameRule2: "- 포인트를 모아 상점에서 아이템을 구매하세요.", gameRule3: "- 전 세계 유저들과 함께 알을 부수세요!", noticeTitle: "주의사항", notice1: "- 비정상적인 플레이는 제재될 수 있습니다.", notice2: "- 이 게임은 초기화될 수 있습니다.", prizeTitle: "이번 회차 상품", contactTitle: "제휴문의", myInfoTitle: "내 정보", totalClick: "총 클릭"
+  },
+  JP: { 
+    label: "日本語", title: "ミリオン・クリック・エッグ", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", item4: "ドリル", item5: "ショベルカー", item6: "レーザー銃", item7: "核爆弾", modalTitle: "🎉 おめでとうございます！ 🎉", modalDesc: "最後の一撃で卵を割りました！あなたが伝説の破壊者です。", modalPrize: "賞品を受け取るためにメールアドレスを入力してください：", send: "送信する", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグブレーク 🔨",
+    gameRuleTitle: "遊び方", gameRule1: "- 卵をクリックしてHPを減らしてください。", gameRule2: "- ポイントを集めてアイテムを購入しましょう。", gameRule3: "- 世界中のユーザーと一緒に卵を割りましょう！", noticeTitle: "注意事項", notice1: "- 不正なプレイは制裁の対象となります。", notice2: "- ゲームデータはリセットされる可能性があります。", prizeTitle: "今回の賞品", contactTitle: "お問い合わせ", myInfoTitle: "マイ情報", totalClick: "総クリック数"
+  },
+  CN: { 
+    label: "中文", title: "百万点击大挑战", subtitle: "全世界一起击碎传说之蛋", users: "在线", total: "总计", shop: "商店", myPoint: "积分", atk: "攻击力", item1: "双锤", item2: "钢镐", item3: "炸药", item4: "钻头", item5: "挖掘机", item6: "激光枪", item7: "核弹", modalTitle: "🎉 恭喜！ 🎉", modalDesc: "您完成了最后一击，击碎了鸡蛋！您就是传说中的破坏者。", modalPrize: "请输入您的电子邮箱以领取奖品：", send: "提交领奖", adText: "广告区域", powerClick: "⚡ 超级点击 (+100) ⚡", watchAd: "看广告强力攻击", logo: "击碎鸡蛋 🔨",
+    gameRuleTitle: "游戏玩法", gameRule1: "- 点击蛋以减少其HP。", gameRule2: "- 收集积分购买道具。", gameRule3: "- 与全世界的玩家一起击碎蛋！", noticeTitle: "注意事项", notice1: "- 异常游戏行为可能会被封禁。", notice2: "- 本游戏可能会被重置。", prizeTitle: "本期奖品", contactTitle: "商务合作", myInfoTitle: "我的信息", totalClick: "总点击数"
+  }
 };
 
 const getFlagEmoji = (countryCode) => {
@@ -37,10 +49,19 @@ function App() {
   const [currentTool, setCurrentTool] = useState("fist");
   const [showCountrySelect, setShowCountrySelect] = useState(false);
   const [prize, setPrize] = useState('');
+  const [prizeUrl, setPrizeUrl] = useState('');
   const [round, setRound] = useState(1);
-  const userId = useRef("user_" + Math.random().toString(36).substr(2, 9));
+  const [announcement, setAnnouncement] = useState('');
+  const [myTotalClicks, setMyTotalClicks] = useState(() => {
+    return parseInt(localStorage.getItem('egg_breaker_clicks') || '0', 10);
+  });
+
+  // Use localStorage to persist user ID across refreshes to prevent "ghost" users
+  const userId = useRef(localStorage.getItem('egg_breaker_uid') || "user_" + Math.random().toString(36).substr(2, 9));
 
   useEffect(() => {
+    localStorage.setItem('egg_breaker_uid', userId.current);
+
     const handleHashChange = () => {
       setRoute(window.location.hash);
     };
@@ -51,35 +72,59 @@ function App() {
 
   useEffect(() => {
     const userRef = ref(db, `onlineUsers/${userId.current}`);
-
+    
+    // Set user online status
     set(userRef, { country: myCountry, lastActive: Date.now() });
-
+    
+    // Set up disconnect handler
     onDisconnect(userRef).remove();
 
+    // Listen for online users
     const usersRef = ref(db, 'onlineUsers');
     const unsubscribe = onValue(usersRef, (snapshot) => {
-      setOnlineUsers(snapshot.val() || {});
+        setOnlineUsers(snapshot.val() || {});
     });
 
+    // Refresh "lastActive" periodically to show liveness (optional but good practice)
+    const interval = setInterval(() => {
+        set(userRef, { country: myCountry, lastActive: Date.now() });
+    }, 60000); // Update every minute
+
     return () => {
-      unsubscribe();
-      set(userRef, null);
+        unsubscribe();
+        clearInterval(interval);
     };
-  }, [myCountry]);
+  }, [myCountry]); // Re-run if country changes to update the flag
 
   useEffect(() => {
-    fetch('https://ipapi.co/json/').then(res => res.json())
-      .then(data => changeCountry(data.country_code || "US"))
+    // CORS 이슈가 적은 ipwho.is API로 변경
+    fetch('https://ipwho.is/')
+      .then(res => res.json())
+      .then(data => {
+        if(data.success) {
+            changeCountry(data.country_code || "US");
+        } else {
+            changeCountry("US");
+        }
+      })
       .catch(() => changeCountry("US"));
 
     const prizeRef = ref(db, 'prize');
+    const prizeUrlRef = ref(db, 'prizeUrl');
     const roundRef = ref(db, 'round');
+    const announcementRef = ref(db, 'announcement');
 
     onValue(prizeRef, (snapshot) => {
-      setPrize(snapshot.val() || '');
+        setPrize(snapshot.val() || '');
+    });
+    onValue(prizeUrlRef, (snapshot) => {
+        setPrizeUrl(snapshot.val() || '');
     });
     onValue(roundRef, (snapshot) => {
-      setRound(snapshot.val() || 1);
+        setRound(snapshot.val() || 1);
+    });
+    onValue(announcementRef, (snapshot) => {
+        setAnnouncement(snapshot.val() || '');
     });
   }, []);
 
@@ -88,6 +133,7 @@ function App() {
     setMyCountry(code);
     setLang(TRANSLATIONS[targetLang]);
     setShowCountrySelect(false);
+    // Update country in DB immediately
     const userRef = ref(db, `onlineUsers/${userId.current}`);
     set(userRef, { country: code, lastActive: Date.now() });
   };
@@ -100,9 +146,13 @@ function App() {
         setHp(1000000);
       } else {
         setHp(currentHp);
+        if (currentHp === 0 && !isWinner) {
+          // This ensures that if a user loads the page and the egg is already broken,
+          // they don't become a winner. `isWinner` is only set for the user who makes the last click.
+        }
       }
     });
-  }, []);
+  }, [isWinner]);
 
   const handleClick = () => {
     if (hp <= 0) return;
@@ -110,14 +160,20 @@ function App() {
     setTimeout(() => setIsShaking(false), 100);
     setMyPoints(prev => prev + clickPower);
 
+    // Update total clicks locally
+    const newTotalClicks = myTotalClicks + 1;
+    setMyTotalClicks(newTotalClicks);
+    localStorage.setItem('egg_breaker_clicks', newTotalClicks.toString());
+
     const hpRef = ref(db, 'eggHP');
     runTransaction(hpRef, (currentHP) => {
       if (currentHP === null) return 1000000;
-      if (currentHP <= 0) return 0;
+      if (currentHP <= 0) return 0; // Already broken, no change
       return Math.max(0, currentHP - clickPower);
     }).then((result) => {
       if (result.committed && result.snapshot.val() === 0) {
-        if (!isWinner) setIsWinner(true);
+        // Only the user who makes the final click becomes the winner
+        if(!isWinner) setIsWinner(true);
       }
     });
   };
@@ -134,11 +190,11 @@ function App() {
 
   const submitWinnerEmail = () => {
     if (!winnerEmail.includes("@")) return;
-    push(ref(db, 'winners'), {
-      email: winnerEmail,
-      date: new Date().toString(),
+    push(ref(db, 'winners'), { 
+      email: winnerEmail, 
+      date: new Date().toString(), 
       country: myCountry,
-      round: round
+      round: round 
     });
     setEmailSubmitted(true);
     alert("Sent!");
@@ -161,28 +217,48 @@ function App() {
 
   return (
     <div className="app-container">
-      <Header
-        lang={lang}
-        myCountry={myCountry}
-        getFlagEmoji={getFlagEmoji}
-        showCountrySelect={showCountrySelect}
-        setShowCountrySelect={setShowCountrySelect}
-        changeCountry={changeCountry}
+      <Header 
+        lang={lang} 
+        myCountry={myCountry} 
+        getFlagEmoji={getFlagEmoji} 
+        setShowCountrySelect={setShowCountrySelect} 
+        showCountrySelect={showCountrySelect} 
+        changeCountry={changeCountry} 
       />
+      
+      {announcement && (
+        <div style={{
+          background: '#ff9800', 
+          color: 'black', 
+          padding: '10px', 
+          textAlign: 'center', 
+          fontWeight: 'bold',
+          animation: 'fadeIn 0.5s'
+        }}>
+          📢 {announcement}
+        </div>
+      )}
 
+      {/* 메인 레이아웃: 화면 꽉 채우기 */}
       <div className="main-layout">
-        <LeftPanel
-          lang={lang}
-          getCountryStats={getCountryStats}
-          onlineUsers={onlineUsers}
+        
+        {/* 왼쪽: 접속자 (고정 너비) */}
+        <LeftPanel 
+          lang={lang} 
+          getCountryStats={getCountryStats} 
+          onlineUsers={onlineUsers} 
           prize={prize}
-          getFlagEmoji={getFlagEmoji}
+          prizeUrl={prizeUrl}
+          getFlagEmoji={getFlagEmoji} 
         />
-        <GameArea
+
+        {/* 중앙: 게임 (남은 공간 모두 차지 flex-grow) */}
+        <GameArea 
           lang={lang}
           hp={hp}
           isShaking={isShaking}
           clickPower={clickPower}
+          myPoints={myPoints}
           isWinner={isWinner}
           emailSubmitted={emailSubmitted}
           winnerEmail={winnerEmail}
@@ -192,11 +268,14 @@ function App() {
           currentTool={currentTool}
           buyItem={buyItem}
         />
-        <RightPanel
-            lang={lang}
-            buyItem={buyItem}
-            myPoints={myPoints}
-            clickPower={clickPower}
+
+        {/* 오른쪽: 상점 (고정 너비) */}
+        <RightPanel 
+          lang={lang}
+          buyItem={buyItem}
+          myPoints={myPoints}
+          clickPower={clickPower}
+          myTotalClicks={myTotalClicks}
         />
       </div>
     </div>

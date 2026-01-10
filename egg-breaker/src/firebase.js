@@ -1,6 +1,7 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
+import { getAuth } from "firebase/auth";
 
 // 🔴 여기에 아까 Firebase 사이트에서 복사한 본인의 설정 코드를 덮어씌우세요!
 // (apiKey, authDomain 등등 들어있는 부분)
@@ -17,3 +18,4 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
+export const auth = getAuth(app);
