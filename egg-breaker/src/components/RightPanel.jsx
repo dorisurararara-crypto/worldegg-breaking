@@ -93,13 +93,6 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
         </p>
       </div>
 
-      <div className="ad-banner" style={{ marginTop: '20px', textAlign: 'center' }}>
-          {/* Ad Placeholder (e.g., Vertical Skyscraper) */}
-           <div style={{ display: 'inline-block', width: '100%', height: '250px', background: 'rgba(255,255,255,0.1)', border: '1px dashed #aaa', lineHeight: '250px', color: '#fff' }}>
-              Google AdSense (Vertical)
-           </div>
-      </div>
-
     </aside>
   );
 };

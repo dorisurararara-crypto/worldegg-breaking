@@ -5,6 +5,7 @@ import Admin from './Admin';
 import Header from './components/Header';
 import LeftPanel from './components/LeftPanel';
 import RightPanel from './components/RightPanel';
+import InfoPanel from './components/InfoPanel';
 import GameArea from './components/GameArea';
 
 // --- 다국어 데이터 (유지) ---
@@ -82,21 +83,51 @@ function App() {
   // Track previous round to detect changes
   const prevRound = useRef(null);
   
+  // Mobile Panel State: 'none', 'left', 'right'
+  const [mobilePanel, setMobilePanel] = useState('none');
+  const [notification, setNotification] = useState('');
+
+  // Track the last round the user shared in (per session)
+  const [lastSharedRound, setLastSharedRound] = useState(0);
+
+  // Client Batching Ref
+  const pendingDamage = useRef(0);
+  
   // Data from Server State
   const announcement = serverState.announcement || "";
   const prize = serverState.prize || "";
   const prizeUrl = serverState.prizeUrl || "";
   const adUrl = serverState.adUrl || "";
 
-  // Client Batching Ref
-  const pendingDamage = useRef(0);
+  // 1. Definition FIRST
+  const changeCountry = (code) => {
+    const targetLang = ["KR", "JP", "CN"].includes(code) ? code : "US";
+    setMyCountry(code);
+    setLang(TRANSLATIONS[targetLang]);
+    setShowCountrySelect(false);
+  };
+
+  // 2. useEffects using functions
+  useEffect(() => {
+    const detectCountry = async () => {
+        try {
+            const res1 = await fetch('https://ipwho.is/');
+            const data1 = await res1.json();
+            if (data1.success && data1.country_code) {
+                changeCountry(data1.country_code);
+                return;
+            }
+            throw new Error("ipwho.is failed");
+        } catch (e) {
+            changeCountry("US");
+        }
+    };
+    detectCountry();
+  }, []);
 
   // Sync Local HP with Server HP (Correction)
   useEffect(() => {
       if (serverState.hp !== undefined) {
-          // If we have pending damage, don't strictly sync to avoid jumping back
-          // Or we can subtract pending from server HP to be more accurate
-          // For simplicity: If pending > 0, we trust local HP flow until sync
           if (pendingDamage.current === 0) {
               setHp(serverState.hp);
           }
@@ -120,7 +151,6 @@ function App() {
                   if (res.ok) {
                       const data = await res.json();
                       if (data.hp !== undefined) {
-                          // Correction with server data
                           setHp(data.hp);
                       }
                       if (data.isWinner && !isWinner) {
@@ -129,8 +159,6 @@ function App() {
                   }
               } catch (e) {
                   console.error("Batch click sync failed", e);
-                  // Optional: restore pending damage on failure? 
-                  // For a casual game, losing a batch is acceptable over complexity.
               }
           }
       }, 1000); // 1 second interval
@@ -156,7 +184,23 @@ function App() {
     }
   }, [serverState.round, lang]);
 
-  // ... (rest of code)
+  useEffect(() => {
+    const handleHashChange = () => {
+      setRoute(window.location.hash);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (window.Kakao && !window.Kakao.isInitialized()) {
+        const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
+        if(kakaoKey && kakaoKey !== 'YOUR_KAKAO_JAVASCRIPT_KEY') {
+             try { window.Kakao.init(kakaoKey); } catch(e) { console.error("Kakao Init Failed:", e); }
+        }
+    }
+  }, []);
 
   const handleClick = async () => {
     if (hp <= 0) return;
@@ -176,8 +220,6 @@ function App() {
     const newTotalClicks = myTotalClicks + 1;
     setMyTotalClicks(newTotalClicks);
     localStorage.setItem('egg_breaker_clicks', newTotalClicks.toString());
-
-    // No immediate API call here anymore
   };
 
   const buyItem = (cost, powerAdd, toolName) => {
@@ -208,13 +250,6 @@ function App() {
         alert("Failed to send. Please try again.");
     }
   };
-
-  // Track the last round the user shared in (per session)
-  const [lastSharedRound, setLastSharedRound] = useState(0);
-  
-  // Mobile Panel State: 'none', 'left', 'right'
-  const [mobilePanel, setMobilePanel] = useState('none');
-  const [notification, setNotification] = useState('');
 
   const showNotification = (msg) => {
       setNotification(msg);
@@ -272,7 +307,6 @@ function App() {
   if (route === '#admin') return <Admin />;
 
   // Transform server stats for UI
-  // clicksByCountry 객체 -> 배열로 변환
   const countryStats = Object.entries(serverState.clicksByCountry || {})
     .sort((a, b) => b[1] - a[1]);
 
@@ -301,12 +335,19 @@ function App() {
       <div className="main-layout">
         <LeftPanel 
           lang={lang} 
-          countryStats={countryStats} // Renamed prop
-          onlineUsersCount={serverState.onlineApprox} // New prop
+          countryStats={countryStats} 
+          onlineUsersCount={serverState.onlineApprox} 
           prize={prize}
           prizeUrl={prizeUrl}
           getFlagEmoji={getFlagEmoji}
           isOpen={mobilePanel === 'left'}
+          toggleMobilePanel={toggleMobilePanel}
+        />
+
+        <InfoPanel
+          lang={lang}
+          recentWinners={serverState.recentWinners || []}
+          isOpen={mobilePanel === 'info'}
           toggleMobilePanel={toggleMobilePanel}
         />
 

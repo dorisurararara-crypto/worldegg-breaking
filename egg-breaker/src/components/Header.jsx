@@ -3,32 +3,39 @@ import React from 'react';
 const Header = ({ lang, myCountry, getFlagEmoji, setShowCountrySelect, showCountrySelect, changeCountry, toggleMobilePanel }) => {
   return (
     <nav className="navbar">
+      {/* 1. Left Group */}
       <div className="nav-left">
-        {/* Mobile Hamburger (Left Panel) */}
-        <button className="mobile-toggle-btn" onClick={() => toggleMobilePanel('left')}>
-          ☰ <span style={{fontSize: '0.8rem', marginLeft: '2px'}}>{lang.users}</span>
+        <button className="mobile-toggle-btn icon-only" onClick={() => toggleMobilePanel('left')} aria-label="Users">
+          👥
         </button>
-        <div className="logo">{lang.logo}</div>
+        <button className="mobile-toggle-btn icon-only" onClick={() => toggleMobilePanel('info')} aria-label="Hall of Fame">
+          🏆
+        </button>
       </div>
 
+      {/* 2. Center: Logo */}
+      <div className="logo-container">
+        <span className="logo-text">{lang.logo}</span>
+      </div>
+
+      {/* 3. Right Group */}
       <div className="nav-right">
         <div className="lang-selector">
-          <button className="lang-btn" onClick={() => setShowCountrySelect(!showCountrySelect)}>
-            {getFlagEmoji(myCountry)} {myCountry} ▼
+          <button className="lang-btn-simple" onClick={() => setShowCountrySelect(!showCountrySelect)}>
+            {getFlagEmoji(myCountry)}
           </button>
           {showCountrySelect && (
             <div className="lang-dropdown">
-              <div onClick={() => changeCountry('US')}>🇺🇸 English (US)</div>
-              <div onClick={() => changeCountry('KR')}>🇰🇷 한국어 (KR)</div>
-              <div onClick={() => changeCountry('JP')}>🇯🇵 日本語 (JP)</div>
-              <div onClick={() => changeCountry('CN')}>🇨🇳 中文 (CN)</div>
+              <div onClick={() => changeCountry('US')}>🇺🇸 English</div>
+              <div onClick={() => changeCountry('KR')}>🇰🇷 한국어</div>
+              <div onClick={() => changeCountry('JP')}>🇯🇵 日本語</div>
+              <div onClick={() => changeCountry('CN')}>🇨🇳 中文</div>
             </div>
           )}
         </div>
         
-        {/* Mobile Shop (Right Panel) */}
-        <button className="mobile-toggle-btn" onClick={() => toggleMobilePanel('right')}>
-          🛒 <span style={{fontSize: '0.8rem', marginLeft: '2px'}}>{lang.shop}</span>
+        <button className="mobile-toggle-btn icon-only" onClick={() => toggleMobilePanel('right')} aria-label="Shop">
+          🛒
         </button>
       </div>
     </nav>

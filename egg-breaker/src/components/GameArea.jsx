@@ -331,13 +331,6 @@ const GameArea = ({
           }}>
             ✨ {lang.shopGuide} ✨
           </p>
-
-          <div className="ad-banner" style={{ marginTop: '10px', textAlign: 'center' }}>
-             {/* Ad Placeholder (e.g., 320x50 or 320x100 for mobile) */}
-             <div style={{ display: 'inline-block', width: '320px', height: '100px', background: 'rgba(255,255,255,0.1)', border: '1px dashed #aaa', lineHeight: '100px', color: '#fff' }}>
-                Google AdSense (320x100)
-             </div>
-          </div>
         </main>
     );
 };

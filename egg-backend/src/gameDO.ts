@@ -10,6 +10,7 @@ export class GameDO {
     round: 1,
     onlineApprox: 0,
     clicksByCountry: {} as Record<string, number>,
+    recentWinners: [] as any[], // 최근 우승자 목록 추가
     // 설정 정보 추가 (Firebase 대체)
     announcement: "Welcome to Egg Pong!",
     prize: "Amazon Gift Card $50",
@@ -73,6 +74,18 @@ export class GameDO {
       await this.env.DB.prepare(
         "INSERT INTO winners (round, email, country) VALUES (?, ?, ?)"
       ).bind(this.gameState.round, body.email, body.country).run();
+      
+      // 메모리 상태 업데이트 (최근 우승자 목록 갱신 -> 최근 상품 목록)
+      this.gameState.recentWinners.unshift({
+          round: this.gameState.round,
+          prize: this.gameState.prize, // 상품명 저장
+          date: new Date().toISOString()
+      });
+      // 5개만 유지
+      if (this.gameState.recentWinners.length > 5) {
+          this.gameState.recentWinners.pop();
+      }
+
       return new Response(JSON.stringify({ success: true }));
     }
 

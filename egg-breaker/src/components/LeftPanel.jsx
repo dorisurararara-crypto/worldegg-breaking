@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LeftPanel = ({ lang, countryStats, onlineUsersCount, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
+const LeftPanel = ({ lang, countryStats, onlineUsersCount, recentWinners, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
   // Stats for Rivalry Widget (Top 2 Countries)
   const top1 = countryStats[0];
   const top2 = countryStats[1];
@@ -48,7 +48,7 @@ const LeftPanel = ({ lang, countryStats, onlineUsersCount, prize, prizeUrl, getF
       </div>
 
       <h3>🌐 {lang.users}</h3>
-      <div className="scroll-box">
+      <div className="scroll-box" style={{ flex: '0 0 150px' }}> {/* Limit height */}
         {/* Country Stats List */}
         {countryStats.map(([code, count], index) => (
           <div key={code} className="user-row" style={index === 0 ? { background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)' } : {}}>
@@ -62,24 +62,24 @@ const LeftPanel = ({ lang, countryStats, onlineUsersCount, prize, prizeUrl, getF
           </div>
         ))}
       </div>
-      {/* onlineUsersCount는 서버에서 온 근사치 사용 */}
-      <div className="total-badge">{lang.total}: ~{onlineUsersCount.toLocaleString()}</div>
+      
+      {/* Recent Winners Section */}
+      <div className="info-box">
+        <h4>🎉 Recent Winners</h4>
+        {recentWinners && recentWinners.length > 0 ? (
+            <ul style={{ paddingLeft: '20px', margin: '5px 0', fontSize: '0.9rem', color: '#6d4c41' }}>
+                {recentWinners.map((w, i) => (
+                    <li key={i} style={{ marginBottom: '5px' }}>
+                        Round {w.round}: {getFlagEmoji(w.country)} Winner
+                    </li>
+                ))}
+            </ul>
+        ) : (
+            <p>No winners yet!</p>
+        )}
+      </div>
 
-      <div className="info-box">
-        <h4>{lang.gameRuleTitle}</h4>
-        <p>
-          {lang.gameRule1}<br/>
-          {lang.gameRule2}<br/>
-          {lang.gameRule3}
-        </p>
-      </div>
-      <div className="info-box">
-        <h4>{lang.noticeTitle}</h4>
-        <p>
-          {lang.notice1}<br/>
-          {lang.notice2}
-        </p>
-      </div>
+      <div className="total-badge">{lang.total}: ~{onlineUsersCount.toLocaleString()}</div>
 
       <div className="info-box">
         <h4>{lang.prizeTitle}</h4>

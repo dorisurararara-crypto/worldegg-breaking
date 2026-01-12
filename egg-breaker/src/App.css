@@ -61,72 +61,107 @@ body::before {
 
 /* --- Navigation --- */
 .navbar {
-  height: 70px;
+  height: 65px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  background: rgba(255, 255, 255, 0.4);
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.8);
   z-index: 100;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
 }
 
 .nav-left, .nav-right {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
+  width: 90px; /* 좌우 너비 고정으로 중앙 정렬 확보 */
 }
 
-.mobile-toggle-btn {
-  display: none;
-  background: #ffffff;
-  border: 2px solid #ffb7b2;
-  color: #ff6f61;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 15px;
+.nav-left {
+  justify-content: flex-start;
+}
+
+.nav-right {
+  justify-content: flex-end;
+}
+
+/* Mobile Spacer (Invisible) */
+.mobile-spacer {
+  width: 40px; /* 오른쪽 버튼 하나 크기만큼 확보 */
+  height: 40px;
+  visibility: hidden;
+}
+
+/* Logo Container */
+.logo-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 4px;
-  font-weight: 600;
-  box-shadow: 0 2px 5px rgba(255, 111, 97, 0.2);
 }
 
-.logo {
-  font-size: 1.5rem;
-  font-weight: 700;
+/* Logo Text Style */
+.logo-text {
+  font-size: 1.5rem; /* 폰트 키움 */
+  font-weight: 900;
   background: linear-gradient(45deg, #ff9a9e, #fad0c4);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
+  position: relative;
+  z-index: 2;
+  /* 텍스트 외곽선 효과 (가독성 UP) */
+  filter: drop-shadow(2px 2px 0px rgba(255, 255, 255, 0.8)); 
 }
+
+/* Mobile Toggle Buttons - Icon Only Style */
+.mobile-toggle-btn {
+  display: none; /* Desktop default */
+  background: #ffffff;
+  border: 2px solid #ffb7b2;
+  color: #ff6f61;
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%; /* 완전 원형 */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(255, 111, 97, 0.1);
+  padding: 0;
+  transition: transform 0.2s;
+}
+
+.mobile-toggle-btn:active {
+  transform: scale(0.9);
+}
+
+/* Simple Lang Button (Flag Only) */
+.lang-btn-simple {
+  background: #ffffff;
+  border: 2px solid #ffe4e1;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Removed old .logo style */
 
 .lang-selector {
   position: relative;
-}
-
-.lang-btn {
-  background: #ffffff;
-  border: 2px solid #ffe4e1; /* Misty Rose */
-  color: #5d4037;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  border-radius: 25px;
-  cursor: pointer;
-  transition: 0.3s;
-  font-weight: 600;
-}
-
-.lang-btn:hover {
-  background: #fff0f5;
-  border-color: #ffb6c1;
 }
 
 .lang-dropdown {
@@ -138,8 +173,28 @@ body::before {
   border-radius: 15px;
   overflow: hidden;
   z-index: 1000;
-  width: 160px;
+  width: 140px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* --- Mobile Responsive Styles --- */
+@media (max-width: 900px) {
+  .navbar {
+    padding: 0 10px; /* 좌우 여백 줄임 */
+  }
+
+  .mobile-toggle-btn {
+    display: flex; /* 모바일에서 보임 */
+  }
+
+  .logo {
+    font-size: 1.2rem; /* 모바일에서 로고 크기 축소 */
+  }
+  
+  /* 중앙 로고가 너무 길면 말줄임 */
+  .logo-container {
+    padding: 0 10px;
+  }
 }
 
 .lang-dropdown div {
@@ -180,6 +235,10 @@ body::before {
   transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
 }
+
+.left-panel { border-right: 1px solid rgba(255, 255, 255, 0.1); }
+.info-panel { border-right: 1px solid rgba(255, 255, 255, 0.1); left: 0; transform: translateX(-100%); }
+.right-panel { border-left: 1px solid rgba(255, 255, 255, 0.1); }
 
 /* Panel Header */
 .panel-header {
