@@ -64,7 +64,7 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
                     fill="url(#eggGradient)" 
                     filter="url(#glow)" 
                     onPointerDown={onEggClick}
-                    style={{ cursor: 'pointer', touchAction: 'manipulation' }}
+                    style={{ cursor: 'pointer', touchAction: 'none' }} 
                 />
                 
                 {/* 2. 얼굴 (Face) - 얼굴을 눌러도 클릭되도록 */}
@@ -323,8 +323,8 @@ const GameArea = ({
                 {hp <= 0 && !isWinner && (
                     <div className="modal-overlay">
                         <div className="round-over-message">
-                            <h2>Round Over!</h2>
-                            <p>Waiting for the next round to begin.</p>
+                            <h2>{lang.roundOverTitle}</h2>
+                            <p>{lang.roundOverDesc}</p>
                         </div>
                     </div>
                 )}

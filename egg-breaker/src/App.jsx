@@ -19,7 +19,8 @@ const TRANSLATIONS = {
     rivalryTitle: "TOP RIVALRY", gap: "Gap", waiting: "Waiting...", noRival: "No Rival",
     hallOfFame: "Menu", recentPrizes: "Recent Prizes", noRecords: "No records yet. Be the first winner!",
     adWatchBtn: "📺 Watch Ad (+2000P)", shareBtn: "💬 Share (+800P)",
-    adReward: "+2000 Points", shareReward: "Share & Get 800P (Max 5)"
+    adReward: "+2000 Points", shareReward: "Share & Get 800P (Max 5)",
+    roundOverTitle: "Round Over!", roundOverDesc: "Waiting for the next round to begin."
   },
   KR: { 
     label: "한국어", title: "에그퐁 ☁️", subtitle: "다함께 퐁! 전설의 알 깨기", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요:", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 ", logo: "에그퐁 ☁️",
@@ -30,7 +31,8 @@ const TRANSLATIONS = {
     rivalryTitle: "국가 대항전", gap: "차이", waiting: "대기중...", noRival: "라이벌 없음",
     hallOfFame: "메뉴", recentPrizes: "최근 우승 상품", noRecords: "아직 우승자가 없습니다. 첫 우승자가 되어보세요!",
     adWatchBtn: "📺 광고 보고 포인트 받기(+2000P)", shareBtn: "💬 공유하기 (+800P)",
-    adReward: "", shareReward: "카톡으로 공유하고 800P 받기 (최대 5회)"
+    adReward: "", shareReward: "카톡으로 공유하고 800P 받기 (최대 5회)",
+    roundOverTitle: "라운드 종료!", roundOverDesc: "다음 라운드 준비 중입니다."
   },
   JP: { 
     label: "日本語", title: "エッグポン ☁️", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", item4: "ドリル", item5: "ショベルカー", item6: "レーザー銃", item7: "核爆弾", modalTitle: "🎉 おめでとうございます！ 🎉", modalDesc: "最後の一撃で卵を割りました！あなたが伝説の破壊者です。", modalPrize: "賞品を受け取るためにメールアドレスを入力してください：", send: "送信する", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグポン ☁️",
@@ -41,7 +43,8 @@ const TRANSLATIONS = {
     rivalryTitle: "国家対抗戦", gap: "差", waiting: "待機中...", noRival: "ライバルなし",
     hallOfFame: "メニュー", recentPrizes: "最近の賞品", noRecords: "まだ勝者はいません。最初の勝者になろう！",
     adWatchBtn: "📺 広告を見る (+2000P)", shareBtn: "💬 シェア (+800P)",
-    adReward: "+2000 ポイント", shareReward: "シェアして800Pゲット (最大5回)"
+    adReward: "+2000 ポイント", shareReward: "シェアして800Pゲット (最大5回)",
+    roundOverTitle: "ラウンド終了！", roundOverDesc: "次のラウンドを待機中..."
   },
   CN: { 
     label: "中文", title: "蛋蛋碰 ☁️", subtitle: "全世界一起击碎传说之蛋", users: "在线", total: "总计", shop: "商店", myPoint: "积分", atk: "攻击力", item1: "双锤", item2: "钢镐", item3: "炸药", item4: "钻头", item5: "挖掘机", item6: "激光枪", item7: "核弹", modalTitle: "🎉 恭喜！ 🎉", modalDesc: "您完成了最后一击，击碎了鸡蛋！您就是传说中的破坏者。", modalPrize: "请输入您的电子邮箱以领取奖品：", send: "提交领奖", adText: "广告区域", powerClick: "⚡ 超级点击 (+100) ⚡", watchAd: "看广告强力攻击", logo: "蛋蛋碰 ☁️",
@@ -52,7 +55,8 @@ const TRANSLATIONS = {
     rivalryTitle: "国家对抗赛", gap: "差距", waiting: "等待中...", noRival: "无对手",
     hallOfFame: "菜单", recentPrizes: "近期奖品", noRecords: "暂无获胜者。成为第一个赢家吧！",
     adWatchBtn: "📺 看广告 (+2000P)", shareBtn: "💬 分享 (+800P)",
-    adReward: "+2000 积分", shareReward: "分享获得800P (最多5次)"
+    adReward: "+2000 积分", shareReward: "分享获得800P (最多5次)",
+    roundOverTitle: "回合结束！", roundOverDesc: "正在等待下一轮..."
   }
 };
 

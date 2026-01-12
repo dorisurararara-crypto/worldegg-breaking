@@ -13,16 +13,19 @@ function Admin() {
   
   // 입력값 상태
   const [hpInput, setHpInput] = useState("");
+  const [roundInput, setRoundInput] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const [prize, setPrize] = useState("");
   const [prizeUrl, setPrizeUrl] = useState("");
   const [adUrl, setAdUrl] = useState("");
+  const [winners, setWinners] = useState([]);
 
   const handleLogin = (e) => {
     e.preventDefault();
     if (password === "egg1234") { // 클라이언트 측 간단 확인 (서버에서도 체크함)
       setIsAuthenticated(true);
       fetchState();
+      fetchWinners();
     } else {
       alert("비밀번호가 틀렸습니다.");
     }
@@ -35,6 +38,7 @@ function Admin() {
       setServerState(data);
       // 현재 서버 값으로 입력창 초기화
       setHpInput(data.hp);
+      setRoundInput(data.round);
       setAnnouncement(data.announcement || "");
       setPrize(data.prize || "");
       setPrizeUrl(data.prizeUrl || "");
@@ -42,6 +46,20 @@ function Admin() {
     } catch (e) {
       console.error("데이터 불러오기 실패:", e);
     }
+  };
+
+  const fetchWinners = async () => {
+      try {
+          const res = await fetch(`${API_URL}/admin/winners`, {
+              headers: { 'x-admin-key': password }
+          });
+          if (res.ok) {
+              const data = await res.json();
+              setWinners(data);
+          }
+      } catch (e) {
+          console.error("우승자 목록 실패", e);
+      }
   };
 
   const callAdminApi = async (endpoint, body = {}) => {
@@ -114,6 +132,20 @@ function Admin() {
         <div className="glass" style={{ padding: '20px', borderRadius: '15px', background: 'rgba(255,255,255,0.1)' }}>
           <h3 style={{ borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '10px', marginBottom: '15px' }}>🎮 게임 조작</h3>
           
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', color: '#ccc' }}>현재 라운드 설정</label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                    type="number" 
+                    value={roundInput} 
+                    onChange={e => setRoundInput(e.target.value)}
+                    style={{ flex: 1, padding: '10px', borderRadius: '5px', border: 'none' }}
+                    placeholder="라운드"
+                />
+                <button onClick={() => callAdminApi('set-round', { round: Number(roundInput) })} style={{ background: '#17a2b8', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '5px', cursor: 'pointer' }}>변경</button>
+            </div>
+          </div>
+
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', color: '#ccc' }}>HP 강제 설정</label>
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -194,6 +226,43 @@ function Admin() {
           >
             💾 설정 저장하기
           </button>
+        </div>
+
+        {/* 4. 우승자 목록 (New) */}
+        <div className="glass" style={{ padding: '20px', borderRadius: '15px', background: 'rgba(255,255,255,0.1)', gridColumn: '1 / -1' }}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom:'10px'}}>
+             <h3>🏆 명예의 전당 (당첨자 관리)</h3>
+             <button onClick={fetchWinners} style={{background:'transparent', border:'1px solid #aaa', color:'#fff', borderRadius:'5px', padding:'5px 10px', cursor:'pointer'}}>새로고침</button>
+          </div>
+          
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.1)' }}>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>Round</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>국가</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>이메일</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>상품</th>
+                        <th style={{ padding: '10px', textAlign: 'left' }}>일시</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {winners.length > 0 ? winners.map((w) => (
+                        <tr key={w.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: '10px' }}>{w.round}</td>
+                            <td style={{ padding: '10px' }}>{w.country}</td>
+                            <td style={{ padding: '10px', fontWeight: 'bold', color: '#ffb6c1' }}>{w.email}</td>
+                            <td style={{ padding: '10px' }}>{w.prize || '-'}</td>
+                            <td style={{ padding: '10px', color: '#aaa' }}>{new Date(w.created_at).toLocaleString()}</td>
+                        </tr>
+                    )) : (
+                        <tr>
+                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#888' }}>아직 우승자가 없습니다.</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+          </div>
         </div>
 
       </div>

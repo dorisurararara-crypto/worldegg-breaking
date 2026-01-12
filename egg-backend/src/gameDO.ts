@@ -101,9 +101,11 @@ export class GameDO {
     // 3. POST /winner
     if (url.pathname === "/winner" && request.method === "POST") {
       const body: any = await request.json();
+      
+      // DB에 저장 (상품명 포함)
       await this.env.DB.prepare(
-        "INSERT INTO winners (round, email, country) VALUES (?, ?, ?)"
-      ).bind(this.gameState.round, body.email, body.country).run();
+        "INSERT INTO winners (round, email, country, prize) VALUES (?, ?, ?, ?)"
+      ).bind(this.gameState.round, body.email, body.country, this.gameState.prize).run();
       
       // 메모리 상태 업데이트 (최근 우승자 목록 갱신 -> 최근 상품 목록)
       this.gameState.recentWinners.unshift({
@@ -151,6 +153,14 @@ export class GameDO {
             return new Response(JSON.stringify({ success: true, hp: this.gameState.hp }));
         }
 
+        // C-2. 라운드 강제 설정 (New)
+        if (url.pathname === "/admin/set-round" && request.method === "POST") {
+            const body: any = await request.json();
+            this.gameState.round = body.round;
+            await this.saveState();
+            return new Response(JSON.stringify({ success: true, round: this.gameState.round }));
+        }
+
         // D. 설정 변경 (공지, 상품 등)
         if (url.pathname === "/admin/config" && request.method === "POST") {
             const body: any = await request.json();
@@ -161,6 +171,14 @@ export class GameDO {
             
             await this.saveState();
             return new Response(JSON.stringify({ success: true }));
+        }
+
+        // E. 우승자 목록 조회
+        if (url.pathname === "/admin/winners") {
+            const { results } = await this.env.DB.prepare(
+                "SELECT * FROM winners ORDER BY id DESC LIMIT 50"
+            ).all();
+            return new Response(JSON.stringify(results));
         }
     }
 

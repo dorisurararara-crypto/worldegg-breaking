@@ -14,5 +14,6 @@ CREATE TABLE winners (
     round INTEGER,
     email TEXT,
     country TEXT,
+    prize TEXT, -- 상품명 추가
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
