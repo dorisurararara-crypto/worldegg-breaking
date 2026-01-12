@@ -1,0 +1,16 @@
+{
+  "name": "egg-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "hono": "^3.12.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240101.0",
+    "typescript": "^5.0.0",
+    "wrangler": "^4.58.0"
+  }
+}

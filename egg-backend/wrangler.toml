@@ -1,0 +1,17 @@
+name = "egg-backend"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# D1 데이터베이스 (영구 저장소)
+[[d1_databases]]
+binding = "DB"
+database_name = "egg-db"
+database_id = "1db00004-1722-48be-bda6-05afe5ad39d1"
+# Durable Object (실시간 상태 관리)
+[[durable_objects.bindings]]
+name = "GAME_DO"
+class_name = "GameDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["GameDO"]

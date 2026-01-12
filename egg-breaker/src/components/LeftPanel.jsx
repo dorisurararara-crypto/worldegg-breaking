@@ -1,15 +1,9 @@
 import React from 'react';
 
-const LeftPanel = ({ lang, getCountryStats, onlineUsers, roundClicks, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
-  // Stats for User List (Online Users)
-  const userStats = getCountryStats();
-
-  // Stats for Rivalry Widget (Round Clicks)
-  const clickStats = Object.entries(roundClicks || {})
-    .sort((a, b) => b[1] - a[1]); // Sort by clicks descending
-
-  const top1 = clickStats[0];
-  const top2 = clickStats[1];
+const LeftPanel = ({ lang, countryStats, onlineUsersCount, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
+  // Stats for Rivalry Widget (Top 2 Countries)
+  const top1 = countryStats[0];
+  const top2 = countryStats[1];
 
   return (
     <aside className={`panel left-panel glass ${isOpen ? 'active' : ''}`}>
@@ -17,7 +11,8 @@ const LeftPanel = ({ lang, getCountryStats, onlineUsers, roundClicks, prize, pri
         <h3>Menu</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
-      {/* --- 🔥 국가 대항전 위젯 (신규 추가) --- */}
+      
+      {/* --- 🔥 국가 대항전 위젯 --- */}
       <div className="rivalry-widget" style={{ padding: '20px 10px', background: 'rgba(255, 255, 255, 0.5)', marginBottom: '10px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.5)', borderRadius: '20px' }}>
         <h4 style={{ margin: '0 0 15px 0', color: '#ff6f61', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '800' }}>🏆 TOP RIVALRY</h4>
         
@@ -54,7 +49,8 @@ const LeftPanel = ({ lang, getCountryStats, onlineUsers, roundClicks, prize, pri
 
       <h3>🌐 {lang.users}</h3>
       <div className="scroll-box">
-        {userStats.map(([code, count], index) => (
+        {/* Country Stats List */}
+        {countryStats.map(([code, count], index) => (
           <div key={code} className="user-row" style={index === 0 ? { background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)' } : {}}>
             <span className="flag">
                 {index === 0 && '🥇 '}
@@ -66,7 +62,8 @@ const LeftPanel = ({ lang, getCountryStats, onlineUsers, roundClicks, prize, pri
           </div>
         ))}
       </div>
-      <div className="total-badge">{lang.total}: {Object.keys(onlineUsers).length}</div>
+      {/* onlineUsersCount는 서버에서 온 근사치 사용 */}
+      <div className="total-badge">{lang.total}: ~{onlineUsersCount.toLocaleString()}</div>
 
       <div className="info-box">
         <h4>{lang.gameRuleTitle}</h4>
