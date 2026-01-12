@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Header = ({ lang, myCountry, getFlagEmoji, setShowCountrySelect, showCountrySelect, changeCountry, toggleMobilePanel }) => {
+const Header = ({ lang, myCountry, getFlagEmoji, onToggleLanguage, showCountrySelect, changeCountry, toggleMobilePanel }) => {
   return (
     <nav className="navbar">
       {/* 1. Left Group */}
@@ -21,7 +21,7 @@ const Header = ({ lang, myCountry, getFlagEmoji, setShowCountrySelect, showCount
       {/* 3. Right Group */}
       <div className="nav-right">
         <div className="lang-selector">
-          <button className="lang-btn-simple" onClick={() => setShowCountrySelect(!showCountrySelect)}>
+          <button className="lang-btn-simple" onClick={onToggleLanguage}>
             {getFlagEmoji(myCountry)}
           </button>
           {showCountrySelect && (

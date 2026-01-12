@@ -4,9 +4,37 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
   return (
     <aside className={`panel right-panel glass ${isOpen ? 'active' : ''}`}>
       <div className="panel-header">
-         <h3>🛒 {lang.shop}</h3>
+         <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+             <h3>🛒 {lang.shop}</h3>
+             <span style={{background:'rgba(255, 215, 0, 0.2)', color:'#ffd700', padding:'4px 8px', borderRadius:'12px', fontSize:'0.9rem', border:'1px solid rgba(255, 215, 0, 0.5)'}}>
+                💰 {myPoints.toLocaleString()}
+             </span>
+         </div>
          <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
+
+      <button 
+        onClick={handleKakaoShare}
+        style={{
+            width: '100%',
+            background: '#FEE500',
+            color: '#000000',
+            border: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            marginBottom: '15px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+        }}
+      >
+        <span style={{fontSize: '1.2rem'}}>💬</span> 
+        {lang.shareReward}
+      </button>
+
       <div className="shop-list">
         <div className="shop-item" onClick={() => buyItem(500, 1, 'hammer')}>
           <div className="icon">🔨</div>
@@ -60,31 +88,8 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
       </div>
 
       <div className="status-row glass">
-        <div>{lang.myPoint}: <span>{myPoints}</span></div>
-        <div>{lang.atk}: <span>x{clickPower}</span></div>
+        <div style={{width:'100%', textAlign:'center'}}>{lang.atk}: <span>x{clickPower}</span></div>
       </div>
-      
-      <button 
-        onClick={handleKakaoShare}
-        style={{
-            width: '100%',
-            background: '#FEE500',
-            color: '#000000',
-            border: 'none',
-            padding: '12px',
-            borderRadius: '8px',
-            fontWeight: 'bold',
-            marginTop: '10px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
-        }}
-      >
-        <span style={{fontSize: '1.2rem'}}>💬</span> 
-        공유하고 800P 받기 (최대 5회)
-      </button>
 
       <div className="info-box">
         <h4>📊 {lang.myInfoTitle}</h4>

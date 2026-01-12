@@ -4,12 +4,12 @@ const InfoPanel = ({ lang, recentWinners, isOpen, toggleMobilePanel }) => {
   return (
     <aside className={`panel info-panel glass ${isOpen ? 'active' : ''}`}>
       <div className="panel-header">
-        <h3>🏆 Hall of Fame</h3>
+        <h3>🏆 {lang.hallOfFame}</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
       
       <div className="scroll-box">
-        <h4 style={{ margin: '15px 0 10px', color: '#ff6f61', textAlign: 'center' }}>🎁 Recent Prizes</h4>
+        <h4 style={{ margin: '15px 0 10px', color: '#ff6f61', textAlign: 'center' }}>🎁 {lang.recentPrizes}</h4>
         
         {recentWinners && recentWinners.length > 0 ? (
             <div className="prize-list">
@@ -36,7 +36,7 @@ const InfoPanel = ({ lang, recentWinners, isOpen, toggleMobilePanel }) => {
             </div>
         ) : (
             <div style={{ textAlign: 'center', padding: '20px', color: '#aaa' }}>
-                No records yet.<br/>Be the first winner!
+                {lang.noRecords}
             </div>
         )}
       </div>

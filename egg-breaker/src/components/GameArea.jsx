@@ -109,7 +109,7 @@ const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '�
 
 const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
-    setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch
+    setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, showGuide
 }) => {
     const [clickEffects, setClickEffects] = useState([]);
     const stageRef = useRef(null); // 스테이지 좌표 기준점
@@ -170,21 +170,26 @@ const GameArea = ({
             {notification && (
                 <div style={{
                     position: 'absolute',
-                    top: '20%',
+                    top: '10%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    background: '#fff',
-                    color: '#ff69b4',
-                    border: '2px solid #ffb6c1',
-                    padding: '10px 25px',
-                    borderRadius: '25px',
-                    fontWeight: 'bold',
-                    zIndex: 100,
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    color: '#ff6f61',
+                    border: '3px solid #ffb6c1',
+                    padding: '12px 30px',
+                    borderRadius: '50px',
+                    fontWeight: '800',
+                    fontSize: '1.2rem',
+                    zIndex: 200,
                     pointerEvents: 'none',
-                    animation: 'floatUp 2s ease-out forwards',
-                    boxShadow: '0 5px 15px rgba(255,182,193,0.5)'
+                    animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    boxShadow: '0 8px 20px rgba(255, 105, 180, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    whiteSpace: 'nowrap'
                 }}>
-                    ✨ {notification}
+                    <span style={{fontSize: '1.5rem'}}>🛍️</span> {notification}
                 </div>
             )}
 
@@ -205,6 +210,27 @@ const GameArea = ({
                     tool={currentTool} 
                     onEggClick={handlePointerDown} 
                 />
+
+                {showGuide && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        padding: '15px 25px',
+                        borderRadius: '20px',
+                        boxShadow: '0 0 20px rgba(0,0,0,0.1)',
+                        zIndex: 100,
+                        fontWeight: 'bold',
+                        color: '#ff6f61',
+                        pointerEvents: 'none',
+                        animation: 'pulse 1s infinite',
+                        border: '2px solid #ffb6c1'
+                    }}>
+                        👈 가운데 계란을 터치하세요!
+                    </div>
+                )}
                 
                 {/* Render Multiple Click Effects (Damage + Tool Icon + Cute Particle) */}
                 {clickEffects.map(effect => (
@@ -312,9 +338,21 @@ const GameArea = ({
             </div>
 
             <button className="power-btn" onClick={handleAdWatch}>
-                <span className="btn-title">📺 {lang.watchAd || "AD Watch"}</span>
-                <span className="btn-sub">+2000 Points</span>
+                <span className="btn-title">{lang.adWatchBtn}</span>
+                <span className="btn-sub">{lang.adReward}</span>
             </button>
+
+            <div style={{
+                fontSize: '8px', 
+                color: 'rgba(0,0,0,0.4)', 
+                textAlign: 'center', 
+                marginBottom: '15px',
+                marginTop: '-10px',
+                pointerEvents: 'none'
+            }}>
+                이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다
+            </div>
+
           <div className="status-row glass">
             <div>{lang.myPoint}: <span>{myPoints}</span></div>
             <div>{lang.atk}: <span>x{clickPower}</span></div>
@@ -322,14 +360,19 @@ const GameArea = ({
 
           <p style={{
             marginTop: '20px',
-            fontSize: '0.9rem',
-            color: '#ffd700',
-            fontWeight: 'bold',
+            fontSize: '1.1rem',
+            color: '#ff4444',
+            fontWeight: '900',
             textAlign: 'center',
-            textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
-            animation: 'pulse 2s infinite'
-          }}>
-            ✨ {lang.shopGuide} ✨
+            background: 'rgba(255, 255, 255, 0.8)',
+            padding: '10px 20px',
+            borderRadius: '20px',
+            border: '2px solid #ffcccc',
+            boxShadow: '0 4px 10px rgba(255, 0, 0, 0.1)',
+            cursor: 'pointer',
+            animation: 'pulse 1.5s infinite'
+          }} onClick={() => document.querySelector('.mobile-toggle-btn[aria-label="Shop"]')?.click()}>
+            🚨 {lang.shopGuide} 🚨
           </p>
         </main>
     );

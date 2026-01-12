@@ -2,6 +2,8 @@
 export class GameDO {
   state: any;
   env: any;
+  // IP 기반 정확한 접속자 집계 (IP -> 마지막 접속 시간)
+  activeUsers: Map<string, number> = new Map();
   
   // 게임 상태 (공지사항, 상품 정보 포함)
   gameState = {
@@ -28,7 +30,32 @@ export class GameDO {
       if (stored) {
         this.gameState = { ...this.gameState, ...stored };
       }
+      // Ensure alarm is running
+      const currentAlarm = await this.state.storage.getAlarm();
+      if (currentAlarm === null) {
+         await this.state.storage.setAlarm(Date.now() + 10 * 1000); // 10s initial
+      }
     });
+  }
+
+  // 사용자 활동 갱신 헬퍼
+  updateActivity(request: Request) {
+      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+      const now = Date.now();
+      this.activeUsers.set(ip, now);
+      
+      // 요청 시마다 즉시 청소 (실시간성 보장)
+      this.cleanupUsers(now);
+  }
+
+  cleanupUsers(now: number) {
+      // 15초 이상 활동 없는 유저 제거
+      for (const [ip, lastSeen] of this.activeUsers.entries()) {
+          if (now - lastSeen > 15 * 1000) {
+              this.activeUsers.delete(ip);
+          }
+      }
+      this.gameState.onlineApprox = this.activeUsers.size;
   }
 
   async fetch(request: Request) {
@@ -36,7 +63,7 @@ export class GameDO {
 
     // 1. GET /state
     if (url.pathname === "/state") {
-      this.gameState.onlineApprox = Math.min(this.gameState.onlineApprox + 1, 100000);
+      this.updateActivity(request);
       return new Response(JSON.stringify(this.gameState), {
         headers: { "Content-Type": "application/json" }
       });
@@ -44,6 +71,8 @@ export class GameDO {
 
     // 2. POST /click
     if (url.pathname === "/click" && request.method === "POST") {
+      this.updateActivity(request); // 클릭도 활동으로 간주
+
       const body: any = await request.json();
       const dmg = body.power || 1;
       const cCode = body.country || "US";
@@ -55,9 +84,10 @@ export class GameDO {
         this.gameState.clicksByCountry[cCode] = (this.gameState.clicksByCountry[cCode] || 0) + 1;
         if (this.gameState.hp === 0) isWinner = true;
 
+        // Ensure alarm exists for saving state and updating stats
         const currentAlarm = await this.state.storage.getAlarm();
         if (currentAlarm === null) {
-          await this.state.storage.setAlarm(Date.now() + 30 * 1000);
+          await this.state.storage.setAlarm(Date.now() + 10 * 1000);
         }
       }
 
@@ -139,6 +169,10 @@ export class GameDO {
 
   async alarm() {
     await this.saveState();
+    
+    // Update Online Users Count (Exact IP-based)
+    this.cleanupUsers(Date.now());
+
     // D1 저장 (스냅샷)
     await this.env.DB.prepare(
       "INSERT INTO game_snapshots (round, hp, stats) VALUES (?, ?, ?)"
@@ -148,7 +182,8 @@ export class GameDO {
       JSON.stringify(this.gameState.clicksByCountry)
     ).run();
 
-    this.gameState.onlineApprox = Math.floor(this.gameState.onlineApprox * 0.9);
+    // Schedule next alarm in 10s for faster updates
+    await this.state.storage.setAlarm(Date.now() + 10 * 1000);
   }
 
   async saveState() {

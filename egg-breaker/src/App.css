@@ -622,7 +622,107 @@ body::before {
   100% { opacity: 0; transform: translate(-50%, -150%) scale(1.3); }
 }
 
-/* --- Mobile Responsive Styles --- */
+@keyframes bounceIn {
+  0% { opacity: 0; transform: translate(-50%, -60%) scale(0.5); }
+  60% { opacity: 1; transform: translate(-50%, -45%) scale(1.1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* --- Desktop Styles (New) --- */
+@media (min-width: 901px) {
+    .main-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr 320px; /* 3-Column Layout */
+        gap: 30px;
+        padding: 30px;
+        max-width: 1600px;
+        margin: 0 auto;
+        height: calc(100vh - 80px); /* Full height minus header */
+    }
+
+    .panel {
+        position: relative; /* Not fixed */
+        transform: none !important; /* Always visible */
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 100%; /* Fill grid cell */
+        height: 100%;
+        border-radius: 30px;
+        background: rgba(255, 255, 255, 0.4); /* Slightly more transparent on desktop */
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+
+    /* Hide InfoPanel (Hall of Fame) by default on desktop if not needed, or put it somewhere else. 
+       Currently the design has Left (Users), Center (Game), Right (Shop). 
+       InfoPanel (Menu) is toggled in mobile. On desktop, maybe we don't need it or it can be a modal?
+       For now, let's hide the InfoPanel (Menu) on desktop to keep the 3-column symmetry (Left vs Right).
+       The "Menu" content (Winners) is duplicated in LeftPanel? No, I removed it from LeftPanel.
+       So InfoPanel is the only place for Winners.
+       Let's make InfoPanel appear as a floating modal or just hide it and add a button?
+       The user said "데스크탑에서는 메뉴와 접속자 이런게 다겹쳐있고".
+       Let's stick to Left (Users) and Right (Shop). 
+       Where does InfoPanel go? 
+       Maybe LeftPanel can include the "Recent Winners" again for Desktop?
+       Or, let's just Hide InfoPanel for now to fix the layout, and if the user wants it, I can add it back.
+       Actually, the `InfoPanel` has class `info-panel`. I will hide it on desktop layout grid, 
+       but maybe keep the button to show it as a modal?
+       The current structure renders ALL panels in the DOM.
+       
+       Let's make:
+       Column 1: LeftPanel (Users)
+       Column 2: GameArea
+       Column 3: RightPanel (Shop)
+       
+       InfoPanel will be hidden by default on desktop, or we can make it a floating absolute panel if toggled.
+       Since `mobilePanel` state controls visibility logic which is mobile-centric ('left', 'right', 'none'),
+       on Desktop we want Left and Right ALWAYS open.
+       
+       I need to override the `active` class logic for Desktop.
+       On Desktop, Left and Right panels should ignore the `active` class and just be visible.
+    */
+    
+    .left-panel, .right-panel {
+        display: flex;
+        z-index: 10;
+    }
+
+    .info-panel {
+        /* InfoPanel (Menu) remains hidden or behaves like a modal */
+        position: absolute; 
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%) !important;
+        width: 400px;
+        height: 600px;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid #fff;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        display: none; /* Hidden by default */
+    }
+    
+    .info-panel.active {
+        display: flex; /* Show only when active */
+    }
+
+    .panel-close-btn {
+        display: none; /* No close button for fixed panels */
+    }
+    
+    /* Show close button ONLY for InfoPanel on desktop */
+    .info-panel .panel-close-btn {
+        display: flex;
+    }
+
+    .game-area {
+        padding: 0;
+    }
+    
+    .title { font-size: 3.5rem; }
+    .egg-stage { height: 50vh; }
+}
+
 @media (min-width: 901px) {
     .title { font-size: 3rem; }
     .egg-stage { height: 450px; }
@@ -682,6 +782,10 @@ body::before {
   
   .egg-svg-container {
     max-width: 75%;
+  }
+
+  .panel h3 {
+    font-size: 1rem; /* Reduced from 1.2rem to fit single line */
   }
 
   .status-row {

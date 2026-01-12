@@ -26,7 +26,7 @@ export function useGameState() {
 
   useEffect(() => {
     fetchState(); // 초기 로드
-    const interval = setInterval(fetchState, 5000); // 5초마다 폴링
+    const interval = setInterval(fetchState, 10000); // 10초마다 폴링 (최적화)
     return () => clearInterval(interval);
   }, []);
 
