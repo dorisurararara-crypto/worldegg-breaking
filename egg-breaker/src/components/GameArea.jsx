@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 // --- 깨지는 알 SVG 컴포넌트 ---
-const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
+const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
     const percentage = (hp / maxHp) * 100;
 
     // 체력에 따른 금(Crack) 단계 결정
@@ -46,7 +46,7 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
 
     return (
         <div className={`egg-svg-container ${isShaking ? 'shake' : ''} cursor-${tool}`}>
-            <svg viewBox="0 0 200 250" className="egg-svg">
+            <svg viewBox="0 0 200 250" className="egg-svg" style={{ overflow: 'visible' }}>
                 <defs>
                     <radialGradient id="eggGradient" cx="40%" cy="30%" r="80%">
                         <stop offset="0%" stopColor="#ffdde1" />
@@ -58,30 +58,36 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool }) => {
                     </filter>
                 </defs>
 
-                {/* 1. 알 본체 */}
-                <ellipse cx="100" cy="125" rx="80" ry="110" fill="url(#eggGradient)" filter="url(#glow)" />
+                {/* 1. 알 본체 - 여기에만 클릭 이벤트를 줍니다 (정밀 타격) */}
+                <ellipse 
+                    cx="100" cy="125" rx="80" ry="110" 
+                    fill="url(#eggGradient)" 
+                    filter="url(#glow)" 
+                    onPointerDown={onEggClick}
+                    style={{ cursor: 'pointer', touchAction: 'manipulation' }}
+                />
                 
-                {/* 2. 얼굴 (Face) - 가장 위에 그려지도록 배치 */}
-                <g className="egg-face" style={{ transition: 'all 0.2s' }}>
+                {/* 2. 얼굴 (Face) - 얼굴을 눌러도 클릭되도록 */}
+                <g className="egg-face" style={{ transition: 'all 0.2s', pointerEvents: 'none' }}>
                     {blush}
                     {eyeLeft}
                     {eyeRight}
                     {mouth}
                 </g>
 
-                {/* 3. 금(Cracks) */}
+                {/* 3. 금(Cracks) - 클릭 통과 (pointerEvents: none 기본값) */}
                 {showCrack1 && (
-                    <path d="M100 30 L110 50 L90 60 L105 80" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" opacity="0.6" />
+                    <path d="M100 30 L110 50 L90 60 L105 80" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" opacity="0.6" style={{ pointerEvents: 'none' }} />
                 )}
                 {showCrack2 && (
-                    <path d="M50 100 L80 110 L60 130 L90 140 L70 160" fill="none" stroke="#5d4037" strokeWidth="4" strokeLinecap="round" opacity="0.7" />
+                    <path d="M50 100 L80 110 L60 130 L90 140 L70 160" fill="none" stroke="#5d4037" strokeWidth="4" strokeLinecap="round" opacity="0.7" style={{ pointerEvents: 'none' }} />
                 )}
                 {showCrack3 && (
-                    <path d="M130 90 L110 110 L140 130 L120 160 L150 180" fill="none" stroke="#5d4037" strokeWidth="4" strokeLinecap="round" opacity="0.8" />
+                    <path d="M130 90 L110 110 L140 130 L120 160 L150 180" fill="none" stroke="#5d4037" strokeWidth="4" strokeLinecap="round" opacity="0.8" style={{ pointerEvents: 'none' }} />
                 )}
                 {/* HP 0일 때 (완전 깨짐) */}
                 {hp <= 0 && (
-                    <path d="M20 125 L180 125" fill="none" stroke="#5d4037" strokeWidth="10" />
+                    <path d="M20 125 L180 125" fill="none" stroke="#5d4037" strokeWidth="10" style={{ pointerEvents: 'none' }} />
                 )}
             </svg>
         </div>
@@ -106,13 +112,15 @@ const GameArea = ({
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch
 }) => {
     const [clickEffects, setClickEffects] = useState([]);
+    const stageRef = useRef(null); // 스테이지 좌표 기준점
 
     const handlePointerDown = (e) => {
         // 1. Trigger Game Logic
         handleClick();
 
-        // 2. Visuals: Calculate relative position
-        const rect = e.currentTarget.getBoundingClientRect();
+        // 2. Visuals: Calculate position relative to the stage
+        if (!stageRef.current) return;
+        const rect = stageRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
@@ -144,8 +152,12 @@ const GameArea = ({
             particle: randomParticle
         };
 
-        // 3. Add to state
-        setClickEffects(prev => [...prev, newEffect]);
+        // 3. Add to state (Limit concurrent particles for optimization)
+        setClickEffects(prev => {
+            const next = [...prev, newEffect];
+            if (next.length > 20) return next.slice(next.length - 20); // Keep max 20
+            return next;
+        });
 
         // 4. Cleanup after animation (800ms matches CSS)
         setTimeout(() => {
@@ -183,14 +195,21 @@ const GameArea = ({
 
             <div 
                 className="egg-stage" 
-                onPointerDown={handlePointerDown}
+                ref={stageRef}
+                /* onPointerDown removed here for precise hitbox */
             >
-                <CrackedEgg hp={hp} maxHp={1000000} isShaking={isShaking} tool={currentTool} />
+                <CrackedEgg 
+                    hp={hp} 
+                    maxHp={1000000} 
+                    isShaking={isShaking} 
+                    tool={currentTool} 
+                    onEggClick={handlePointerDown} 
+                />
                 
                 {/* Render Multiple Click Effects (Damage + Tool Icon + Cute Particle) */}
                 {clickEffects.map(effect => (
                     <React.Fragment key={effect.id}>
-                        {/* Damage Number - More playful font/color */}
+                        {/* Damage Number */}
                         <span 
                             className="damage-float"
                             style={{ 
@@ -202,7 +221,7 @@ const GameArea = ({
                                 WebkitTextStroke: '2px #fff',
                                 pointerEvents: 'none',
                                 zIndex: 12,
-                                transform: `rotate(${Math.random() * 20 - 10}deg)` // Random tilt
+                                transform: `rotate(${Math.random() * 20 - 10}deg)`
                             }}
                         >
                             -{effect.val}
