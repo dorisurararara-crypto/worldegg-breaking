@@ -9,7 +9,7 @@ const Header = ({ lang, myCountry, getFlagEmoji, onToggleLanguage, showCountrySe
           👥
         </button>
         <button className="mobile-toggle-btn icon-only" onClick={() => toggleMobilePanel('info')} aria-label="Hall of Fame">
-          🏆
+          🎁 
         </button>
       </div>
 

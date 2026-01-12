@@ -81,7 +81,10 @@ export class GameDO {
     // 1. GET /state
     if (url.pathname === "/state") {
       this.updateActivity(request);
-      return new Response(JSON.stringify(this.gameState), {
+      return new Response(JSON.stringify({
+          ...this.gameState,
+          ts: Date.now()
+      }), {
         headers: { "Content-Type": "application/json" }
       });
     }
@@ -105,29 +108,39 @@ export class GameDO {
             isWinner = true;
             this.gameState.status = 'WINNER_CHECK';
             this.gameState.winnerCheckStartTime = Date.now();
+            // HP가 0이 되는 중요한 순간이므로 즉시 저장 (데이터 유실 방지)
+            await this.saveState();
         }
+        
+        // 비용 절감을 위해 매 클릭 저장은 제거 (Alarm이 10초마다 저장함)
+        // 타임스탬프 로직이 프론트엔드 문제를 해결했으므로 안전함
 
         // Ensure alarm exists for saving state and updating stats
         const currentAlarm = await this.state.storage.getAlarm();
-        if (currentAlarm === null) {
-          await this.state.storage.setAlarm(Date.now() + 10 * 1000);
-        }
       }
 
       return new Response(JSON.stringify({ 
         success: true, 
         hp: this.gameState.hp, 
         isWinner,
-        status: this.gameState.status 
+        status: this.gameState.status,
+        ts: Date.now()
       }));
     }
 
     // 3. POST /winner
     if (url.pathname === "/winner" && request.method === "POST") {
       const body: any = await request.json();
-      await this.env.DB.prepare(
-        "INSERT INTO winners (round, email, country, prize) VALUES (?, ?, ?, ?)"
-      ).bind(this.gameState.round, body.email, body.country, this.gameState.prize).run();
+      
+      // DB 저장은 실패할 수 있으므로 try-catch로 감싸서 게임 상태 업데이트를 보장함
+      try {
+          await this.env.DB.prepare(
+            "INSERT INTO winners (round, email, country, prize) VALUES (?, ?, ?, ?)"
+          ).bind(this.gameState.round, body.email, body.country, this.gameState.prize).run();
+      } catch (e) {
+          console.error("Winner DB Insert Failed:", e);
+          // DB 실패해도 게임은 종료 처리해야 함
+      }
       
       // 마스킹된 이메일 생성 (ex: abc***@gmail.com)
       const maskedEmail = body.email.replace(/(^.{3}).+(@.+)/, "$1***$2");
