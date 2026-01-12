@@ -30,7 +30,7 @@ const TRANSLATIONS = {
     gameRuleTitle: "게임 방법", gameRule1: "- 알을 클릭해서 HP를 깎으세요.", gameRule2: "- 포인트를 모아 상점에서 아이템을 구매하세요. 깨면 깰수록 더 강력해지고 더 큰 보상을 받을 수 있습니다!", gameRule3: "- 전 세계 유저들과 함께 알을 부수세요!", noticeTitle: "주의사항", notice1: "- 비정상적인 플레이는 제재될 수 있습니다.", notice2: "- 새로고침 시 초기화될 수 있습니다.", prizeTitle: "이번 회차 상품", contactTitle: "제휴문의", myInfoTitle: "내 정보", totalClick: "총 클릭",
     notEnoughPoints: "포인트가 부족합니다!", alreadyShared: "이번 라운드에는 이미 공유 보상을 받으셨습니다!", shareSuccess: "공유 완료! 800 포인트가 지급되었습니다.", sent: "전송되었습니다!", bought: "구매 완료:",
     newRoundReset: "새로운 라운드가 시작되었습니다! 모든 진행 상황이 초기화되었습니다.",
-    shopGuide: "우측 상점 🛒 을 눌러 더 강력한 아이템을 획득하세요",
+    shopGuide: "여기를 눌러 더 강력한 아이템을 획득하세요",
     rivalryTitle: "국가 대항전", gap: "차이", waiting: "대기중...", noRival: "라이벌 없음",
     hallOfFame: "상품", recentPrizes: "최근 우승 상품", noRecords: "아직 우승자가 없습니다. 첫 우승자가 되어보세요!",
     adWatchBtn: "📺 광고 보고 포인트 받기(+2000P)", shareBtn: "💬 공유하기 (+800P)",
@@ -38,7 +38,7 @@ const TRANSLATIONS = {
     roundOverTitle: "라운드 종료!", roundOverDesc: "다음 라운드 준비 중입니다.",
     checkingWinnerTitle: "우승자 판독 중...", checkingWinnerDesc: "누가 마지막 일격을 날렸는지 확인하고 있습니다.",
     winnerTimerWarning: "5분 안에 이메일을 입력해야 합니다. (미입력 시 취소)", winnerExitMsg: "전송되었습니다! 잠시 후 퇴장합니다", loserMsg: "아쉽게도 이번에는 실패했습니다. 잠시 후 퇴장합니다 (새 창 열림)", timeLeft: "남은 시간",
-    retryTitle: "다시 도전하시겠습니까?", retryBtn: "🔄 게임 재입장"
+    retryTitle: "다시 도전하시겠습니까?", retryBtn: "🔄 재입장하기"
   },
   JP: { 
     label: "日本語", title: "エッグポン ☁️", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", item4: "ドリル", item5: "ショベルカー", item6: "レーザー銃", item7: "核爆弾", modalTitle: "🎉 おめでとうございます！ 🎉", modalDesc: "最後の一撃で卵を割りました！あなたが伝説の破壊者です。", modalPrize: "賞品を受け取るためにメールアドレスを入力してください：", send: "送信する", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグポン ☁️",

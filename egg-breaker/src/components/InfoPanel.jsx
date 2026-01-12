@@ -4,7 +4,7 @@ const InfoPanel = ({ lang, recentWinners, prize, prizeUrl, isOpen, toggleMobileP
   return (
     <aside className={`panel info-panel glass ${isOpen ? 'active' : ''}`}>
       <div className="panel-header">
-        <h3>🏆 {lang.hallOfFame}</h3>
+        <h3>🎁 {lang.hallOfFame}</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
       
