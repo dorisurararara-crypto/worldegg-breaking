@@ -18,35 +18,35 @@ const LeftPanel = ({ lang, getCountryStats, onlineUsers, roundClicks, prize, pri
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
       {/* --- 🔥 국가 대항전 위젯 (신규 추가) --- */}
-      <div className="rivalry-widget" style={{ padding: '20px 10px', background: 'rgba(0,0,0,0.3)', marginBottom: '10px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <h4 style={{ margin: '0 0 15px 0', color: '#ffd700', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>🏆 TOP RIVALRY</h4>
+      <div className="rivalry-widget" style={{ padding: '20px 10px', background: 'rgba(255, 255, 255, 0.5)', marginBottom: '10px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.5)', borderRadius: '20px' }}>
+        <h4 style={{ margin: '0 0 15px 0', color: '#ff6f61', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '800' }}>🏆 TOP RIVALRY</h4>
         
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px' }}>
             {/* 1위 국가 */}
             {top1 ? (
                 <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '2.5rem', lineHeight: 1, marginBottom: '5px' }}>{getFlagEmoji(top1[0])}</div>
-                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#fff' }}>{top1[1].toLocaleString()}</div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#5d4037' }}>{top1[1].toLocaleString()}</div>
                 </div>
             ) : (
-                <div style={{ color: '#aaa' }}>Waiting...</div>
+                <div style={{ color: '#8d6e63' }}>Waiting...</div>
             )}
 
-            <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#ff4444', fontStyle: 'italic' }}>VS</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#ff9a9e', fontStyle: 'italic' }}>VS</div>
 
             {/* 2위 국가 */}
             {top2 ? (
                 <div style={{ textAlign: 'center' }}>
                      <div style={{ fontSize: '2rem', lineHeight: 1, marginBottom: '5px', opacity: 0.8 }}>{getFlagEmoji(top2[0])}</div>
-                     <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#ccc' }}>{top2[1].toLocaleString()}</div>
+                     <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#8d6e63' }}>{top2[1].toLocaleString()}</div>
                 </div>
             ) : (
-                <div style={{ color: '#555', fontSize: '0.8rem' }}>No Rival</div>
+                <div style={{ color: '#a1887f', fontSize: '0.8rem' }}>No Rival</div>
             )}
         </div>
         
         {top1 && top2 && (
-            <div style={{ marginTop: '10px', fontSize: '0.8rem', color: '#00ff88' }}>
+            <div style={{ marginTop: '10px', fontSize: '0.8rem', color: '#ff6f61', fontWeight: '600' }}>
                 Gap: {(top1[1] - top2[1]).toLocaleString()}
             </div>
         )}

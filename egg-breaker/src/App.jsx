@@ -413,12 +413,16 @@ function App() {
       
       {announcement && (
         <div style={{
-          background: '#ff9800', 
-          color: 'black', 
-          padding: '10px', 
+          background: '#ffefd5', 
+          color: '#ff6f61', 
+          padding: '12px', 
           textAlign: 'center', 
           fontWeight: 'bold',
-          animation: 'fadeIn 0.5s'
+          animation: 'fadeIn 0.5s',
+          borderRadius: '0 0 20px 20px',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+          border: '1px solid #ffe4e1',
+          marginBottom: '10px'
         }}>
           📢 {announcement}
         </div>
