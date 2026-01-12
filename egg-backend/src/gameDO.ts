@@ -3,24 +3,28 @@ export class GameDO {
   state: any;
   env: any;
   
-  // 인메모리 상태 (Single Source of Truth)
+  // 게임 상태 (공지사항, 상품 정보 포함)
   gameState = {
     hp: 1000000,
     maxHp: 1000000,
     round: 1,
     onlineApprox: 0,
     clicksByCountry: {} as Record<string, number>,
+    // 설정 정보 추가 (Firebase 대체)
+    announcement: "Welcome to Egg Pong!",
+    prize: "Amazon Gift Card $50",
+    prizeUrl: "https://amazon.com",
+    adUrl: "" 
   };
 
   constructor(state: any, env: any) {
     this.state = state;
     this.env = env;
     
-    // 복구 로직: 서버 재시작 시 저장된 상태 불러오기
+    // 복구 로직
     this.state.blockConcurrencyWhile(async () => {
       const stored: any = await this.state.storage.get("fullState");
       if (stored) {
-        // 병합 (새로운 필드가 추가되었을 경우 대비)
         this.gameState = { ...this.gameState, ...stored };
       }
     });
@@ -29,17 +33,15 @@ export class GameDO {
   async fetch(request: Request) {
     const url = new URL(request.url);
 
-    // 1. GET /state (폴링용)
+    // 1. GET /state
     if (url.pathname === "/state") {
-      // 접속자 수 추정 (호출될 때마다 조금씩 증가, 최대값 제한)
       this.gameState.onlineApprox = Math.min(this.gameState.onlineApprox + 1, 100000);
-      
       return new Response(JSON.stringify(this.gameState), {
         headers: { "Content-Type": "application/json" }
       });
     }
 
-    // 2. POST /click (클릭 처리)
+    // 2. POST /click
     if (url.pathname === "/click" && request.method === "POST") {
       const body: any = await request.json();
       const dmg = body.power || 1;
@@ -47,17 +49,11 @@ export class GameDO {
       
       let isWinner = false;
 
-      // HP 차감 (0 이하로 내려가지 않음)
       if (this.gameState.hp > 0) {
         this.gameState.hp = Math.max(0, this.gameState.hp - dmg);
-        
-        // 국가별 통계 집계
         this.gameState.clicksByCountry[cCode] = (this.gameState.clicksByCountry[cCode] || 0) + 1;
-        
-        // 우승자 판정 (막타)
         if (this.gameState.hp === 0) isWinner = true;
 
-        // 상태 변경 시 알람 예약 (30초 뒤 배치 저장)
         const currentAlarm = await this.state.storage.getAlarm();
         if (currentAlarm === null) {
           await this.state.storage.setAlarm(Date.now() + 30 * 1000);
@@ -66,40 +62,71 @@ export class GameDO {
 
       return new Response(JSON.stringify({ 
         success: true, 
-        hp: this.gameState.hp, // 서버의 최신 HP 반환
+        hp: this.gameState.hp, 
         isWinner 
       }));
     }
 
-    // 3. POST /winner (우승자 정보 저장)
+    // 3. POST /winner
     if (url.pathname === "/winner" && request.method === "POST") {
       const body: any = await request.json();
-      // 중요 정보는 D1에 즉시 저장
       await this.env.DB.prepare(
         "INSERT INTO winners (round, email, country) VALUES (?, ?, ?)"
       ).bind(this.gameState.round, body.email, body.country).run();
-      
       return new Response(JSON.stringify({ success: true }));
     }
 
-    // 4. Admin Reset
-    if (url.pathname === "/admin/reset") {
-        this.gameState.hp = 1000000;
-        this.gameState.round += 1;
-        this.gameState.clicksByCountry = {};
-        await this.state.storage.put("fullState", this.gameState);
-        return new Response(JSON.stringify(this.gameState));
+    // --- 👮 관리자 기능 (Admin) ---
+    // 간단한 보안을 위해 헤더에 'x-admin-key' 확인 (실무에선 더 복잡한 인증 필요)
+    if (url.pathname.startsWith("/admin/")) {
+        const authKey = request.headers.get("x-admin-key");
+        // 주의: 이 키는 프론트엔드 Admin 페이지에서 입력받아야 함. 여기서는 예시로 "egg1234" 설정
+        if (authKey !== "egg1234") { 
+            return new Response("Unauthorized", { status: 401 });
+        }
+
+        // A. 게임 리셋 (라운드 증가)
+        if (url.pathname === "/admin/reset-round") {
+            this.gameState.hp = 1000000;
+            this.gameState.round += 1;
+            this.gameState.clicksByCountry = {};
+            await this.saveState();
+            return new Response(JSON.stringify(this.gameState));
+        }
+
+        // B. 접속자 수 초기화
+        if (url.pathname === "/admin/reset-users") {
+            this.gameState.onlineApprox = 0;
+            return new Response(JSON.stringify({ success: true }));
+        }
+
+        // C. HP 강제 설정 (테스트용)
+        if (url.pathname === "/admin/set-hp" && request.method === "POST") {
+            const body: any = await request.json();
+            this.gameState.hp = body.hp;
+            await this.saveState();
+            return new Response(JSON.stringify({ success: true, hp: this.gameState.hp }));
+        }
+
+        // D. 설정 변경 (공지, 상품 등)
+        if (url.pathname === "/admin/config" && request.method === "POST") {
+            const body: any = await request.json();
+            if (body.announcement !== undefined) this.gameState.announcement = body.announcement;
+            if (body.prize !== undefined) this.gameState.prize = body.prize;
+            if (body.prizeUrl !== undefined) this.gameState.prizeUrl = body.prizeUrl;
+            if (body.adUrl !== undefined) this.gameState.adUrl = body.adUrl;
+            
+            await this.saveState();
+            return new Response(JSON.stringify({ success: true }));
+        }
     }
 
     return new Response("Not Found", { status: 404 });
   }
 
-  // 알람: 주기적 저장 (배치 처리)
   async alarm() {
-    // DO 스토리지 저장 (빠른 복구용)
-    await this.state.storage.put("fullState", this.gameState);
-    
-    // D1 데이터베이스 저장 (분석용 스냅샷)
+    await this.saveState();
+    // D1 저장 (스냅샷)
     await this.env.DB.prepare(
       "INSERT INTO game_snapshots (round, hp, stats) VALUES (?, ?, ?)"
     ).bind(
@@ -108,7 +135,10 @@ export class GameDO {
       JSON.stringify(this.gameState.clicksByCountry)
     ).run();
 
-    // 접속자 수 자연 감소 (Heartbeat 대용)
     this.gameState.onlineApprox = Math.floor(this.gameState.onlineApprox * 0.9);
+  }
+
+  async saveState() {
+      await this.state.storage.put("fullState", this.gameState);
   }
 }

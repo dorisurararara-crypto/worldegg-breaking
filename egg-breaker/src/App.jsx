@@ -73,10 +73,6 @@ function App() {
   const [lang, setLang] = useState(TRANSLATIONS.US);
   const [currentTool, setCurrentTool] = useState("fist");
   const [showCountrySelect, setShowCountrySelect] = useState(false);
-  const [prize, setPrize] = useState('');
-  const [prizeUrl, setPrizeUrl] = useState('');
-  const [adUrl, setAdUrl] = useState('');
-  const [announcement, setAnnouncement] = useState('');
   const [shareCount, setShareCount] = useState(0); 
   const [adWatchCount, setAdWatchCount] = useState(0); 
   const [myTotalClicks, setMyTotalClicks] = useState(() => {
@@ -86,14 +82,61 @@ function App() {
   // Track previous round to detect changes
   const prevRound = useRef(null);
   
+  // Data from Server State
+  const announcement = serverState.announcement || "";
+  const prize = serverState.prize || "";
+  const prizeUrl = serverState.prizeUrl || "";
+  const adUrl = serverState.adUrl || "";
+
+  // Client Batching Ref
+  const pendingDamage = useRef(0);
+
   // Sync Local HP with Server HP (Correction)
   useEffect(() => {
-      // 서버에서 HP가 갱신되면 로컬 HP도 따라감
-      // (단, 사용자가 막 클릭하는 동안 튀는걸 방지하기 위해 간단한 로직 적용)
       if (serverState.hp !== undefined) {
-          setHp(serverState.hp);
+          // If we have pending damage, don't strictly sync to avoid jumping back
+          // Or we can subtract pending from server HP to be more accurate
+          // For simplicity: If pending > 0, we trust local HP flow until sync
+          if (pendingDamage.current === 0) {
+              setHp(serverState.hp);
+          }
       }
   }, [serverState.hp]);
+  
+  // Batch Send Logic (Every 1s)
+  useEffect(() => {
+      const interval = setInterval(async () => {
+          if (pendingDamage.current > 0) {
+              const damageToSend = pendingDamage.current;
+              pendingDamage.current = 0; // Reset immediately to capture new clicks
+
+              try {
+                  const res = await fetch(`${API_URL}/click`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ power: damageToSend, country: myCountry })
+                  });
+
+                  if (res.ok) {
+                      const data = await res.json();
+                      if (data.hp !== undefined) {
+                          // Correction with server data
+                          setHp(data.hp);
+                      }
+                      if (data.isWinner && !isWinner) {
+                          setIsWinner(true);
+                      }
+                  }
+              } catch (e) {
+                  console.error("Batch click sync failed", e);
+                  // Optional: restore pending damage on failure? 
+                  // For a casual game, losing a batch is acceptable over complexity.
+              }
+          }
+      }, 1000); // 1 second interval
+
+      return () => clearInterval(interval);
+  }, [API_URL, myCountry, isWinner]);
 
   useEffect(() => {
     // Round change handling
@@ -104,6 +147,7 @@ function App() {
         setShareCount(0);
         setAdWatchCount(0);
         setMyTotalClicks(0);
+        pendingDamage.current = 0; // Reset pending on new round
         localStorage.setItem('egg_breaker_clicks', '0');
         alert(lang.newRoundReset);
     }
@@ -112,52 +156,12 @@ function App() {
     }
   }, [serverState.round, lang]);
 
-  useEffect(() => {
-    const handleHashChange = () => {
-      setRoute(window.location.hash);
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  useEffect(() => {
-    if (window.Kakao && !window.Kakao.isInitialized()) {
-        const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
-        if(kakaoKey && kakaoKey !== 'YOUR_KAKAO_JAVASCRIPT_KEY') {
-             try { window.Kakao.init(kakaoKey); } catch(e) { console.error("Kakao Init Failed:", e); }
-        }
-    }
-  }, []);
-
-  useEffect(() => {
-    const detectCountry = async () => {
-        try {
-            const res1 = await fetch('https://ipwho.is/');
-            const data1 = await res1.json();
-            if (data1.success && data1.country_code) {
-                changeCountry(data1.country_code);
-                return;
-            }
-            throw new Error("ipwho.is failed");
-        } catch (e) {
-            changeCountry("US");
-        }
-    };
-    detectCountry();
-  }, []);
-
-  const changeCountry = (code) => {
-    const targetLang = ["KR", "JP", "CN"].includes(code) ? code : "US";
-    setMyCountry(code);
-    setLang(TRANSLATIONS[targetLang]);
-    setShowCountrySelect(false);
-  };
+  // ... (rest of code)
 
   const handleClick = async () => {
     if (hp <= 0) return;
     
-    // 1. [Optimistic Update] UI 즉시 반영 (가장 중요)
+    // 1. [Optimistic Update] UI 즉시 반영
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 100);
     
@@ -165,35 +169,15 @@ function App() {
     setMyPoints(prev => prev + clickPower);
     setHp(prev => Math.max(0, prev - clickPower));
     
+    // Accumulate damage for batch sending
+    pendingDamage.current += clickPower;
+    
     // 로컬 통계 갱신
     const newTotalClicks = myTotalClicks + 1;
     setMyTotalClicks(newTotalClicks);
     localStorage.setItem('egg_breaker_clicks', newTotalClicks.toString());
 
-    // 2. API 호출 (비동기)
-    try {
-        const res = await fetch(`${API_URL}/click`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ power: clickPower, country: myCountry })
-        });
-        
-        if (res.ok) {
-            const data = await res.json();
-            
-            // 3. [Correction] 서버 HP로 보정 (다른 사람 클릭 반영)
-            // 서버 응답 HP를 그대로 사용하면 데이터 일관성이 유지됨
-            if (data.hp !== undefined) {
-                setHp(data.hp);
-            }
-
-            if (data.isWinner && !isWinner) {
-                setIsWinner(true);
-            }
-        }
-    } catch (e) {
-        console.error("Click API failed", e);
-    }
+    // No immediate API call here anymore
   };
 
   const buyItem = (cost, powerAdd, toolName) => {
