@@ -297,61 +297,13 @@ const GameArea = ({
                     </React.Fragment>
                 ))}
 
-            {/* 모달 */}
-            {isWinner && (
-              <div className="modal-overlay">
-                <div className="modal-content glass" style={{ maxWidth: '500px', width: '90%' }}>
-                  
-                  {emailSubmitted ? (
-                      // 1. Winner Submitted View
-                      <div style={{ textAlign: 'center', padding: '20px' }}>
-                          <h2 style={{ color: '#4CAF50', fontSize: '2rem', marginBottom: '20px' }}>✅ {lang.sent}</h2>
-                          <p style={{ fontSize: '1.2rem', color: '#5d4037' }}>
-                              {lang.winnerExitMsg}: <span style={{ fontWeight: 'bold', color: '#ff6f61' }}>{exitCountdown}s</span>
-                          </p>
-                      </div>
-                  ) : (
-                      // 2. Winner Input View
-                      <>
-                        <h2 style={{ color: '#ff6f61', fontSize: '2rem', marginBottom: '10px' }}>{lang.modalTitle}</h2>
-                        <p style={{ fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '20px' }}>
-                            {lang.modalDesc}
-                        </p>
-                        
-                        <div style={{ background: '#fff0f5', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #ffb6c1' }}>
-                            <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>⚠️ {lang.winnerTimerWarning}</p>
-                            <p style={{ fontSize: '1.5rem', fontWeight: '900', color: '#d32f2f' }}>
-                                {lang.timeLeft}: {formatTime(winnerCountdown)}
-                            </p>
-                        </div>
-
-                        <div style={{ background: 'rgba(255, 182, 193, 0.2)', padding: '20px', borderRadius: '15px', marginBottom: '20px' }}>
-                            <p style={{ margin: '0 0 10px 0', color: '#ff6f61', fontWeight: 'bold' }}>
-                            {lang.modalPrize}
-                            </p>
-                            <input 
-                                type="email" 
-                                placeholder="example@email.com"
-                                value={winnerEmail}
-                                onChange={(e) => setWinnerEmail(e.target.value)}
-                                style={{ width: '80%', padding: '12px', borderRadius: '10px', border: '2px solid #ffe4e1', background: '#fff', color: '#5d4037', textAlign: 'center', fontSize: '1rem' }}
-                            />
-                        </div>
-
-                        <button className="send-btn" onClick={submitWinnerEmail} style={{ fontSize: '1.1rem', padding: '12px 40px' }}>
-                            {lang.send}
-                        </button>
-                      </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {hp <= 0 && !isWinner && (
+            {/* Unified Modal Logic */}
+            {(hp <= 0 || isWinner || showRetry || isSpectating) && (
                 <div className="modal-overlay">
-                    <div className="round-over-message" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px' }}>
+                    <div className="modal-content glass" style={{ maxWidth: '500px', width: '90%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px' }}>
+                        
                         {(showRetry || isSpectating) ? (
-                            // 3. Round Over / Retry View
+                            // 1. Retry / Spectator / Round Over
                             <>
                                 <div style={{ fontSize: '4rem', marginBottom: '15px', animation: 'bounce 1s infinite' }}>🐣</div>
                                 <h2 style={{ color: '#ff6f61', fontSize: '2rem', marginBottom: '10px' }}>{lang.roundOverTitle}</h2>
@@ -367,24 +319,70 @@ const GameArea = ({
                                     onMouseOver={e => e.target.style.transform = 'scale(1.05)'}
                                     onMouseOut={e => e.target.style.transform = 'scale(1)'}
                                 >
-                                    {lang.retryBtn}
+                                    {showRetry ? lang.retryBtn : (lang.refreshBtn || lang.retryBtn)}
                                 </button>
                             </>
-                        ) : showLoserMessage ? (
-                            // 4. Loser Failed Message
-                            <>
-                                <div style={{ fontSize: '4rem', marginBottom: '10px' }}>😢</div>
-                                <h2 style={{ color: '#5d4037', marginBottom: '15px' }}>{lang.loserMsg} <span style={{ color: '#ff6f61' }}>{loserCountdown}s</span></h2>
-                            </>
+                        ) : isWinner ? (
+                            // 2. Winner Logic
+                            emailSubmitted ? (
+                                // Winner Success
+                                <>
+                                    <h2 style={{ color: '#4CAF50', fontSize: '2rem', marginBottom: '20px' }}>✅ {lang.sent}</h2>
+                                    <p style={{ fontSize: '1.2rem', color: '#5d4037' }}>
+                                        {lang.winnerExitMsg}: <span style={{ fontWeight: 'bold', color: '#ff6f61' }}>{exitCountdown}s</span>
+                                    </p>
+                                </>
+                            ) : (
+                                // Winner Input
+                                <>
+                                    <h2 style={{ color: '#ff6f61', fontSize: '2rem', marginBottom: '10px' }}>{lang.modalTitle}</h2>
+                                    <p style={{ fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '20px' }}>
+                                        {lang.modalDesc}
+                                    </p>
+                                    
+                                    <div style={{ background: '#fff0f5', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #ffb6c1', width: '100%' }}>
+                                        <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>⚠️ {lang.winnerTimerWarning}</p>
+                                        <p style={{ fontSize: '1.5rem', fontWeight: '900', color: '#d32f2f' }}>
+                                            {lang.timeLeft}: {formatTime(winnerCountdown)}
+                                        </p>
+                                    </div>
+
+                                    <div style={{ background: 'rgba(255, 182, 193, 0.2)', padding: '20px', borderRadius: '15px', marginBottom: '20px', width: '100%' }}>
+                                        <p style={{ margin: '0 0 10px 0', color: '#ff6f61', fontWeight: 'bold' }}>
+                                        {lang.modalPrize}
+                                        </p>
+                                        <input 
+                                            type="email" 
+                                            placeholder="example@email.com"
+                                            value={winnerEmail}
+                                            onChange={(e) => setWinnerEmail(e.target.value)}
+                                            style={{ width: '90%', padding: '12px', borderRadius: '10px', border: '2px solid #ffe4e1', background: '#fff', color: '#5d4037', textAlign: 'center', fontSize: '1rem' }}
+                                        />
+                                    </div>
+
+                                    <button className="send-btn" onClick={submitWinnerEmail} style={{ fontSize: '1.1rem', padding: '12px 40px' }}>
+                                        {lang.send}
+                                    </button>
+                                </>
+                            )
                         ) : (
-                            // 5. Checking Winner Spinner
-                            <>
-                                <div className="spinner" style={{
-                                    width: '40px', height: '40px', border: '5px solid #ffe4e1', borderTop: '5px solid #ff6f61', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '20px'
-                                }}></div>
-                                <h2>{lang.checkingWinnerTitle}</h2>
-                                <p>{lang.checkingWinnerDesc}</p>
-                            </>
+                            // 3. Loser Logic (hp <= 0)
+                            showLoserMessage ? (
+                                // Failed
+                                <>
+                                    <div style={{ fontSize: '4rem', marginBottom: '10px' }}>😢</div>
+                                    <h2 style={{ color: '#5d4037', marginBottom: '15px' }}>{lang.loserMsg} <span style={{ color: '#ff6f61' }}>{loserCountdown}s</span></h2>
+                                </>
+                            ) : (
+                                // Checking Spinner
+                                <>
+                                    <div className="spinner" style={{
+                                        width: '40px', height: '40px', border: '5px solid #ffe4e1', borderTop: '5px solid #ff6f61', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '20px'
+                                    }}></div>
+                                    <h2>{lang.checkingWinnerTitle}</h2>
+                                    <p>{lang.checkingWinnerDesc}</p>
+                                </>
+                            )
                         )}
                     </div>
                 </div>

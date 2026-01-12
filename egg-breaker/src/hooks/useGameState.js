@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8787/api";
 
 export function useGameState() {
   const [serverState, setServerState] = useState({
-    hp: 1000000,
+    hp: undefined,
     round: 1,
     onlineApprox: 0,
     clicksByCountry: {}

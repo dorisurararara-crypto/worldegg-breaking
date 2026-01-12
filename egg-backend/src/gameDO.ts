@@ -181,6 +181,10 @@ export class GameDO {
         if (url.pathname === "/admin/set-hp" && request.method === "POST") {
             const body: any = await request.json();
             this.gameState.hp = body.hp;
+            // HP를 강제로 설정하면 게임을 다시 진행할 수 있도록 상태도 리셋
+            this.gameState.status = 'PLAYING';
+            this.gameState.winnerInfo = null;
+            
             await this.saveState();
             return new Response(JSON.stringify({ success: true, hp: this.gameState.hp }));
         }

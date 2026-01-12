@@ -26,18 +26,18 @@ const TRANSLATIONS = {
     retryTitle: "Ready to try again?", retryBtn: "🔄 Re-enter Game"
   },
   KR: { 
-    label: "한국어", title: "에그퐁 ☁️", subtitle: "다함께 퐁! 전설의 알 깨기", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요:", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 ", logo: "에그퐁 ☁️",
+    label: "한국어", title: "에그퐁 ☁️", subtitle: "다함께 퐁! 전설의 알 깨기", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요(새로고침을 누르지 마세요! 초기화됩니다.):", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 ", logo: "에그퐁 ☁️",
     gameRuleTitle: "게임 방법", gameRule1: "- 알을 클릭해서 HP를 깎으세요.", gameRule2: "- 포인트를 모아 상점에서 아이템을 구매하세요. 깨면 깰수록 더 강력해지고 더 큰 보상을 받을 수 있습니다!", gameRule3: "- 전 세계 유저들과 함께 알을 부수세요!", noticeTitle: "주의사항", notice1: "- 비정상적인 플레이는 제재될 수 있습니다.", notice2: "- 새로고침 시 초기화될 수 있습니다.", prizeTitle: "이번 회차 상품", contactTitle: "제휴문의", myInfoTitle: "내 정보", totalClick: "총 클릭",
     notEnoughPoints: "포인트가 부족합니다!", alreadyShared: "이번 라운드에는 이미 공유 보상을 받으셨습니다!", shareSuccess: "공유 완료! 800 포인트가 지급되었습니다.", sent: "전송되었습니다!", bought: "구매 완료:",
     newRoundReset: "새로운 라운드가 시작되었습니다! 모든 진행 상황이 초기화되었습니다.",
     shopGuide: "우측 상점 🛒 을 눌러 더 강력한 아이템을 획득하세요",
     rivalryTitle: "국가 대항전", gap: "차이", waiting: "대기중...", noRival: "라이벌 없음",
-    hallOfFame: "메뉴", recentPrizes: "최근 우승 상품", noRecords: "아직 우승자가 없습니다. 첫 우승자가 되어보세요!",
+    hallOfFame: "상품", recentPrizes: "최근 우승 상품", noRecords: "아직 우승자가 없습니다. 첫 우승자가 되어보세요!",
     adWatchBtn: "📺 광고 보고 포인트 받기(+2000P)", shareBtn: "💬 공유하기 (+800P)",
     adReward: "", shareReward: "카톡으로 공유하고 800P 받기 (최대 5회)",
     roundOverTitle: "라운드 종료!", roundOverDesc: "다음 라운드 준비 중입니다.",
     checkingWinnerTitle: "우승자 판독 중...", checkingWinnerDesc: "누가 마지막 일격을 날렸는지 확인하고 있습니다.",
-    winnerTimerWarning: "5분 안에 이메일을 입력해야 합니다. (미입력 시 취소)", winnerExitMsg: "전송되었습니다! 잠시 후 퇴장합니다 (새 창 열림)", loserMsg: "아쉽게도 이번에는 실패했습니다. 잠시 후 퇴장합니다 (새 창 열림)", timeLeft: "남은 시간",
+    winnerTimerWarning: "5분 안에 이메일을 입력해야 합니다. (미입력 시 취소)", winnerExitMsg: "전송되었습니다! 잠시 후 퇴장합니다", loserMsg: "아쉽게도 이번에는 실패했습니다. 잠시 후 퇴장합니다 (새 창 열림)", timeLeft: "남은 시간",
     retryTitle: "다시 도전하시겠습니까?", retryBtn: "🔄 게임 재입장"
   },
   JP: { 
@@ -163,28 +163,8 @@ function App() {
   };
 
   const handleRetry = () => {
-      setShowRetry(false);
-      // Reset Game State for Retry
-      setMyPoints(0);
-      setClickPower(1);
-      setCurrentTool('fist');
-      setShareCount(0);
-      setAdWatchCount(0);
-      
-      // Reset Winner/Loser State
-      setWinnerEmail("");
-      setEmailSubmitted(false);
-      setIsWinner(false);
-      setExitCountdown(null);
-      setLoserCountdown(null);
-      setShowLoserMessage(false);
-
-      // If round is still over, keep spectating mode
-      if (hp <= 0) {
-          setIsSpectating(true);
-      } else {
-          setIsSpectating(false);
-      }
+      // Complete reset by reloading the page
+      window.location.reload();
   };
 
   // Winner Timer (5 min limit)
@@ -219,12 +199,12 @@ function App() {
       let countdownTimer;
 
       if (hp <= 0 && !isWinner && !showRetry && !isSpectating) {
-          // 1. Wait 3 seconds before showing "Failed" (to allow server sync)
+          // 1. Wait 4 seconds before showing "Failed" (to allow server sync)
           if (!showLoserMessage) {
               checkTimer = setTimeout(() => {
                   setShowLoserMessage(true);
                   setLoserCountdown(10); // 10 seconds to exit
-              }, 3000);
+              }, 4000);
           }
 
           // 2. Start Countdown if message is shown
@@ -280,10 +260,10 @@ function App() {
   useEffect(() => {
       if (serverState.hp !== undefined) {
           // 서버에서 온 HP를 그대로 믿지 않고, 내가 아직 서버로 안 보낸 데미지(pendingDamage)만큼
-          // 미리 깎아서 보여줍니다. 그래야 HP가 뒤로 밀리는(늘어나는) 현상을 막을 수 있습니다.
+          // 미리 깎아서 보여줍니다.
           setHp(serverState.hp - pendingDamage.current);
           
-          // Latecomer Detection: If it's the first load and HP is 0, set spectator immediately.
+          // Latecomer Detection
           if (isFirstLoad.current) {
               if (serverState.hp <= 0) {
                   setIsSpectating(true);
@@ -293,48 +273,44 @@ function App() {
       }
   }, [serverState.hp]);
   
-  // Batch Send Logic (Every 1s)
-  useEffect(() => {
-      const interval = setInterval(async () => {
-          if (pendingDamage.current > 0) {
-              const damageToSend = pendingDamage.current;
-              pendingDamage.current = 0; // Reset immediately to capture new clicks
+  // Define flushPendingDamage as a reusable function
+  const flushPendingDamage = async () => {
+      if (pendingDamage.current > 0) {
+          const damageToSend = pendingDamage.current;
+          pendingDamage.current = 0; // Reset immediately
 
-              try {
-                  const res = await fetch(`${API_URL}/click`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ power: damageToSend, country: myCountry })
-                  });
+          try {
+              const res = await fetch(`${API_URL}/click`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ power: damageToSend, country: myCountry })
+              });
 
-                  if (res.ok) {
-                      const data = await res.json();
-                      if (data.hp !== undefined) {
-                          // 서버 HP를 그대로 쓰지 않고, 현재 전송 대기 중인 데미지를 고려해야 할 수도 있지만
-                          // 여기서는 응답받은 시점의 최신 HP로 동기화합니다.
-                          // 단, 사용자가 그 사이에 클릭한 것은 pendingDamage에 쌓여 있으므로
-                          // 다음 렌더링 시 setHp(data.hp - pendingDamage) 처럼 보정하는 로직이 필요할 수 있습니다.
-                          // 현재 useEffect([serverState.hp])에서 보정하고 있으므로 여기서는 state 업데이트만 합니다.
-                          // 하지만 data.hp가 serverState.hp보다 더 최신일 수 있으므로 여기서 직접 setHp를 하면 화면이 튈 수 있습니다.
-                          // 가장 좋은 건 fetch 결과를 serverState에 반영하는 것입니다.
-                          // 하지만 여기서는 간단히 로컬 hp만 갱신하겠습니다.
-                          // 단, 낙관적 업데이트 유지를 위해 "서버 HP - 현재 쌓인 펜딩 데미지"로 설정합니다.
-                          setHp(data.hp - pendingDamage.current);
-                      }
-                      if (data.isWinner && !isWinner) {
-                          setIsWinner(true);
-                      }
+              if (res.ok) {
+                  const data = await res.json();
+                  if (data.hp !== undefined) {
+                      setHp(data.hp - pendingDamage.current);
                   }
-              } catch (e) {
-                  console.error("Batch click sync failed", e);
-                  // 실패 시 펜딩 데미지 복구 (선택 사항)
-                  pendingDamage.current += damageToSend;
+                  if (data.isWinner && !isWinner) {
+                      setIsWinner(true);
+                  }
               }
+          } catch (e) {
+              console.error("Click sync failed", e);
+              // Restore pending damage on failure (optional, but safe)
+              pendingDamage.current += damageToSend;
           }
-      }, 5000); // 5 second interval (Optimized)
+      }
+  };
+
+  // Batch Send Logic (Every 5s)
+  useEffect(() => {
+      const interval = setInterval(() => {
+          flushPendingDamage();
+      }, 5000); 
 
       return () => clearInterval(interval);
-  }, [API_URL, myCountry, isWinner]);
+  }, [API_URL, myCountry, isWinner]); // pendingDamage is a ref, so it doesn't need to be in deps
 
   useEffect(() => {
     // Round change handling
@@ -347,12 +323,16 @@ function App() {
         setMyTotalClicks(0);
         pendingDamage.current = 0; // Reset pending on new round
         localStorage.setItem('egg_breaker_clicks', '0');
-        alert(lang.newRoundReset);
     }
     if (serverState.round) {
         prevRound.current = serverState.round;
     }
-  }, [serverState.round, lang]);
+    
+    // If status is FINISHED, ensure we don't have pending damage
+    if (serverState.status === 'FINISHED') {
+        pendingDamage.current = 0;
+    }
+  }, [serverState.round, serverState.status, lang]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -383,7 +363,7 @@ function App() {
   }, [lastActivity, showGuide]);
 
   const handleClick = async () => {
-    if (hp <= 0) return;
+    if (hp <= 0 || serverState.status === 'FINISHED') return;
     
     // Reset activity timer
     setLastActivity(Date.now());
@@ -393,12 +373,19 @@ function App() {
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 100);
     
+    const newHp = Math.max(0, hp - clickPower);
+    
     // 로컬 상태 즉시 변경
     setMyPoints(prev => prev + clickPower);
-    setHp(prev => Math.max(0, prev - clickPower));
+    setHp(newHp);
     
-    // Accumulate damage for batch sending
+    // Accumulate damage
     pendingDamage.current += clickPower;
+    
+    // If HP hits 0 locally, sync IMMEDIATELY to check winner status
+    if (newHp === 0) {
+        await flushPendingDamage();
+    }
     
     // 로컬 통계 갱신
     const newTotalClicks = myTotalClicks + 1;
@@ -421,7 +408,12 @@ function App() {
   };
 
   const submitWinnerEmail = async () => {
-    if (!winnerEmail.includes("@")) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(winnerEmail)) {
+        alert("이메일 형식이 올바르지 않습니다.");
+        return;
+    }
+    
     try {
         await fetch(`${API_URL}/winner`, {
             method: 'POST',
@@ -539,13 +531,16 @@ function App() {
         toggleMobilePanel={toggleMobilePanel} 
       />
       
-      {announcement && (
-        <div style={{
-          background: '#ffefd5', color: '#ff6f61', padding: '12px', textAlign: 'center', fontWeight: 'bold',
-          animation: 'fadeIn 0.5s', borderRadius: '0 0 20px 20px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-          border: '1px solid #ffe4e1', marginBottom: '10px'
-        }}>
-          📢 {announcement}
+      {announcement && !hideAnnouncement && (
+        <div 
+          onClick={() => setHideAnnouncement(true)}
+          style={{
+            background: '#ffefd5', color: '#ff6f61', padding: '12px', textAlign: 'center', fontWeight: 'bold',
+            animation: 'fadeIn 0.5s', borderRadius: '0 0 20px 20px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+            border: '1px solid #ffe4e1', marginBottom: '10px', cursor: 'pointer'
+          }}
+        >
+          📢 {announcement} <span style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 'normal', marginLeft: '5px' }}>{lang.tapToClose}</span>
         </div>
       )}
 
@@ -578,6 +573,8 @@ function App() {
         <InfoPanel
           lang={lang}
           recentWinners={serverState.recentWinners || []}
+          prize={prize}
+          prizeUrl={prizeUrl}
           isOpen={mobilePanel === 'info'}
           toggleMobilePanel={toggleMobilePanel}
         />

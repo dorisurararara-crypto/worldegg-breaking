@@ -6,7 +6,7 @@ const LeftPanel = ({ lang, countryStats, onlineUsersCount, recentWinners, prize,
   const top2 = countryStats[1];
 
   return (
-    <aside className={`panel left-panel glass ${isOpen ? 'active' : ''}`}>
+    <aside className={`panel left-panel glass ${isOpen ? 'active' : ''}`} style={{ overflowY: 'auto' }}>
       <div className="panel-header">
         <h3>{lang.users}</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
@@ -67,6 +67,23 @@ const LeftPanel = ({ lang, countryStats, onlineUsersCount, recentWinners, prize,
 
       <div className="total-badge" style={{ color: '#4caf50', background: 'rgba(76, 175, 80, 0.1)', borderTop: '1px solid rgba(76, 175, 80, 0.2)' }}>
         🟢 {lang.users}: {onlineUsersCount.toLocaleString()}
+      </div>
+
+      <div className="rule-notice-box" style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.3)', borderRadius: '15px', margin: '10px 0', fontSize: '0.85rem', textAlign: 'left' }}>
+        <h4 style={{ margin: '0 0 8px 0', color: '#ff6f61' }}>📜 {lang.gameRuleTitle}</h4>
+        <ul style={{ paddingLeft: '20px', margin: '0 0 15px 0', color: '#5d4037', lineHeight: '1.4' }}>
+          <li>{lang.gameRule1}</li>
+          <li>{lang.gameRule2}</li>
+          <li>{lang.gameRule3}</li>
+        </ul>
+
+        <h4 style={{ margin: '0 0 8px 0', color: '#ff6f61' }}>⚠️ {lang.noticeTitle}</h4>
+        <ul style={{ paddingLeft: '20px', margin: 0, color: '#d32f2f', fontSize: '0.8rem', fontWeight: 'bold' }}>
+          <li style={{ marginBottom: '5px' }}>{lang.notice1}</li>
+          <li>
+            <span style={{ background: '#ffebee', padding: '4px 8px', borderRadius: '5px', display: 'inline-block' }}>{lang.notice2}</span>
+          </li>
+        </ul>
       </div>
 
       <div className="info-box">
