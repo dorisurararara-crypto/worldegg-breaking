@@ -172,7 +172,7 @@ body::before {
   border: 1px solid #ffe4e1;
   border-radius: 15px;
   overflow: hidden;
-  z-index: 1000;
+  z-index: 2001; /* Higher than panels */
   width: 140px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
@@ -636,7 +636,12 @@ body::before {
   100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
-/* --- Desktop Styles (New) --- */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- Mobile Responsive Styles --- */
 @media (min-width: 901px) {
     .main-layout {
         display: grid;
@@ -751,7 +756,7 @@ body::before {
     bottom: 0;
     width: 100%;
     max-width: 100%;
-    z-index: 200;
+    z-index: 2000; /* Higher than modal overlay (1000) */
     background: rgba(255, 255, 255, 0.95);
     transform: translateX(-100%);
     opacity: 0;

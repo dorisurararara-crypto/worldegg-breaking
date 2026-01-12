@@ -11,6 +11,9 @@ export class GameDO {
     maxHp: 1000000,
     round: 1,
     onlineApprox: 0,
+    status: 'PLAYING', // PLAYING, WINNER_CHECK, FINISHED
+    winnerInfo: null as any, // { country: 'KR', email: 'ab***' }
+    winnerCheckStartTime: 0,
     clicksByCountry: {} as Record<string, number>,
     recentWinners: [] as any[], // 최근 우승자 목록 추가
     // 설정 정보 추가 (Firebase 대체)
@@ -60,6 +63,20 @@ export class GameDO {
 
   async fetch(request: Request) {
     const url = new URL(request.url);
+    const MAX_USERS = 130; // 최대 동시 접속자 제한 (무료 플랜용 보수적 설정)
+
+    // 관리자 요청은 통과
+    if (!url.pathname.startsWith("/admin/")) {
+        // 접속자 수 체크 (이미 접속 중인 유저는 통과시켜야 게임이 진행됨 - IP 체크)
+        // 하지만 간단하게 총량으로 제한 (신규/기존 구분 없이 꽉 차면 튕김 - 대기열 효과)
+        if (this.gameState.onlineApprox >= MAX_USERS) {
+             // 단, 내 IP가 이미 리스트에 있다면 통과 (새로고침해도 안 튕기게)
+             const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+             if (!this.activeUsers.has(ip)) {
+                 return new Response(JSON.stringify({ error: "full" }), { status: 503, headers: { "Content-Type": "application/json" } });
+             }
+        }
+    }
 
     // 1. GET /state
     if (url.pathname === "/state") {
@@ -79,10 +96,16 @@ export class GameDO {
       
       let isWinner = false;
 
-      if (this.gameState.hp > 0) {
+      // 게임 진행 중일 때만 데미지 적용
+      if (this.gameState.status === 'PLAYING' && this.gameState.hp > 0) {
         this.gameState.hp = Math.max(0, this.gameState.hp - dmg);
         this.gameState.clicksByCountry[cCode] = (this.gameState.clicksByCountry[cCode] || 0) + 1;
-        if (this.gameState.hp === 0) isWinner = true;
+        
+        if (this.gameState.hp === 0) {
+            isWinner = true;
+            this.gameState.status = 'WINNER_CHECK';
+            this.gameState.winnerCheckStartTime = Date.now();
+        }
 
         // Ensure alarm exists for saving state and updating stats
         const currentAlarm = await this.state.storage.getAlarm();
@@ -94,19 +117,25 @@ export class GameDO {
       return new Response(JSON.stringify({ 
         success: true, 
         hp: this.gameState.hp, 
-        isWinner 
+        isWinner,
+        status: this.gameState.status 
       }));
     }
 
     // 3. POST /winner
     if (url.pathname === "/winner" && request.method === "POST") {
       const body: any = await request.json();
-      
-      // DB에 저장 (상품명 포함)
       await this.env.DB.prepare(
         "INSERT INTO winners (round, email, country, prize) VALUES (?, ?, ?, ?)"
       ).bind(this.gameState.round, body.email, body.country, this.gameState.prize).run();
       
+      // 마스킹된 이메일 생성 (ex: abc***@gmail.com)
+      const maskedEmail = body.email.replace(/(^.{3}).+(@.+)/, "$1***$2");
+
+      // 상태 업데이트
+      this.gameState.winnerInfo = { country: body.country, email: maskedEmail };
+      this.gameState.status = 'FINISHED';
+
       // 메모리 상태 업데이트 (최근 우승자 목록 갱신 -> 최근 상품 목록)
       this.gameState.recentWinners.unshift({
           round: this.gameState.round,
@@ -118,6 +147,7 @@ export class GameDO {
           this.gameState.recentWinners.pop();
       }
 
+      await this.saveState(); // 즉시 저장
       return new Response(JSON.stringify({ success: true }));
     }
 
@@ -135,6 +165,8 @@ export class GameDO {
             this.gameState.hp = 1000000;
             this.gameState.round += 1;
             this.gameState.clicksByCountry = {};
+            this.gameState.status = 'PLAYING';
+            this.gameState.winnerInfo = null;
             await this.saveState();
             return new Response(JSON.stringify(this.gameState));
         }
@@ -174,11 +206,22 @@ export class GameDO {
         }
 
         // E. 우승자 목록 조회
-        if (url.pathname === "/admin/winners") {
+        if (url.pathname === "/admin/winners" && request.method === "GET") {
             const { results } = await this.env.DB.prepare(
                 "SELECT * FROM winners ORDER BY id DESC LIMIT 50"
             ).all();
             return new Response(JSON.stringify(results));
+        }
+
+        // F. 우승자 삭제 (New)
+        // URL 패턴: /admin/winners/123
+        const deleteMatch = url.pathname.match(/^\/admin\/winners\/(\d+)$/);
+        if (deleteMatch && request.method === "DELETE") {
+            const id = deleteMatch[1];
+            await this.env.DB.prepare(
+                "DELETE FROM winners WHERE id = ?"
+            ).bind(id).run();
+            return new Response(JSON.stringify({ success: true }));
         }
     }
 
@@ -190,6 +233,14 @@ export class GameDO {
     
     // Update Online Users Count (Exact IP-based)
     this.cleanupUsers(Date.now());
+
+    // 타임아웃 체크 (3분)
+    if (this.gameState.status === 'WINNER_CHECK') {
+        if (Date.now() - this.gameState.winnerCheckStartTime > 3 * 60 * 1000) {
+            this.gameState.status = 'FINISHED';
+            this.gameState.winnerInfo = { country: 'Unknown', email: 'Time Out' };
+        }
+    }
 
     // D1 저장 (스냅샷)
     await this.env.DB.prepare(

@@ -62,6 +62,25 @@ function Admin() {
       }
   };
 
+  const deleteWinner = async (id) => {
+      if (!confirm("정말로 이 우승자 기록을 삭제하시겠습니까? (복구 불가)")) return;
+      
+      try {
+          const res = await fetch(`${API_URL}/admin/winners/${id}`, {
+              method: 'DELETE',
+              headers: { 'x-admin-key': password }
+          });
+          if (res.ok) {
+              alert("삭제되었습니다.");
+              fetchWinners(); // 목록 갱신
+          } else {
+              alert("삭제 실패");
+          }
+      } catch (e) {
+          alert("오류 발생");
+      }
+  };
+
   const callAdminApi = async (endpoint, body = {}) => {
     if (!confirm(`정말로 '${endpoint}' 명령을 실행하시겠습니까?`)) return;
 
@@ -244,6 +263,7 @@ function Admin() {
                         <th style={{ padding: '10px', textAlign: 'left' }}>이메일</th>
                         <th style={{ padding: '10px', textAlign: 'left' }}>상품</th>
                         <th style={{ padding: '10px', textAlign: 'left' }}>일시</th>
+                        <th style={{ padding: '10px', textAlign: 'center' }}>관리</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -254,10 +274,13 @@ function Admin() {
                             <td style={{ padding: '10px', fontWeight: 'bold', color: '#ffb6c1' }}>{w.email}</td>
                             <td style={{ padding: '10px' }}>{w.prize || '-'}</td>
                             <td style={{ padding: '10px', color: '#aaa' }}>{new Date(w.created_at).toLocaleString()}</td>
+                            <td style={{ padding: '10px', textAlign: 'center' }}>
+                                <button onClick={() => deleteWinner(w.id)} style={{ background: '#ff4444', border: 'none', borderRadius: '5px', padding: '5px 10px', color: 'white', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
+                            </td>
                         </tr>
                     )) : (
                         <tr>
-                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#888' }}>아직 우승자가 없습니다.</td>
+                            <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#888' }}>아직 우승자가 없습니다.</td>
                         </tr>
                     )}
                 </tbody>

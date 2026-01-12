@@ -20,7 +20,10 @@ const TRANSLATIONS = {
     hallOfFame: "Menu", recentPrizes: "Recent Prizes", noRecords: "No records yet. Be the first winner!",
     adWatchBtn: "📺 Watch Ad (+2000P)", shareBtn: "💬 Share (+800P)",
     adReward: "+2000 Points", shareReward: "Share & Get 800P (Max 5)",
-    roundOverTitle: "Round Over!", roundOverDesc: "Waiting for the next round to begin."
+    roundOverTitle: "Round Over!", roundOverDesc: "Waiting for the next round to begin.",
+    checkingWinnerTitle: "Checking Winner...", checkingWinnerDesc: "Please wait while we verify the legendary destroyer.",
+    winnerTimerWarning: "You must enter your email within 5 minutes.", winnerExitMsg: "Sent! Exiting... (Opening new window)", loserMsg: "Unfortunately, you failed. Exiting... (Opening new window)", timeLeft: "Time Left",
+    retryTitle: "Ready to try again?", retryBtn: "🔄 Re-enter Game"
   },
   KR: { 
     label: "한국어", title: "에그퐁 ☁️", subtitle: "다함께 퐁! 전설의 알 깨기", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요:", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 ", logo: "에그퐁 ☁️",
@@ -32,7 +35,10 @@ const TRANSLATIONS = {
     hallOfFame: "메뉴", recentPrizes: "최근 우승 상품", noRecords: "아직 우승자가 없습니다. 첫 우승자가 되어보세요!",
     adWatchBtn: "📺 광고 보고 포인트 받기(+2000P)", shareBtn: "💬 공유하기 (+800P)",
     adReward: "", shareReward: "카톡으로 공유하고 800P 받기 (최대 5회)",
-    roundOverTitle: "라운드 종료!", roundOverDesc: "다음 라운드 준비 중입니다."
+    roundOverTitle: "라운드 종료!", roundOverDesc: "다음 라운드 준비 중입니다.",
+    checkingWinnerTitle: "우승자 판독 중...", checkingWinnerDesc: "누가 마지막 일격을 날렸는지 확인하고 있습니다.",
+    winnerTimerWarning: "5분 안에 이메일을 입력해야 합니다. (미입력 시 취소)", winnerExitMsg: "전송되었습니다! 잠시 후 퇴장합니다 (새 창 열림)", loserMsg: "아쉽게도 이번에는 실패했습니다. 잠시 후 퇴장합니다 (새 창 열림)", timeLeft: "남은 시간",
+    retryTitle: "다시 도전하시겠습니까?", retryBtn: "🔄 게임 재입장"
   },
   JP: { 
     label: "日本語", title: "エッグポン ☁️", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", item4: "ドリル", item5: "ショベルカー", item6: "レーザー銃", item7: "核爆弾", modalTitle: "🎉 おめでとうございます！ 🎉", modalDesc: "最後の一撃で卵を割りました！あなたが伝説の破壊者です。", modalPrize: "賞品を受け取るためにメールアドレスを入力してください：", send: "送信する", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグポン ☁️",
@@ -44,7 +50,10 @@ const TRANSLATIONS = {
     hallOfFame: "メニュー", recentPrizes: "最近の賞品", noRecords: "まだ勝者はいません。最初の勝者になろう！",
     adWatchBtn: "📺 広告を見る (+2000P)", shareBtn: "💬 シェア (+800P)",
     adReward: "+2000 ポイント", shareReward: "シェアして800Pゲット (最大5回)",
-    roundOverTitle: "ラウンド終了！", roundOverDesc: "次のラウンドを待機中..."
+    roundOverTitle: "ラウンド終了！", roundOverDesc: "次のラウンドを待機中...",
+    checkingWinnerTitle: "勝者を判定中...", checkingWinnerDesc: "伝説の破壊者を確認しています。",
+    winnerTimerWarning: "5분 이내에 입력해주세요。", winnerExitMsg: "送信しました！まもなく終了します (新ウィンドウ)", loserMsg: "残念ながら失敗しました。まもなく終了します (新ウィンドウ)", timeLeft: "残り時間",
+    retryTitle: "もう一度挑戦しますか？", retryBtn: "🔄 ゲーム再入場"
   },
   CN: { 
     label: "中文", title: "蛋蛋碰 ☁️", subtitle: "全世界一起击碎传说之蛋", users: "在线", total: "总计", shop: "商店", myPoint: "积分", atk: "攻击力", item1: "双锤", item2: "钢镐", item3: "炸药", item4: "钻头", item5: "挖掘机", item6: "激光枪", item7: "核弹", modalTitle: "🎉 恭喜！ 🎉", modalDesc: "您完成了最后一击，击碎了鸡蛋！您就是传说中的破坏者。", modalPrize: "请输入您的电子邮箱以领取奖品：", send: "提交领奖", adText: "广告区域", powerClick: "⚡ 超级点击 (+100) ⚡", watchAd: "看广告强力攻击", logo: "蛋蛋碰 ☁️",
@@ -56,7 +65,10 @@ const TRANSLATIONS = {
     hallOfFame: "菜单", recentPrizes: "近期奖品", noRecords: "暂无获胜者。成为第一个赢家吧！",
     adWatchBtn: "📺 看广告 (+2000P)", shareBtn: "💬 分享 (+800P)",
     adReward: "+2000 积分", shareReward: "分享获得800P (最多5次)",
-    roundOverTitle: "回合结束！", roundOverDesc: "正在等待下一轮..."
+    roundOverTitle: "回合结束！", roundOverDesc: "正在等待下一轮...",
+    checkingWinnerTitle: "正在判定胜者...", checkingWinnerDesc: "正在确认谁是传说中的破坏者。",
+    winnerTimerWarning: "请在5分钟内输入。", winnerExitMsg: "已发送！即将退出 (打开新窗口)", loserMsg: "很遗憾，这次失败了。即将退出 (打开新窗口)", timeLeft: "剩余时间",
+    retryTitle: "准备好再次尝试了吗？", retryBtn: "🔄 重新进入游戏"
   }
 };
 
@@ -81,7 +93,7 @@ function App() {
   const [route, setRoute] = useState(window.location.hash);
   
   // Custom Hook for API State
-  const { serverState, API_URL } = useGameState();
+  const { serverState, API_URL, error: serverError } = useGameState(); // Get error from hook
   
   // Local HP for Optimistic Updates
   const [hp, setHp] = useState(1000000);
@@ -115,6 +127,17 @@ function App() {
   // Track the last round the user shared in (per session)
   const [lastSharedRound, setLastSharedRound] = useState(0);
 
+  // Timers
+  const [winnerCountdown, setWinnerCountdown] = useState(300); // 5 minutes
+  const [exitCountdown, setExitCountdown] = useState(null); // For winner after submit
+  const [loserCountdown, setLoserCountdown] = useState(null); // For losers
+  const [showLoserMessage, setShowLoserMessage] = useState(false); // Delay for "Checking..."
+
+  // Retry & Spectator State
+  const [showRetry, setShowRetry] = useState(false);
+  const [isSpectating, setIsSpectating] = useState(false);
+  const isFirstLoad = useRef(true); // Track first load to detect latecomers
+
   // Client Batching Ref
   const pendingDamage = useRef(0);
   
@@ -123,6 +146,109 @@ function App() {
   const prize = serverState.prize || "";
   const prizeUrl = serverState.prizeUrl || "";
   const adUrl = serverState.adUrl || "";
+
+  // Helper for Game End (Open New Window + Show Retry Screen)
+  const handleGameEnd = (url) => {
+      try {
+          // Open a new blank window/tab
+          const target = url || 'about:blank';
+          window.open(target, '_blank');
+      } catch (e) {
+          console.error("Popup blocked or failed", e);
+      }
+      
+      // Show Retry/Spectating UI inside the game instead of a separate screen
+      setShowRetry(true);
+      setIsSpectating(true); 
+  };
+
+  const handleRetry = () => {
+      setShowRetry(false);
+      // Reset Game State for Retry
+      setMyPoints(0);
+      setClickPower(1);
+      setCurrentTool('fist');
+      setShareCount(0);
+      setAdWatchCount(0);
+      
+      // Reset Winner/Loser State
+      setWinnerEmail("");
+      setEmailSubmitted(false);
+      setIsWinner(false);
+      setExitCountdown(null);
+      setLoserCountdown(null);
+      setShowLoserMessage(false);
+
+      // If round is still over, keep spectating mode
+      if (hp <= 0) {
+          setIsSpectating(true);
+      } else {
+          setIsSpectating(false);
+      }
+  };
+
+  // Winner Timer (5 min limit)
+  useEffect(() => {
+    let timer;
+    if (isWinner && !emailSubmitted && winnerCountdown > 0 && !showRetry) {
+      timer = setInterval(() => {
+        setWinnerCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (winnerCountdown === 0 && isWinner && !emailSubmitted && !showRetry) {
+       // Time expired for winner
+       alert("Time expired! You failed to enter your email in time.");
+       handleGameEnd(adUrl);
+    }
+    return () => clearInterval(timer);
+  }, [isWinner, emailSubmitted, winnerCountdown, adUrl, showRetry]);
+
+  // Winner Exit Timer (after submission)
+  useEffect(() => {
+    let timer;
+    if (exitCountdown !== null && exitCountdown > 0 && !showRetry) {
+        timer = setInterval(() => setExitCountdown(prev => prev - 1), 1000);
+    } else if (exitCountdown === 0 && !showRetry) {
+        handleGameEnd(adUrl);
+    }
+    return () => clearInterval(timer);
+  }, [exitCountdown, adUrl, showRetry]);
+
+  // Loser Logic & Timer
+  useEffect(() => {
+      let checkTimer;
+      let countdownTimer;
+
+      if (hp <= 0 && !isWinner && !showRetry && !isSpectating) {
+          // 1. Wait 3 seconds before showing "Failed" (to allow server sync)
+          if (!showLoserMessage) {
+              checkTimer = setTimeout(() => {
+                  setShowLoserMessage(true);
+                  setLoserCountdown(10); // 10 seconds to exit
+              }, 3000);
+          }
+
+          // 2. Start Countdown if message is shown
+          if (showLoserMessage && loserCountdown !== null && loserCountdown > 0) {
+              countdownTimer = setInterval(() => {
+                  setLoserCountdown(prev => prev - 1);
+              }, 1000);
+          } else if (showLoserMessage && loserCountdown === 0) {
+              handleGameEnd(adUrl);
+          }
+      } else {
+          // Reset if HP restored (new round) or became winner
+          if (hp > 0) {
+            setShowLoserMessage(false);
+            setLoserCountdown(null);
+            setIsSpectating(false);
+          }
+      }
+
+      return () => {
+          clearTimeout(checkTimer);
+          clearInterval(countdownTimer);
+      };
+  }, [hp, isWinner, showLoserMessage, loserCountdown, adUrl, showRetry, isSpectating]);
 
   // 1. Definition FIRST
   const changeCountry = (code) => {
@@ -156,6 +282,14 @@ function App() {
           // 서버에서 온 HP를 그대로 믿지 않고, 내가 아직 서버로 안 보낸 데미지(pendingDamage)만큼
           // 미리 깎아서 보여줍니다. 그래야 HP가 뒤로 밀리는(늘어나는) 현상을 막을 수 있습니다.
           setHp(serverState.hp - pendingDamage.current);
+          
+          // Latecomer Detection: If it's the first load and HP is 0, set spectator immediately.
+          if (isFirstLoad.current) {
+              if (serverState.hp <= 0) {
+                  setIsSpectating(true);
+              }
+              isFirstLoad.current = false;
+          }
       }
   }, [serverState.hp]);
   
@@ -295,7 +429,8 @@ function App() {
             body: JSON.stringify({ email: winnerEmail, country: myCountry })
         });
         setEmailSubmitted(true);
-        alert(lang.sent);
+        // Start exit timer
+        setExitCountdown(5); 
     } catch(e) {
         console.error("Winner submit failed", e);
         alert("Failed to send. Please try again.");
@@ -367,6 +502,27 @@ function App() {
 
   if (route === '#admin') return <Admin />;
 
+  // Server Full Overlay
+  if (serverError === 'full') {
+      return (
+          <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              height: '100vh', background: '#fff0f5', color: '#5d4037', textAlign: 'center', padding: '20px'
+          }}>
+              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🚧</div>
+              <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>접속자가 너무 많습니다!</h1>
+              <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
+                  현재 서버 수용 인원(130명)을 초과하여 대기 중입니다.<br/>
+                  잠시 후 자동으로 재접속을 시도합니다.
+              </p>
+              <div className="spinner" style={{
+                  width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
+                  borderRadius: '50%', animation: 'spin 1s linear infinite', marginTop: '30px'
+              }}></div>
+          </div>
+      );
+  }
+
   // Transform server stats for UI
   const countryStats = Object.entries(serverState.clicksByCountry || {})
     .sort((a, b) => b[1] - a[1]);
@@ -383,17 +539,28 @@ function App() {
         toggleMobilePanel={toggleMobilePanel} 
       />
       
-      {announcement && !hideAnnouncement && (
-        <div 
-          onClick={() => setHideAnnouncement(true)}
-          style={{
-            background: '#ffefd5', color: '#ff6f61', padding: '12px', textAlign: 'center', fontWeight: 'bold',
-            animation: 'fadeIn 0.5s', borderRadius: '0 0 20px 20px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-            border: '1px solid #ffe4e1', marginBottom: '10px', cursor: 'pointer'
-          }}
-        >
-          📢 {announcement} <span style={{fontSize: '0.8rem', opacity: 0.5, marginLeft: '5px'}}>(터치해서 닫기)</span>
+      {announcement && (
+        <div style={{
+          background: '#ffefd5', color: '#ff6f61', padding: '12px', textAlign: 'center', fontWeight: 'bold',
+          animation: 'fadeIn 0.5s', borderRadius: '0 0 20px 20px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
+          border: '1px solid #ffe4e1', marginBottom: '10px'
+        }}>
+          📢 {announcement}
         </div>
+      )}
+
+      {/* Backdrop for closing menus on click outside */}
+      {(mobilePanel !== 'none' || showCountrySelect) && (
+        <div 
+            onClick={() => { setMobilePanel('none'); setShowCountrySelect(false); }}
+            style={{
+                position: 'fixed',
+                top: 0, left: 0, width: '100%', height: '100%',
+                background: 'rgba(0,0,0,0.3)', // Semi-transparent dimming
+                zIndex: 1500, // Below panels (2000) but above everything else
+                cursor: 'pointer'
+            }}
+        />
       )}
 
       <div className="main-layout">
@@ -432,6 +599,13 @@ function App() {
           notification={notification}
           handleAdWatch={handleAdWatch}
           showGuide={showGuide}
+          winnerCountdown={winnerCountdown}
+          exitCountdown={exitCountdown}
+          loserCountdown={loserCountdown}
+          showLoserMessage={showLoserMessage}
+          isSpectating={isSpectating}
+          showRetry={showRetry}
+          handleRetry={handleRetry}
         />
 
         <RightPanel 
