@@ -97,7 +97,7 @@ function App() {
   const [route, setRoute] = useState(window.location.hash);
   
   // Custom Hook for API State
-  const { serverState, API_URL, error: serverError } = useGameState(); // Get error from hook
+  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected } = useGameState(); 
   
   // Local HP for Optimistic Updates
   const [hp, setHp] = useState(1000000);
@@ -145,9 +145,6 @@ function App() {
   const [isSpectating, setIsSpectating] = useState(false);
   const isFirstLoad = useRef(true); // Track first load to detect latecomers
 
-  // Client Batching Ref
-  const pendingDamage = useRef(0);
-  const inFlightDamage = useRef(0);
   
   // Data from Server State
   const announcement = serverState.announcement || "";
@@ -268,22 +265,17 @@ function App() {
   useEffect(() => {
       if (serverState.hp !== undefined) {
           // [DEBUG] 증거 확보용 로그
-          if (serverState.doId) {
-             console.log(`[SYNC] DO:${serverState.doId} TS:${serverState.ts} ServerHP:${serverState.hp}`);
-          }
-
-          // 1. If we have local unsent/sending changes, TRUST LOCAL. Do not overwrite.
-          if (pendingDamage.current > 0 || inFlightDamage.current > 0) {
-              console.log(`[DEBUG] Sync Ignored (Local changes exist). Pending: ${pendingDamage.current}, InFlight: ${inFlightDamage.current}`);
-              return;
+          if (serverState.rev) {
+             console.log(`[SYNC] Rev:${serverState.rev} TS:${serverState.lastUpdatedAt} ServerHP:${serverState.hp}`);
           }
 
           // 타임스탬프 체크: 더 오래된 데이터가 최신 데이터를 덮어쓰는 것 방지 (Race Condition 해결)
-          const ts = serverState.ts || 0;
+          const ts = serverState.lastUpdatedAt || 0;
+          
           if (ts >= lastServerTs.current) {
               lastServerTs.current = ts;
               
-              setHp(serverState.hp); // Pending is 0, so just set to server HP
+              setHp(serverState.hp);
 
               // Latecomer Detection
               if (isFirstLoad.current) {
@@ -292,62 +284,17 @@ function App() {
                   }
                   isFirstLoad.current = false;
               }
-          } else {
-               console.log(`[DEBUG] Sync Ignored (Stale TS). ServerTS: ${ts}, LastTS: ${lastServerTs.current}`);
-          }
-      }
-  }, [serverState.hp, serverState.ts]);
-  
-  const flushPendingDamage = async () => {
-      if (pendingDamage.current > 0) {
-          const damageToSend = pendingDamage.current;
-          pendingDamage.current = 0; // Reset immediately
-          inFlightDamage.current = damageToSend; // Mark as in-flight
-          
-          try {
-              const res = await fetch(`${API_URL}/click`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ power: damageToSend, country: myCountry })
-              });
-
-              if (res.ok) {
-                  inFlightDamage.current = 0; // Success
-                  const data = await res.json();
-                  
-                  // 타임스탬프 체크
-                  const ts = data.ts || 0;
-                  if (ts >= lastServerTs.current) {
-                      lastServerTs.current = ts;
-                      if (data.hp !== undefined) {
-                          setHp(data.hp - pendingDamage.current);
-                      }
-                  }
-                  
-                  if (data.isWinner && !isWinner) {
-                      setIsWinner(true);
-                  }
-              } else {
-                   // Restore on server error
-                  pendingDamage.current += damageToSend;
-                  inFlightDamage.current = 0;
+              
+              if (serverState.winnerInfo && serverState.winnerInfo.country === myCountry && !isWinner) {
+                  // Check if it matches me? We don't have ID check here easily yet without more logic.
+                  // Assume if "I" triggered the win, isWinner is set locally.
+                  // If someone else won, we see status FINISHED.
               }
-          } catch (e) {
-              console.error(`[DEBUG] Flush Error. Restoring ${damageToSend}`, e);
-              pendingDamage.current += damageToSend;
-              inFlightDamage.current = 0;
-          }
+          } 
       }
-  };
-
-  // Batch Send Logic (Every 3s)
-  useEffect(() => {
-      const interval = setInterval(() => {
-          flushPendingDamage();
-      }, 3000); 
-
-      return () => clearInterval(interval);
-  }, [API_URL, myCountry, isWinner]);
+  }, [serverState.hp, serverState.lastUpdatedAt, myCountry, isWinner]);
+  
+  // Removed manual flushPendingDamage logic (handled in hook)
 
   useEffect(() => {
     // Round change handling
@@ -358,16 +305,10 @@ function App() {
         setShareCount(0);
         setAdWatchCount(0);
         setMyTotalClicks(0);
-        pendingDamage.current = 0; // Reset pending on new round
         localStorage.setItem('egg_breaker_clicks', '0');
     }
     if (serverState.round) {
         prevRound.current = serverState.round;
-    }
-    
-    // If status is FINISHED, ensure we don't have pending damage
-    if (serverState.status === 'FINISHED') {
-        pendingDamage.current = 0;
     }
   }, [serverState.round, serverState.status, lang]);
 
@@ -400,7 +341,7 @@ function App() {
   }, [lastActivity, showGuide]);
 
   const handleClick = async () => {
-    if (hp <= 0 || serverState.status === 'FINISHED') return;
+    if (hp <= 0 || serverState.status === 'FINISHED' || role === 'spectator') return;
     
     // Reset activity timer
     setLastActivity(Date.now());
@@ -416,12 +357,12 @@ function App() {
     setMyPoints(prev => prev + clickPower);
     setHp(newHp);
     
-    // Accumulate damage
-    pendingDamage.current += clickPower;
+    // Use Hook to Add Click
+    addClick(clickPower, myCountry);
     
-    // If HP hits 0 locally, sync IMMEDIATELY to check winner status
+    // If HP hits 0 locally, we rely on server to confirm.
     if (newHp === 0) {
-        await flushPendingDamage();
+       setIsWinner(true); // Tentative
     }
     
     // 로컬 통계 갱신
@@ -543,17 +484,18 @@ function App() {
   if (route === '#admin') return <Admin />;
 
   // Server Full Overlay
-  if (serverError === 'full') {
+  if (serverError === 'full' || (role === 'spectator' && queuePos)) {
       return (
           <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               height: '100vh', background: '#fff0f5', color: '#5d4037', textAlign: 'center', padding: '20px'
           }}>
-              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🚧</div>
-              <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>접속자가 너무 많습니다!</h1>
+              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
+              <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>대기열 {queuePos}위</h1>
               <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-                  현재 서버 수용 인원(130명)을 초과하여 대기 중입니다.<br/>
-                  잠시 후 자동으로 재접속을 시도합니다.
+                  현재 참여 인원이 많아 대기 중입니다.<br/>
+                  잠시만 기다려주시면 자동으로 입장됩니다.<br/>
+                  (예상 대기 시간: {etaSec ? `${etaSec}초` : '계산 중...'})
               </p>
               <div className="spinner" style={{
                   width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
@@ -566,6 +508,8 @@ function App() {
   // Transform server stats for UI
   const countryStats = Object.entries(serverState.clicksByCountry || {})
     .sort((a, b) => b[1] - a[1]);
+
+  const onlineUsersCount = (serverState.onlinePlayers || 0) + (serverState.onlineSpectatorsApprox || 0);
 
   return (
     <div className="app-container">
@@ -610,7 +554,7 @@ function App() {
         <LeftPanel 
           lang={lang} 
           countryStats={countryStats} 
-          onlineUsersCount={serverState.onlineApprox} 
+          onlineUsersCount={onlineUsersCount} 
           prize={prize}
           prizeUrl={prizeUrl}
           getFlagEmoji={getFlagEmoji}

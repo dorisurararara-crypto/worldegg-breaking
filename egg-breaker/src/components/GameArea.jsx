@@ -236,7 +236,7 @@ const GameArea = ({
                         animation: 'pulse 1s infinite',
                         border: '2px solid #ffb6c1'
                     }}>
-                        👈 가운데 계란을 터치하세요!
+                        가운데 계란을 👈  터치하세요!
                     </div>
                 )}
                 
