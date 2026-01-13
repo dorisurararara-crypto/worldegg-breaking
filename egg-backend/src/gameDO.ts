@@ -23,9 +23,13 @@ export class GameDO {
     adUrl: "" 
   };
 
+  // 인스턴스 구분용 ID (서버가 재시작되면 바뀜)
+  instanceId: string = Math.random().toString(36).substring(7);
+
   constructor(state: any, env: any) {
     this.state = state;
     this.env = env;
+    console.log(`[GameDO:${this.instanceId}] 🐣 NEW INSTANCE CREATED.`);
     
     // 복구 로직
     this.state.blockConcurrencyWhile(async () => {
@@ -83,7 +87,8 @@ export class GameDO {
       this.updateActivity(request);
       return new Response(JSON.stringify({
           ...this.gameState,
-          ts: Date.now()
+          ts: Date.now(),
+          doId: this.instanceId
       }), {
         headers: { "Content-Type": "application/json" }
       });

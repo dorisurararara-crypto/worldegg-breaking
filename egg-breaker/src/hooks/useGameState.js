@@ -13,31 +13,37 @@ export function useGameState() {
   const [error, setError] = useState(null);
 
   // 상태 폴링 함수
-  const fetchState = async () => {
+  const fetchState = async (controller) => {
     try {
-      const res = await fetch(`${API_URL}/state`);
-      if (res.status === 503) {
-          setError('full');
-          return;
-      }
+      const res = await fetch(`${API_URL}/state?t=${Date.now()}`, { 
+          signal: controller?.signal,
+          cache: 'no-store' 
+      });
       if (res.ok) {
         const data = await res.json();
-        if (data.error === 'full') {
-            setError('full');
-        } else {
-            setServerState(data);
-            setError(null); // Clear error if successful
-        }
+        setServerState(data);
+        setError(null);
       }
     } catch (e) {
-      console.error("Polling failed:", e);
+      if (e.name !== 'AbortError') {
+        console.error("Polling failed:", e);
+      }
     }
   };
 
   useEffect(() => {
-    fetchState(); // 초기 로드
-    const interval = setInterval(fetchState, 10000); // 10초마다 폴링 (최적화)
-    return () => clearInterval(interval);
+    const controller = new AbortController();
+    fetchState(controller); // 초기 로드
+
+    const interval = setInterval(() => {
+        const newController = new AbortController();
+        fetchState(newController);
+    }, 15000); // 15초마다 폴링
+    
+    return () => {
+        clearInterval(interval);
+        controller.abort();
+    };
   }, []);
 
   return { serverState, API_URL, refetch: fetchState, error };

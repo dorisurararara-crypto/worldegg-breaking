@@ -147,6 +147,7 @@ function App() {
 
   // Client Batching Ref
   const pendingDamage = useRef(0);
+  const inFlightDamage = useRef(0);
   
   // Data from Server State
   const announcement = serverState.announcement || "";
@@ -266,12 +267,23 @@ function App() {
   // Sync Local HP with Server HP (Correction with Pending Damage)
   useEffect(() => {
       if (serverState.hp !== undefined) {
+          // [DEBUG] 증거 확보용 로그
+          if (serverState.doId) {
+             console.log(`[SYNC] DO:${serverState.doId} TS:${serverState.ts} ServerHP:${serverState.hp}`);
+          }
+
+          // 1. If we have local unsent/sending changes, TRUST LOCAL. Do not overwrite.
+          if (pendingDamage.current > 0 || inFlightDamage.current > 0) {
+              console.log(`[DEBUG] Sync Ignored (Local changes exist). Pending: ${pendingDamage.current}, InFlight: ${inFlightDamage.current}`);
+              return;
+          }
+
           // 타임스탬프 체크: 더 오래된 데이터가 최신 데이터를 덮어쓰는 것 방지 (Race Condition 해결)
           const ts = serverState.ts || 0;
           if (ts >= lastServerTs.current) {
               lastServerTs.current = ts;
               
-              setHp(serverState.hp - pendingDamage.current);
+              setHp(serverState.hp); // Pending is 0, so just set to server HP
 
               // Latecomer Detection
               if (isFirstLoad.current) {
@@ -280,16 +292,18 @@ function App() {
                   }
                   isFirstLoad.current = false;
               }
+          } else {
+               console.log(`[DEBUG] Sync Ignored (Stale TS). ServerTS: ${ts}, LastTS: ${lastServerTs.current}`);
           }
       }
   }, [serverState.hp, serverState.ts]);
   
-  // Define flushPendingDamage as a reusable function
   const flushPendingDamage = async () => {
       if (pendingDamage.current > 0) {
           const damageToSend = pendingDamage.current;
           pendingDamage.current = 0; // Reset immediately
-
+          inFlightDamage.current = damageToSend; // Mark as in-flight
+          
           try {
               const res = await fetch(`${API_URL}/click`, {
                   method: 'POST',
@@ -298,7 +312,9 @@ function App() {
               });
 
               if (res.ok) {
+                  inFlightDamage.current = 0; // Success
                   const data = await res.json();
+                  
                   // 타임스탬프 체크
                   const ts = data.ts || 0;
                   if (ts >= lastServerTs.current) {
@@ -311,23 +327,27 @@ function App() {
                   if (data.isWinner && !isWinner) {
                       setIsWinner(true);
                   }
+              } else {
+                   // Restore on server error
+                  pendingDamage.current += damageToSend;
+                  inFlightDamage.current = 0;
               }
           } catch (e) {
-              console.error("Click sync failed", e);
-              // Restore pending damage on failure (optional, but safe)
+              console.error(`[DEBUG] Flush Error. Restoring ${damageToSend}`, e);
               pendingDamage.current += damageToSend;
+              inFlightDamage.current = 0;
           }
       }
   };
 
-  // Batch Send Logic (Every 5s)
+  // Batch Send Logic (Every 3s)
   useEffect(() => {
       const interval = setInterval(() => {
           flushPendingDamage();
-      }, 5000); 
+      }, 3000); 
 
       return () => clearInterval(interval);
-  }, [API_URL, myCountry, isWinner]); // pendingDamage is a ref, so it doesn't need to be in deps
+  }, [API_URL, myCountry, isWinner]);
 
   useEffect(() => {
     // Round change handling

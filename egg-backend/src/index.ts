@@ -32,10 +32,13 @@ export default {
       const newHeaders = new Headers(response.headers);
       Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
 
-      // GET 요청은 캐싱 (서버 부하 감소)
+      // GET 요청은 캐싱 (서버 부하 감소) -> 실시간성 중요하므로 캐싱 제거
+      /*
       if (request.method === "GET") {
         newHeaders.set("Cache-Control", "public, max-age=3");
       }
+      */
+      newHeaders.set("Cache-Control", "no-store");
 
       return new Response(response.body, {
         status: response.status,
