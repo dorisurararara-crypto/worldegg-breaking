@@ -110,10 +110,49 @@ const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '�
 const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, showGuide,
-    winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry
+    winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry,
+    clientId, serverState, API_URL, myCountry, winningToken
 }) => {
     const [clickEffects, setClickEffects] = useState([]);
     const stageRef = useRef(null); // 스테이지 좌표 기준점
+    const wasActivePlayer = useRef(false);
+    const [localLoserTimer, setLocalLoserTimer] = useState(null);
+    const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
+
+    // Track if I was a player in this round
+    useEffect(() => {
+        // If HP is full (New Round), reset
+        if (serverState?.hp === serverState?.maxHp) {
+             wasActivePlayer.current = false;
+             setShowWinnerClaiming(false);
+             setLocalLoserTimer(null);
+        }
+        // If I am a player while game is playing, mark as active
+        // (Note: serverState doesn't have 'role', pass it from App if needed? 
+        //  Actually App passes 'isSpectating' which is basically role check.
+        //  If !isSpectating, I am a player.)
+        if (!isSpectating && hp > 0) {
+            wasActivePlayer.current = true;
+        }
+    }, [serverState, isSpectating, hp]);
+
+    // Loser Timer Logic
+    useEffect(() => {
+        if (serverState?.status === 'WINNER_CHECK' && serverState?.winningClientId !== clientId && wasActivePlayer.current) {
+            if (localLoserTimer === null) {
+                setLocalLoserTimer(7); // Start 7s countdown
+            } else if (localLoserTimer > 0) {
+                const timer = setTimeout(() => setLocalLoserTimer(prev => prev - 1), 1000);
+                return () => clearTimeout(timer);
+            } else {
+                // Timer finished
+                setShowWinnerClaiming(true);
+            }
+        } else if (serverState?.status === 'WINNER_CHECK' && !wasActivePlayer.current) {
+            // Pure spectator sees claiming screen immediately
+            setShowWinnerClaiming(true);
+        }
+    }, [serverState, clientId, localLoserTimer]);
 
     // Helper to format seconds to mm:ss
     const formatTime = (seconds) => {
@@ -172,6 +211,11 @@ const GameArea = ({
             setClickEffects(prev => prev.filter(item => item.id !== newEffect.id));
         }, 800);
     };
+    
+    // --- Render Conditions ---
+    const isMyWin = serverState?.winningClientId === clientId;
+    const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
+    const isFinished = serverState?.status === 'FINISHED';
 
     return (
         <main className="game-area">
@@ -298,91 +342,84 @@ const GameArea = ({
                 ))}
 
             {/* Unified Modal Logic */}
-            {(hp <= 0 || isWinner || showRetry || isSpectating) && (
+            {(isWinnerCheck || isFinished || showRetry) && (
                 <div className="modal-overlay">
                     <div className="modal-content glass" style={{ maxWidth: '500px', width: '90%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px' }}>
                         
-                        {(showRetry || isSpectating) ? (
-                            // 1. Retry / Spectator / Round Over
+                        {/* 1. FINISHED State (Round Over, Waiting for Admin) */}
+                        {isFinished && (
                             <>
-                                <div style={{ fontSize: '4rem', marginBottom: '15px', animation: 'bounce 1s infinite' }}>🐣</div>
+                                <div style={{ fontSize: '4rem', marginBottom: '15px' }}>🏁</div>
                                 <h2 style={{ color: '#ff6f61', fontSize: '2rem', marginBottom: '10px' }}>{lang.roundOverTitle}</h2>
-                                <p style={{ color: '#5d4037', fontSize: '1.1rem', marginBottom: '25px', lineHeight: '1.6' }}>{lang.roundOverDesc}</p>
-                                
-                                <button 
-                                    onClick={handleRetry}
-                                    style={{
-                                        background: '#ff6f61', color: '#fff', border: 'none', padding: '12px 35px', 
-                                        fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '50px', cursor: 'pointer',
-                                        boxShadow: '0 5px 15px rgba(255, 111, 97, 0.4)', transition: 'transform 0.2s'
-                                    }}
-                                    onMouseOver={e => e.target.style.transform = 'scale(1.05)'}
-                                    onMouseOut={e => e.target.style.transform = 'scale(1)'}
-                                >
-                                    {showRetry ? lang.retryBtn : (lang.refreshBtn || lang.retryBtn)}
-                                </button>
+                                <p style={{ color: '#5d4037', fontSize: '1.1rem', marginBottom: '25px', lineHeight: '1.6' }}>
+                                    {lang.roundOverDesc} <br/> (다음 라운드 준비 중)
+                                </p>
                             </>
-                        ) : isWinner ? (
-                            // 2. Winner Logic
-                            emailSubmitted ? (
-                                // Winner Success
-                                <>
-                                    <h2 style={{ color: '#4CAF50', fontSize: '2rem', marginBottom: '20px' }}>✅ {lang.sent}</h2>
-                                    <p style={{ fontSize: '1.2rem', color: '#5d4037' }}>
-                                        {lang.winnerExitMsg}: <span style={{ fontWeight: 'bold', color: '#ff6f61' }}>{exitCountdown}s</span>
-                                    </p>
-                                </>
-                            ) : (
-                                // Winner Input
-                                <>
-                                    <h2 style={{ color: '#ff6f61', fontSize: '2rem', marginBottom: '10px' }}>{lang.modalTitle}</h2>
-                                    <p style={{ fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '20px' }}>
-                                        {lang.modalDesc}
-                                    </p>
-                                    
-                                    <div style={{ background: '#fff0f5', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #ffb6c1', width: '100%' }}>
-                                        <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>⚠️ {lang.winnerTimerWarning}</p>
-                                        <p style={{ fontSize: '1.5rem', fontWeight: '900', color: '#d32f2f' }}>
-                                            {lang.timeLeft}: {formatTime(winnerCountdown)}
-                                        </p>
-                                    </div>
+                        )}
 
-                                    <div style={{ background: 'rgba(255, 182, 193, 0.2)', padding: '20px', borderRadius: '15px', marginBottom: '20px', width: '100%' }}>
-                                        <p style={{ margin: '0 0 10px 0', color: '#ff6f61', fontWeight: 'bold' }}>
-                                        {lang.modalPrize}
-                                        </p>
-                                        <input 
-                                            type="email" 
-                                            placeholder="example@email.com"
-                                            value={winnerEmail}
-                                            onChange={(e) => setWinnerEmail(e.target.value)}
-                                            style={{ width: '90%', padding: '12px', borderRadius: '10px', border: '2px solid #ffe4e1', background: '#fff', color: '#5d4037', textAlign: 'center', fontSize: '1rem' }}
-                                        />
-                                    </div>
+                        {/* 2. WINNER CHECK State */}
+                        {isWinnerCheck && (
+                            <>
+                                {isMyWin ? (
+                                    // A. I AM THE WINNER
+                                    <>
+                                        <h2 style={{ color: '#ff6f61', fontSize: '2rem', marginBottom: '10px' }}>{lang.modalTitle}</h2>
+                                        <p style={{ fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '20px' }}>{lang.modalDesc}</p>
+                                        
+                                        <div style={{ background: '#fff0f5', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #ffb6c1', width: '100%' }}>
+                                            <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>⚠️ {lang.winnerTimerWarning}</p>
+                                            <p style={{ fontSize: '1.5rem', fontWeight: '900', color: '#d32f2f' }}>
+                                                {lang.timeLeft}: {formatTime(winnerCountdown)}
+                                            </p>
+                                        </div>
 
-                                    <button className="send-btn" onClick={submitWinnerEmail} style={{ fontSize: '1.1rem', padding: '12px 40px' }}>
-                                        {lang.send}
-                                    </button>
-                                </>
-                            )
-                        ) : (
-                            // 3. Loser Logic (hp <= 0)
-                            showLoserMessage ? (
-                                // Failed
-                                <>
-                                    <div style={{ fontSize: '4rem', marginBottom: '10px' }}>😢</div>
-                                    <h2 style={{ color: '#5d4037', marginBottom: '15px' }}>{lang.loserMsg} <span style={{ color: '#ff6f61' }}>{loserCountdown}s</span></h2>
-                                </>
-                            ) : (
-                                // Checking Spinner
-                                <>
-                                    <div className="spinner" style={{
-                                        width: '40px', height: '40px', border: '5px solid #ffe4e1', borderTop: '5px solid #ff6f61', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '20px'
-                                    }}></div>
-                                    <h2>{lang.checkingWinnerTitle}</h2>
-                                    <p>{lang.checkingWinnerDesc}</p>
-                                </>
-                            )
+                                        {!emailSubmitted ? (
+                                            <>
+                                                <div style={{ background: 'rgba(255, 182, 193, 0.2)', padding: '20px', borderRadius: '15px', marginBottom: '20px', width: '100%' }}>
+                                                    <p style={{ margin: '0 0 10px 0', color: '#ff6f61', fontWeight: 'bold' }}>{lang.modalPrize}</p>
+                                                    <input 
+                                                        type="email" 
+                                                        placeholder="example@email.com"
+                                                        value={winnerEmail}
+                                                        onChange={(e) => setWinnerEmail(e.target.value)}
+                                                        style={{ width: '90%', padding: '12px', borderRadius: '10px', border: '2px solid #ffe4e1', background: '#fff', color: '#5d4037', textAlign: 'center', fontSize: '1rem' }}
+                                                    />
+                                                </div>
+                                                <button className="send-btn" onClick={submitWinnerEmail} style={{ fontSize: '1.1rem', padding: '12px 40px' }}>
+                                                    {lang.send}
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <h2 style={{ color: '#4CAF50', marginTop: '20px' }}>✅ {lang.sent}</h2>
+                                        )}
+                                    </>
+                                ) : (
+                                    // B. I AM NOT THE WINNER (Loser or Spectator)
+                                    <>
+                                        {(!showWinnerClaiming && localLoserTimer !== null) ? (
+                                            // Loser Timer Phase (7s)
+                                            <>
+                                                <div style={{ fontSize: '4rem', marginBottom: '10px' }}>😢</div>
+                                                <h2 style={{ color: '#5d4037', marginBottom: '15px' }}>
+                                                    {lang.loserMsg?.split('.')[0] || "아쉽게도 실패했습니다."} 
+                                                </h2>
+                                                <p style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#ff6f61'}}>
+                                                    {localLoserTimer}초 후 대기열로 이동합니다.
+                                                </p>
+                                            </>
+                                        ) : (
+                                            // Winner Claiming Phase (Waiting)
+                                            <>
+                                                 <div className="spinner" style={{
+                                                    width: '40px', height: '40px', border: '5px solid #ffe4e1', borderTop: '5px solid #ff6f61', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '20px'
+                                                }}></div>
+                                                <h2>🏆 승자가 상품을 수령하고 있습니다...</h2>
+                                                <p>잠시만 기다려주세요.</p>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

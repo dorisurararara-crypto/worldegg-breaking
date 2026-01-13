@@ -41,6 +41,7 @@ export function useGameState() {
   const [etaSec, setEtaSec] = useState(null);
   const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [winningToken, setWinningToken] = useState(null); // Store winning token
 
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
@@ -101,6 +102,11 @@ export function useGameState() {
             case 'queue_update':
                 setQueuePos(msg.queuePos);
                 setEtaSec(msg.etaSec);
+                break;
+
+            case 'you_won':
+                console.log("🎉 I WON!", msg.token);
+                setWinningToken(msg.token);
                 break;
 
             case 'error':
@@ -180,6 +186,8 @@ export function useGameState() {
       role, 
       queuePos, 
       etaSec,
-      addClick 
+      addClick,
+      clientId: clientIdRef.current,
+      winningToken
   };
 }

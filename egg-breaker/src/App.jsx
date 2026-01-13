@@ -97,7 +97,7 @@ function App() {
   const [route, setRoute] = useState(window.location.hash);
   
   // Custom Hook for API State
-  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected } = useGameState(); 
+  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken } = useGameState(); 
   
   // Local HP for Optimistic Updates
   const [hp, setHp] = useState(1000000);
@@ -396,7 +396,7 @@ function App() {
         await fetch(`${API_URL}/winner`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: winnerEmail, country: myCountry })
+            body: JSON.stringify({ email: winnerEmail, country: myCountry, token: winningToken })
         });
         setEmailSubmitted(true);
         // Start exit timer
@@ -595,6 +595,11 @@ function App() {
           isSpectating={isSpectating}
           showRetry={showRetry}
           handleRetry={handleRetry}
+          clientId={clientId}
+          serverState={serverState}
+          API_URL={API_URL}
+          myCountry={myCountry}
+          winningToken={winningToken}
         />
 
         <RightPanel 

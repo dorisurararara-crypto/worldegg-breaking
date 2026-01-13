@@ -7,6 +7,8 @@ interface GameState {
   status: 'PLAYING' | 'WINNER_CHECK' | 'FINISHED';
   winnerInfo: any;
   winnerCheckStartTime: number;
+  winningClientId?: string; // ID of the winner (before email is set)
+  winningToken?: string;    // Secret token for the winner to claim prize
   clicksByCountry: Record<string, number>;
   announcement: string;
   prize: string;
@@ -71,6 +73,8 @@ export class GameDO extends DurableObject {
       status: 'PLAYING',
       winnerInfo: null,
       winnerCheckStartTime: 0,
+      winningClientId: undefined,
+      winningToken: undefined,
       clicksByCountry: {},
       announcement: "Welcome to Egg Pong!",
       prize: "Amazon Gift Card $50",
@@ -126,13 +130,17 @@ export class GameDO extends DurableObject {
         return this.handleAdmin(request, url);
     }
     
-    // Legacy /winner Endpoint for Prize Claim
+    // Legacy /winner Endpoint for Prize Claim (Now Secured)
     if (url.pathname === "/winner" && request.method === "POST") {
       const body: any = await request.json();
       
-      // Basic Validation: Game must be in WINNER_CHECK (or PLAYING just transitioned)
-      // And strict validation might require a token generated when HP hits 0? 
-      // For now, trust the client logic but in production needs a token.
+      // Security Check: Must be WINNER_CHECK and Token must match
+      if (this.gameState.status !== 'WINNER_CHECK') {
+          return new Response(JSON.stringify({ error: "Game not in winner check mode" }), { status: 400 });
+      }
+      if (!this.gameState.winningToken || body.token !== this.gameState.winningToken) {
+          return new Response(JSON.stringify({ error: "Invalid winning token" }), { status: 403 });
+      }
       
       try {
           await this.env.DB.prepare(
@@ -144,7 +152,11 @@ export class GameDO extends DurableObject {
       
       const maskedEmail = body.email.replace(/(^.{3}).+(@.+)/, "$1***$2");
       this.gameState.winnerInfo = { country: body.country, email: maskedEmail };
-      this.gameState.status = 'FINISHED';
+      this.gameState.status = 'FINISHED'; // Game ends, waits for admin reset
+      
+      // Clear sensitive info
+      this.gameState.winningClientId = undefined;
+      this.gameState.winningToken = undefined;
 
       this.gameState.recentWinners.unshift({
           round: this.gameState.round,
@@ -282,7 +294,23 @@ export class GameDO extends DurableObject {
               if (this.gameState.hp === 0) {
                   this.gameState.status = 'WINNER_CHECK';
                   this.gameState.winnerCheckStartTime = now;
+                  
+                  // 1. Identify Winner
+                  this.gameState.winningClientId = session.clientId;
+                  this.gameState.winningToken = crypto.randomUUID();
+
+                  // Notify Winner Privately
+                  session.ws.send(JSON.stringify({
+                      type: 'you_won',
+                      token: this.gameState.winningToken,
+                      round: this.gameState.round
+                  }));
+                  
+                  // 2. Rotate Players (Move current players to back of queue)
+                  this.rotatePlayers();
+
                   this.saveState(); // Critical
+                  this.broadcastState(); // Notify immediately
               }
           }
       }
@@ -351,6 +379,45 @@ export class GameDO extends DurableObject {
       }
   }
 
+  rotatePlayers() {
+      // 1. Move all current players to the BACK of the queue
+      const currentPlayers = Array.from(this.players.values());
+      
+      // Sort by some criteria if needed, but random/insertion order is fine
+      for (const p of currentPlayers) {
+          p.role = 'spectator';
+          const token = crypto.randomUUID();
+          p.queueToken = token;
+          this.queue.push({ 
+              token, 
+              clientId: p.clientId, 
+              joinedAt: Date.now(), 
+              ws: p.ws 
+          });
+          
+          // Notify them they are now spectators (queued)
+          if (p.ws.readyState === WebSocket.OPEN) {
+              p.ws.send(JSON.stringify({
+                  type: 'join_ok',
+                  role: 'spectator',
+                  queuePos: this.queue.length,
+                  serverTs: Date.now()
+              }));
+          }
+      }
+      
+      // Clear active players list
+      this.players.clear();
+
+      // 2. Promote spectators from the FRONT of the queue to fill the slots
+      // They become players for the NEXT round, but they can't play yet (status != PLAYING)
+      while (this.players.size < this.MAX_PLAYERS && this.queue.length > 0) {
+          this.promoteFromQueue();
+      }
+      
+      this.broadcastQueueUpdate();
+  }
+
   broadcastQueueUpdate() {
       // Send queue update to those with tokens
       this.queue.forEach((item, idx) => {
@@ -374,6 +441,7 @@ export class GameDO extends DurableObject {
           round: this.gameState.round,
           status: this.gameState.status,
           winnerInfo: this.gameState.winnerInfo,
+          winningClientId: this.gameState.winningClientId, // Send winner ID
           onlinePlayers: this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
           announcement: this.gameState.announcement,
@@ -469,6 +537,7 @@ export class GameDO extends DurableObject {
           round: this.gameState.round,
           status: this.gameState.status,
           winnerInfo: this.gameState.winnerInfo,
+          winningClientId: this.gameState.winningClientId,
           onlinePlayers: this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
           announcement: this.gameState.announcement,
