@@ -26,6 +26,7 @@ interface PlayerSession {
   country: string;
   lastSeen: number;
   lastDeltaTime: number; // For rate limiting
+  warnings?: number;     // For abuse detection
   role: 'player' | 'spectator';
   queueToken?: string;
 }
@@ -53,6 +54,7 @@ export class GameDO extends DurableObject {
   
   // Constants
   MAX_PLAYERS = 1000;
+  MAX_QUEUE = 1000; // Limit queue size to save cost
   BROADCAST_INTERVAL_MS = 2000; // 2 seconds
   SAVE_INTERVAL_MS = 20000; // 20 seconds
   
@@ -91,6 +93,23 @@ export class GameDO extends DurableObject {
       if (stored) {
         this.gameState = { ...this.gameState, ...stored };
       }
+      
+      // Load recent winners from DB to ensure persistence
+      try {
+          const { results } = await this.env.DB.prepare(
+              "SELECT round, prize, created_at as date FROM winners ORDER BY id DESC LIMIT 5"
+          ).all();
+          
+          // Debug Log
+          console.log("[Recovery] Loaded winners from DB:", JSON.stringify(results));
+
+          if (results && Array.isArray(results)) {
+              this.gameState.recentWinners = results;
+          }
+      } catch (e) {
+          console.error("[Recovery] Failed to load winners:", e);
+      }
+
       // Start loops
       this.startLoops();
     });
@@ -165,6 +184,9 @@ export class GameDO extends DurableObject {
       });
       if (this.gameState.recentWinners.length > 5) this.gameState.recentWinners.pop();
 
+      // NOW we kick everyone
+      this.kickAllPlayers();
+
       this.gameState.lastUpdatedAt = Date.now();
       await this.saveState();
       this.broadcastState();
@@ -206,8 +228,15 @@ export class GameDO extends DurableObject {
       if (msg.type === 'join') {
         const clientId = msg.clientId || crypto.randomUUID();
         const country = msg.country || "UN";
-        const requestedMode = msg.mode || "spectator";
         
+        // Gatekeeper: Only allow joining queue/game if status is PLAYING
+        // (Except for admin or special cases, but here strictly for users)
+        if (this.gameState.status !== 'PLAYING') {
+             ws.send(JSON.stringify({ type: 'error', code: 'ROUND_NOT_STARTED', message: 'Round not started yet.' }));
+             ws.close(1008, "Round not started");
+             return;
+        }
+
         let role: 'player' | 'spectator' = 'spectator';
         let queuePos: number | null = null;
         let queueToken: string | undefined;
@@ -217,27 +246,31 @@ export class GameDO extends DurableObject {
             this.cleanupSession(ws); 
         }
 
-        // Logic
-        if (requestedMode === 'player') {
-            if (this.players.size < this.MAX_PLAYERS) {
-                role = 'player';
-                this.players.set(clientId, {
-                    ws, ip: "unknown", clientId, country, 
-                    lastSeen: Date.now(), lastDeltaTime: 0, role: 'player'
-                });
-            } else {
+        // Logic: Try to join as player first
+        if (this.players.size < this.MAX_PLAYERS) {
+            role = 'player';
+            this.players.set(clientId, {
+                ws, ip: "unknown", clientId, country, 
+                lastSeen: Date.now(), lastDeltaTime: 0, role: 'player'
+            });
+        } else {
+            // Player slots full, try queue
+            if (this.queue.length < this.MAX_QUEUE) {
                 role = 'spectator';
                 queueToken = crypto.randomUUID();
                 this.queue.push({ token: queueToken, clientId, joinedAt: Date.now(), ws });
                 queuePos = this.queue.length;
+            } else {
+                // Queue full! Reject connection
+                ws.send(JSON.stringify({ type: 'error', code: 'FULL', message: 'Server is full (Queue Max Reached)' }));
+                ws.close(1008, "Server Full");
+                return;
             }
-        } else {
-            role = 'spectator';
         }
 
         const session: PlayerSession = {
             ws, ip: "unknown", clientId, country, 
-            lastSeen: Date.now(), lastDeltaTime: 0, role, queueToken
+            lastSeen: Date.now(), lastDeltaTime: 0, role, queueToken, warnings: 0
         };
         this.sessions.set(ws, session);
 
@@ -266,13 +299,31 @@ export class GameDO extends DurableObject {
               return;
           }
 
-          // Rate Limit (Simple: 5s interval)
+          // Rate Limit (Strict)
           const now = Date.now();
-          if (now - session.lastDeltaTime < 4500) { // Allow slight drift (4.5s)
-              // Too fast - ignore or warn
-              // ws.send(JSON.stringify({ type: 'error', code: 'RATE_LIMIT', message: 'Too fast' }));
+          const timeSinceLast = now - session.lastDeltaTime;
+          
+          if (timeSinceLast < 4500) { // 4.5s (allowing 0.5s drift for 5s interval)
+              // Too fast!
+              session.warnings = (session.warnings || 0) + 1;
+              
+              if (session.warnings > 3) {
+                  // Abuser detected: Disconnect immediately
+                  try {
+                      ws.send(JSON.stringify({ type: 'error', code: 'RATE_LIMIT_EXCEEDED', message: 'Kicked due to rate limit abuse.' }));
+                      ws.close(1008, "Rate Limit Exceeded");
+                  } catch(e) {}
+                  return;
+              }
+              
+              // Just warn for now
+              ws.send(JSON.stringify({ type: 'error', code: 'TOO_FAST', message: `Too fast! Wait ${Math.ceil((4500 - timeSinceLast)/1000)}s` }));
               return; 
           }
+          
+          // Reset warnings on successful valid click
+          session.warnings = 0;
+          session.lastDeltaTime = now;
 
           const delta = Number(msg.delta);
           if (isNaN(delta) || delta <= 0 || delta > 500) { // Max 500 clicks per 5s (100 CPS limit)
@@ -306,8 +357,19 @@ export class GameDO extends DurableObject {
                       round: this.gameState.round
                   }));
                   
-                  // 2. Rotate Players (Move current players to back of queue)
-                  this.rotatePlayers();
+                  // 2. KICK ALL PLAYERS (They become spectators/poller)
+                  // Winner is also kicked? No, winner needs to stay connected to submit email?
+                  // Wait, if we kick winner, they lose connection.
+                  // BUT winner needs to submit email via HTTP POST /winner. 
+                  // So we CAN kick them, as long as UI handles it.
+                  // HOWEVER, the prompt says "Winner inputs email... THEN kicked".
+                  // So we should NOT kick yet. We wait for FINISHED state.
+                  
+                  // Actually, prompt: "Winner inputs email... 5 mins... THEN kicked."
+                  // Losers: "7s wait... THEN kicked."
+                  
+                  // So here (WINNER_CHECK start), we DO NOT kick yet.
+                  // We kick when transitioning to FINISHED.
 
                   this.saveState(); // Critical
                   this.broadcastState(); // Notify immediately
@@ -379,43 +441,19 @@ export class GameDO extends DurableObject {
       }
   }
 
-  rotatePlayers() {
-      // 1. Move all current players to the BACK of the queue
-      const currentPlayers = Array.from(this.players.values());
+  kickAllPlayers() {
+      // Kick all active players (Winner + Losers)
+      // We do NOT kick the queue (waiting list). They stay for next round.
       
-      // Sort by some criteria if needed, but random/insertion order is fine
-      for (const p of currentPlayers) {
-          p.role = 'spectator';
-          const token = crypto.randomUUID();
-          p.queueToken = token;
-          this.queue.push({ 
-              token, 
-              clientId: p.clientId, 
-              joinedAt: Date.now(), 
-              ws: p.ws 
-          });
-          
-          // Notify them they are now spectators (queued)
-          if (p.ws.readyState === WebSocket.OPEN) {
-              p.ws.send(JSON.stringify({
-                  type: 'join_ok',
-                  role: 'spectator',
-                  queuePos: this.queue.length,
-                  serverTs: Date.now()
-              }));
-          }
+      for (const p of this.players.values()) {
+          try {
+              p.ws.send(JSON.stringify({ type: 'error', code: 'GAME_OVER', message: 'Round finished. Thanks for playing!' }));
+              p.ws.close(1000, "Round Finished");
+          } catch(e) {}
+          // Session cleanup will happen in close handler
       }
-      
-      // Clear active players list
       this.players.clear();
-
-      // 2. Promote spectators from the FRONT of the queue to fill the slots
-      // They become players for the NEXT round, but they can't play yet (status != PLAYING)
-      while (this.players.size < this.MAX_PLAYERS && this.queue.length > 0) {
-          this.promoteFromQueue();
-      }
-      
-      this.broadcastQueueUpdate();
+      // Note: sessions map will be cleared via webSocketClose handlers
   }
 
   broadcastQueueUpdate() {
@@ -448,6 +486,7 @@ export class GameDO extends DurableObject {
           prize: this.gameState.prize,
           prizeUrl: this.gameState.prizeUrl,
           adUrl: this.gameState.adUrl,
+          recentWinners: this.gameState.recentWinners, // Added this field
           rev: this.gameState.rev,
           lastUpdatedAt: this.gameState.lastUpdatedAt
       });
@@ -483,6 +522,12 @@ export class GameDO extends DurableObject {
           this.gameState.status = 'PLAYING';
           this.gameState.winnerInfo = null;
           this.gameState.lastUpdatedAt = Date.now();
+          
+          // Promote Queue to Players
+          while (this.players.size < this.MAX_PLAYERS && this.queue.length > 0) {
+              this.promoteFromQueue();
+          }
+
           details = `Reset Round to ${this.gameState.round}`;
           await this.saveState();
           this.broadcastState();
@@ -505,6 +550,14 @@ export class GameDO extends DurableObject {
           details = `Config Updated`;
           await this.saveState();
           this.broadcastState();
+      } else if (action === "winners" && request.method === "GET") {
+          // Fetch winners list
+          try {
+             const { results } = await this.env.DB.prepare("SELECT * FROM winners ORDER BY id DESC LIMIT 50").all();
+             return new Response(JSON.stringify(results));
+          } catch(e) {
+             return new Response(JSON.stringify([]));
+          }
       } else if (action === "winner" && request.method === "POST") {
            // Manual winner selection or verification?
            // Original had /winner in public API, but it should be protected or part of game logic
@@ -544,6 +597,7 @@ export class GameDO extends DurableObject {
           prize: this.gameState.prize,
           prizeUrl: this.gameState.prizeUrl,
           adUrl: this.gameState.adUrl,
+          recentWinners: this.gameState.recentWinners, // Added this field
           rev: this.gameState.rev,
           lastUpdatedAt: this.gameState.lastUpdatedAt
       }));

@@ -97,7 +97,7 @@ function App() {
   const [route, setRoute] = useState(window.location.hash);
   
   // Custom Hook for API State
-  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken } = useGameState(); 
+  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken, connect } = useGameState(); 
   
   // Local HP for Optimistic Updates
   const [hp, setHp] = useState(1000000);
@@ -483,26 +483,31 @@ function App() {
 
   if (route === '#admin') return <Admin />;
 
-  // Server Full Overlay
-  if (serverError === 'full' || (role === 'spectator' && queuePos)) {
+  // 1. Server Full / Queue Full Error
+  if (serverError === 'FULL') {
       return (
           <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               height: '100vh', background: '#fff0f5', color: '#5d4037', textAlign: 'center', padding: '20px'
           }}>
-              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
-              <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>대기열 {queuePos}위</h1>
+              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🚫</div>
+              <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>대기열 만원</h1>
               <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-                  현재 참여 인원이 많아 대기 중입니다.<br/>
-                  잠시만 기다려주시면 자동으로 입장됩니다.<br/>
-                  (예상 대기 시간: {etaSec ? `${etaSec}초` : '계산 중...'})
+                  현재 참여 가능한 인원이 모두 찼습니다.<br/>
+                  잠시 후 다시 시도해주세요.
               </p>
-              <div className="spinner" style={{
-                  width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
-                  borderRadius: '50%', animation: 'spin 1s linear infinite', marginTop: '30px'
-              }}></div>
+              <button onClick={() => window.location.reload()} style={{
+                  marginTop: '20px', padding: '10px 20px', background: '#ff6f61', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer'
+              }}>새로고침</button>
           </div>
       );
+  }
+
+  // 2. Spectator Mode (Not Connected)
+  if (!connected) {
+      // Polling Mode View
+      // Show Game Area but with overlay if PLAYING
+      // If FINISHED or WINNER_CHECK, just show the state (GameArea handles it)
   }
 
   // Transform server stats for UI
@@ -571,36 +576,65 @@ function App() {
           toggleMobilePanel={toggleMobilePanel}
         />
 
-        <GameArea 
-          lang={lang}
-          hp={hp}
-          isShaking={isShaking}
-          clickPower={clickPower}
-          myPoints={myPoints}
-          isWinner={isWinner}
-          emailSubmitted={emailSubmitted}
-          winnerEmail={winnerEmail}
-          setWinnerEmail={setWinnerEmail}
-          submitWinnerEmail={submitWinnerEmail}
-          handleClick={handleClick}
-          currentTool={currentTool}
-          buyItem={buyItem}
-          notification={notification}
-          handleAdWatch={handleAdWatch}
-          showGuide={showGuide}
-          winnerCountdown={winnerCountdown}
-          exitCountdown={exitCountdown}
-          loserCountdown={loserCountdown}
-          showLoserMessage={showLoserMessage}
-          isSpectating={isSpectating}
-          showRetry={showRetry}
-          handleRetry={handleRetry}
-          clientId={clientId}
-          serverState={serverState}
-          API_URL={API_URL}
-          myCountry={myCountry}
-          winningToken={winningToken}
-        />
+        {/* Game Area Wrapper for Overlays */}
+        <div style={{ position: 'relative', flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <GameArea 
+              lang={lang}
+              hp={hp}
+              isShaking={isShaking}
+              clickPower={clickPower}
+              myPoints={myPoints}
+              isWinner={isWinner}
+              emailSubmitted={emailSubmitted}
+              winnerEmail={winnerEmail}
+              setWinnerEmail={setWinnerEmail}
+              submitWinnerEmail={submitWinnerEmail}
+              handleClick={handleClick}
+              currentTool={currentTool}
+              buyItem={buyItem}
+              notification={notification}
+              handleAdWatch={handleAdWatch}
+              showGuide={showGuide}
+              winnerCountdown={winnerCountdown}
+              exitCountdown={exitCountdown}
+              loserCountdown={loserCountdown}
+              showLoserMessage={showLoserMessage}
+              isSpectating={isSpectating} // This logic needs update in GameArea
+              showRetry={showRetry}
+              handleRetry={handleRetry}
+              clientId={clientId}
+              serverState={serverState}
+              API_URL={API_URL}
+              myCountry={myCountry}
+              winningToken={winningToken}
+              connected={connected}
+            />
+
+            {/* JOIN BUTTON OVERLAY (When NOT connected and PLAYING) */}
+            {!connected && serverState.status === 'PLAYING' && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'rgba(255, 255, 255, 0.4)', // Slightly dim
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: 1000, backdropFilter: 'blur(2px)'
+                }}>
+                    <button 
+                        onClick={connect}
+                        className="pulse-btn"
+                        style={{
+                            padding: '20px 50px', fontSize: '2rem', fontWeight: '900',
+                            background: 'linear-gradient(45deg, #ff6f61, #ff9a9e)',
+                            color: 'white', border: 'none', borderRadius: '50px',
+                            cursor: 'pointer', boxShadow: '0 10px 30px rgba(255, 111, 97, 0.5)',
+                            transform: 'scale(1)', transition: 'transform 0.2s',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                    >
+                        ⚔️ {lang.joinGame || "JOIN GAME"}
+                    </button>
+                </div>
+            )}
+        </div>
 
         <RightPanel 
           lang={lang}

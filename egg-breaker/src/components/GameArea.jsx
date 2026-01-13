@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 // --- 깨지는 알 SVG 컴포넌트 ---
 const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
@@ -111,7 +111,7 @@ const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, showGuide,
     winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry,
-    clientId, serverState, API_URL, myCountry, winningToken
+    clientId, serverState, API_URL, myCountry, winningToken, connected
 }) => {
     const [clickEffects, setClickEffects] = useState([]);
     const stageRef = useRef(null); // 스테이지 좌표 기준점
@@ -128,13 +128,10 @@ const GameArea = ({
              setLocalLoserTimer(null);
         }
         // If I am a player while game is playing, mark as active
-        // (Note: serverState doesn't have 'role', pass it from App if needed? 
-        //  Actually App passes 'isSpectating' which is basically role check.
-        //  If !isSpectating, I am a player.)
-        if (!isSpectating && hp > 0) {
+        if (connected && !isSpectating && hp > 0) {
             wasActivePlayer.current = true;
         }
-    }, [serverState, isSpectating, hp]);
+    }, [serverState, isSpectating, hp, connected]);
 
     // Loser Timer Logic
     useEffect(() => {
@@ -152,7 +149,7 @@ const GameArea = ({
             // Pure spectator sees claiming screen immediately
             setShowWinnerClaiming(true);
         }
-    }, [serverState, clientId, localLoserTimer]);
+    }, [serverState, clientId, localLoserTimer, wasActivePlayer]);
 
     // Helper to format seconds to mm:ss
     const formatTime = (seconds) => {
@@ -162,6 +159,9 @@ const GameArea = ({
     };
 
     const handlePointerDown = (e) => {
+        // Only allow click if connected and playing
+        if (!connected) return; 
+
         // 1. Trigger Game Logic
         handleClick();
 
@@ -216,9 +216,26 @@ const GameArea = ({
     const isMyWin = serverState?.winningClientId === clientId;
     const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
     const isFinished = serverState?.status === 'FINISHED';
+    
+    // Queue Display (If connected but spectating due to full room)
+    const isInQueue = connected && isSpectating && !isWinnerCheck && !isFinished;
 
     return (
         <main className="game-area">
+            {/* Queue Overlay */}
+            {isInQueue && (
+                 <div className="modal-overlay">
+                    <div className="modal-content glass" style={{ textAlign: 'center', padding: '40px' }}>
+                        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
+                        <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>대기열 대기 중...</h1>
+                        <p style={{ fontSize: '1.2rem' }}>잠시만 기다려주세요.</p>
+                        <div className="spinner" style={{
+                            width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
+                            borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '20px auto'
+                        }}></div>
+                    </div>
+                </div>
+            )}
             {notification && (
                 <div style={{
                     position: 'absolute',
