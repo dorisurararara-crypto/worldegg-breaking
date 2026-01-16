@@ -558,6 +558,24 @@ export class GameDO extends DurableObject {
           } catch(e) {
              return new Response(JSON.stringify([]));
           }
+      } else if (action.startsWith("winners/") && request.method === "DELETE") {
+          const id = action.split("/")[1];
+          if (!id) return new Response("Missing ID", { status: 400 });
+
+          try {
+             await this.env.DB.prepare("DELETE FROM winners WHERE id = ?").bind(id).run();
+             details = `Deleted winner ID ${id}`;
+
+             // Reload recent winners to reflect deletion
+             const { results } = await this.env.DB.prepare(
+                "SELECT round, prize, created_at as date FROM winners ORDER BY id DESC LIMIT 5"
+             ).all();
+             if (results) this.gameState.recentWinners = results;
+             this.broadcastState();
+
+          } catch(e) {
+             return new Response("DB Error: " + e, { status: 500 });
+          }
       } else if (action === "winner" && request.method === "POST") {
            // Manual winner selection or verification?
            // Original had /winner in public API, but it should be protected or part of game logic
