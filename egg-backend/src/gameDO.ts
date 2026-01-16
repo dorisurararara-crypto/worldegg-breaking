@@ -531,6 +531,13 @@ export class GameDO extends DurableObject {
           details = `Reset Round to ${this.gameState.round}`;
           await this.saveState();
           this.broadcastState();
+      } else if (action === "set-round" && request.method === "POST") {
+          const body: any = await request.json();
+          this.gameState.round = body.round;
+          this.gameState.lastUpdatedAt = Date.now();
+          details = `Set Round to ${body.round}`;
+          await this.saveState();
+          this.broadcastState();
       } else if (action === "set-hp" && request.method === "POST") {
           const body: any = await request.json();
           this.gameState.hp = body.hp;
