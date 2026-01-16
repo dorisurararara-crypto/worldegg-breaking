@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "956289198740",
+    "project_id": "egg-break2",
+    "storage_bucket": "egg-break2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:956289198740:android:ceadd5c2a2d6fc9b1b6281",
+        "android_client_info": {
+          "package_name": "com.funweb.eggbreaker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwP5uS94b8tbRO1vk_6shfZNnNN82IJcY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

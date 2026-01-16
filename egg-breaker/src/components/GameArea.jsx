@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { NativeAudio } from '@capacitor-community/native-audio';
+import { Capacitor } from '@capacitor/core';
 
 // --- 깨지는 알 SVG 컴포넌트 ---
 const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
@@ -6,8 +9,9 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
 
     // 체력에 따른 금(Crack) 단계 결정
     const showCrack1 = percentage < 80;
-    const showCrack2 = percentage < 50;
+    const showCrack2 = percentage < 70;
     const showCrack3 = percentage < 20;
+    const isCritical = percentage < 20 && hp > 0; // Critical Phase (Dark Mode)
 
     // 표정 결정 로직
     let eyeLeft = <circle cx="75" cy="110" r="8" fill="#5d4037" />;
@@ -25,12 +29,30 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
         eyeLeft = <path d="M68 103 L82 117 M82 103 L68 117" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
         eyeRight = <path d="M118 103 L132 117 M132 103 L118 117" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
         mouth = <circle cx="100" cy="140" r="10" fill="none" stroke="#5d4037" strokeWidth="3" />; // O 입
+    } else if (isCritical) {
+        // 폭주/위기 상태 (붉은 눈, 뾰족한 이빨)
+        eyeLeft = (
+            <g>
+                 <path d="M65 105 L85 115 L65 120" fill="red" /> {/* Sharp Red Eye */}
+                 <circle cx="72" cy="112" r="2" fill="#fff" />
+            </g>
+        );
+        eyeRight = (
+            <g>
+                 <path d="M135 105 L115 115 L135 120" fill="red" /> {/* Sharp Red Eye */}
+                 <circle cx="128" cy="112" r="2" fill="#fff" />
+            </g>
+        );
+        mouth = (
+             <path d="M85 140 L90 130 L95 140 L100 130 L105 140 L110 130 L115 140" fill="none" stroke="#5d4037" strokeWidth="2" /> // Jagged teeth
+        );
+        blush = null; // No blush when angry
     } else if (isShaking) {
         // 아픔 (> < 눈)
         eyeLeft = <path d="M68 110 L75 117 L82 110" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
         eyeRight = <path d="M118 110 L125 117 L132 110" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
         mouth = <circle cx="100" cy="140" r="6" fill="#5d4037" />; // 'o' 입
-    } else if (percentage < 30) {
+    } else if (percentage < 70) { // Changed threshold for Sad face
         // 힘듦 (울상)
         eyeLeft = <path d="M68 115 Q75 105 82 115" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
         eyeRight = <path d="M118 115 Q125 105 132 115" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
@@ -49,20 +71,25 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
             <svg viewBox="0 0 200 250" className="egg-svg" style={{ overflow: 'visible' }}>
                 <defs>
                     <radialGradient id="eggGradient" cx="40%" cy="30%" r="80%">
-                        <stop offset="0%" stopColor="#ffdde1" />
-                        <stop offset="100%" stopColor="#ff9a9e" />
+                        <stop offset="0%" stopColor={isCritical ? "#800000" : "#ffdde1"} /> {/* Dark Red when critical */}
+                        <stop offset="100%" stopColor={isCritical ? "#200000" : "#ff9a9e"} />
                     </radialGradient>
                     <filter id="glow">
                         <feGaussianBlur stdDeviation="4" result="coloredBlur" />
                         <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
                     </filter>
+                    {isCritical && (
+                         <filter id="redGlow">
+                            <feDropShadow dx="0" dy="0" stdDeviation="10" floodColor="red" />
+                         </filter>
+                    )}
                 </defs>
 
                 {/* 1. 알 본체 - 여기에만 클릭 이벤트를 줍니다 (정밀 타격) */}
                 <ellipse 
                     cx="100" cy="125" rx="80" ry="110" 
                     fill="url(#eggGradient)" 
-                    filter="url(#glow)" 
+                    filter={isCritical ? "url(#redGlow)" : "url(#glow)"} 
                     onPointerDown={onEggClick}
                     style={{ cursor: 'pointer', touchAction: 'none' }} 
                 />
@@ -118,6 +145,246 @@ const GameArea = ({
     const wasActivePlayer = useRef(false);
     const [localLoserTimer, setLocalLoserTimer] = useState(null);
     const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
+    
+    // Settings Toggle State
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    
+    // --- Sound State (Persisted in localStorage) ---
+    const [audioLoaded, setAudioLoaded] = useState(false); 
+
+    const [isSoundOn, setIsSoundOn] = useState(() => {
+        const saved = localStorage.getItem('soundOn');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    const [isBgmOn, setIsBgmOn] = useState(() => {
+        const saved = localStorage.getItem('bgmOn');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    // BGM & SFX Refs
+    const webAudioRefs = useRef({});
+    const bgmRef = useRef(null); // For Web Audio BGM
+    const currentPhaseRef = useRef('none');
+
+    useEffect(() => {
+        const sounds = [
+            'fist', 'hammer', 'pickaxe', 'dynamite', 'drill', 'excavator', 'laser', 'nuke', 
+            'buy', 'win'
+        ];
+
+        const loadSounds = async () => {
+            if (Capacitor.isNativePlatform()) {
+                // Native: Preload SFX
+                for (const sound of sounds) {
+                    try {
+                        try { await NativeAudio.unload({ assetId: sound }); } catch(e){}
+                        await NativeAudio.preload({
+                            assetId: sound,
+                            assetPath: `public/sounds/${sound}.mp3`,
+                            audioChannelNum: 1,
+                            isUrl: false
+                        });
+                    } catch (e) { 
+                        console.error(`NativeAudio preload failed for ${sound}:`, e); 
+                    }
+                }
+                
+                // Native: Preload BGM
+                const bgms = ['bgm_peace', 'bgm_tense', 'bgm_danger'];
+                for (const bgm of bgms) {
+                     try {
+                        try { await NativeAudio.unload({ assetId: bgm }); } catch(e){}
+                        await NativeAudio.preload({
+                            assetId: bgm,
+                            assetPath: `public/sounds/${bgm}.mp3`,
+                            audioChannelNum: 1,
+                            isUrl: false
+                        });
+                    } catch (e) { 
+                        console.error(`NativeAudio preload BGM failed for ${bgm}:`, e);
+                    }
+                }
+                setAudioLoaded(true); // Signal completion
+
+            } else {
+                // Web: Preload using HTML5 Audio
+                sounds.forEach(sound => {
+                    const audio = new Audio(`/sounds/${sound}.mp3`);
+                    audio.volume = 0.6;
+                    webAudioRefs.current[sound] = audio;
+                });
+                setAudioLoaded(true);
+            }
+        };
+
+        loadSounds();
+
+        return () => {
+            if (Capacitor.isNativePlatform()) {
+                sounds.forEach(sound => NativeAudio.unload({ assetId: sound }).catch(() => {}));
+                ['bgm_peace', 'bgm_tense', 'bgm_danger'].forEach(bgm => NativeAudio.unload({ assetId: bgm }).catch(() => {}));
+            }
+            if (bgmRef.current) { bgmRef.current.pause(); bgmRef.current = null; }
+        };
+    }, []);
+
+    // --- Visual Theme Logic (Separated from Audio) ---
+    useEffect(() => {
+        // HP가 0 이하이면 처리는 하되, 테마는 유지하거나 별도 처리 가능
+        // 여기서는 HP에 따라 배경만 즉시 변경
+        const percentage = (hp / 1000000) * 100;
+        
+        // Remove old themes first
+        document.documentElement.classList.remove('dark-theme', 'tense-theme');
+        document.body.classList.remove('dark-theme', 'tense-theme');
+
+        if (percentage < 20 && hp > 0) {
+            document.documentElement.classList.add('dark-theme');
+            document.body.classList.add('dark-theme');
+        } else if (percentage < 70 && hp > 0) {
+            document.documentElement.classList.add('tense-theme');
+            document.body.classList.add('tense-theme');
+        }
+    }, [hp]);
+
+    // --- Audio Logic (BGM) ---
+    useEffect(() => {
+        if (!audioLoaded) return; // Wait for load
+
+        if (!isBgmOn || hp <= 0) {
+            // 소리 끄기 또는 사망 시
+            if (currentPhaseRef.current !== 'none') {
+                stopBgm();
+                currentPhaseRef.current = 'none';
+            }
+            return;
+        }
+
+        const percentage = (hp / 1000000) * 100;
+        let newPhase = 'peace';
+        if (percentage < 20) newPhase = 'danger';
+        else if (percentage < 70) newPhase = 'tense';
+
+        if (newPhase !== currentPhaseRef.current) {
+            playBgm(newPhase);
+            currentPhaseRef.current = newPhase;
+        }
+    }, [hp, isBgmOn, audioLoaded]);
+
+    const stopBgm = async () => {
+        if (Capacitor.isNativePlatform()) {
+            try {
+                await NativeAudio.stop({ assetId: 'bgm_peace' });
+                await NativeAudio.stop({ assetId: 'bgm_tense' });
+                await NativeAudio.stop({ assetId: 'bgm_danger' });
+            } catch(e) {}
+        } else {
+            if (bgmRef.current) {
+                bgmRef.current.pause();
+                bgmRef.current = null;
+            }
+        }
+    };
+
+    const playBgm = async (phase) => {
+        const trackName = `bgm_${phase}`;
+        
+        // Stop others strictly before starting new one
+        await stopBgm();
+
+        if (Capacitor.isNativePlatform()) {
+            try {
+                // 1. Set Volume
+                await NativeAudio.setVolume({ assetId: trackName, volume: 0.8 });
+                
+                // 2. Play first (To wake up the audio channel reliability)
+                await NativeAudio.play({ assetId: trackName });
+                
+                // 3. Loop (For continuous play)
+                await NativeAudio.loop({ assetId: trackName });
+                
+            } catch(e) { 
+                console.log("BGM Play/Loop Error:", e);
+            }
+        } else {
+            const audio = new Audio(`/sounds/${trackName}.mp3`);
+            audio.loop = true;
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log("Web BGM play failed", e));
+            bgmRef.current = audio;
+        }
+    };
+    
+    // --- Helper to resume Audio Context on Web ---
+    const checkWebAudioAutoplay = () => {
+        if (!Capacitor.isNativePlatform() && isBgmOn && bgmRef.current && bgmRef.current.paused) {
+            bgmRef.current.play().catch(e => console.log("Still blocked", e));
+        }
+    };
+
+    const toggleSound = () => {
+        setIsSoundOn(prev => {
+            const newState = !prev;
+            localStorage.setItem('soundOn', JSON.stringify(newState));
+            return newState;
+        });
+    };
+
+    const toggleBgm = () => {
+        setIsBgmOn(prev => {
+            const newState = !prev;
+            localStorage.setItem('bgmOn', JSON.stringify(newState));
+            return newState;
+        });
+    };
+
+    const playToolSound = async (tool) => {
+        if (!isSoundOn) return;
+        const soundName = tool || 'fist';
+
+        if (Capacitor.isNativePlatform()) {
+            try {
+                await NativeAudio.play({ assetId: soundName });
+            } catch (e) {
+                // console.error("Native play error", e);
+            }
+        } else {
+            const audio = webAudioRefs.current[soundName];
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log('Web Audio play failed', e));
+            }
+        }
+    };
+
+    // --- Vibration State (Persisted in localStorage) ---
+    const [isVibrationOn, setIsVibrationOn] = useState(() => {
+        const saved = localStorage.getItem('vibrationOn');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    const toggleVibration = () => {
+        setIsVibrationOn(prev => {
+            const newState = !prev;
+            localStorage.setItem('vibrationOn', JSON.stringify(newState));
+            if (newState) {
+                // Test vibration when turning on
+                Haptics.impact({ style: ImpactStyle.Light });
+            }
+            return newState;
+        });
+    };
+
+    const triggerVibration = async () => {
+        if (isVibrationOn) {
+            try {
+                await Haptics.impact({ style: ImpactStyle.Medium });
+            } catch (e) {
+                // Ignore errors (e.g., if running on web without support)
+            }
+        }
+    };
 
     // Track if I was a player in this round
     useEffect(() => {
@@ -161,6 +428,11 @@ const GameArea = ({
     const handlePointerDown = (e) => {
         // Only allow click if connected and playing
         if (!connected) return; 
+
+        // 0. Trigger Vibration & Sound & Check Autoplay
+        checkWebAudioAutoplay();
+        triggerVibration();
+        playToolSound(currentTool);
 
         // 1. Trigger Game Logic
         handleClick();
@@ -262,6 +534,143 @@ const GameArea = ({
                 </div>
             )}
 
+            {/* Gear Icon (Toggle Settings) */}
+            <button 
+                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    width: '45px',
+                    height: '45px',
+                    borderRadius: '50%',
+                    border: '2px solid rgba(255,255,255,0.8)',
+                    background: 'rgba(255,255,255,0.4)',
+                    backdropFilter: 'blur(5px)',
+                    color: '#5d4037',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    zIndex: 51,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                    transition: 'transform 0.2s'
+                }}
+            >
+                ⚙️
+            </button>
+
+            {/* Settings Box (Conditionally Rendered) */}
+            {isSettingsOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: '75px', // Below the gear icon
+                    right: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '15px',
+                    zIndex: 50,
+                    background: 'rgba(255, 255, 255, 0.85)',
+                    padding: '20px',
+                    borderRadius: '20px',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                    border: '1px solid rgba(255,255,255,0.9)',
+                    minWidth: '150px',
+                    animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                }}>
+                    {/* Sound Toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#5d4037' }}>효과음</span>
+                        <div 
+                            onClick={toggleSound}
+                            style={{
+                                width: '50px',
+                                height: '28px',
+                                background: isSoundOn ? '#ff9a9e' : '#e0e0e0',
+                                borderRadius: '30px',
+                                position: 'relative',
+                                cursor: 'pointer',
+                                transition: 'background 0.3s'
+                            }}
+                        >
+                            <div style={{
+                                width: '24px',
+                                height: '24px',
+                                background: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: isSoundOn ? '24px' : '2px',
+                                transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                            }} />
+                        </div>
+                    </div>
+
+                    {/* BGM Toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#5d4037' }}>배경음</span>
+                        <div 
+                            onClick={toggleBgm}
+                            style={{
+                                width: '50px',
+                                height: '28px',
+                                background: isBgmOn ? '#ff9a9e' : '#e0e0e0',
+                                borderRadius: '30px',
+                                position: 'relative',
+                                cursor: 'pointer',
+                                transition: 'background 0.3s'
+                            }}
+                        >
+                            <div style={{
+                                width: '24px',
+                                height: '24px',
+                                background: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: isBgmOn ? '24px' : '2px',
+                                transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                            }} />
+                        </div>
+                    </div>
+
+                    {/* Vibration Toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#5d4037' }}>진동</span>
+                        <div 
+                            onClick={toggleVibration}
+                            style={{
+                                width: '50px',
+                                height: '28px',
+                                background: isVibrationOn ? '#ff9a9e' : '#e0e0e0',
+                                borderRadius: '30px',
+                                position: 'relative',
+                                cursor: 'pointer',
+                                transition: 'background 0.3s'
+                            }}
+                        >
+                            <div style={{
+                                width: '24px',
+                                height: '24px',
+                                background: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: isVibrationOn ? '24px' : '2px',
+                                transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                            }} />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Debug Console Removed */}
+            
             <div className="header-glow">
                 <h1 className="title">{lang.title}</h1>
                 <p className="subtitle">{lang.subtitle}</p>

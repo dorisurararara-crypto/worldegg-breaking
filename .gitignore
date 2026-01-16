@@ -3,4 +3,4 @@ dist
 .env
 *.msi
 .DS_Store
-.wrangler
+.wrangler.idea

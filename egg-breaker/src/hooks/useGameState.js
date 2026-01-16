@@ -17,7 +17,7 @@ export function useGameState() {
     hp: 1000000,
     maxHp: 1000000,
     round: 1,
-    status: 'FINISHED', // Default to safe state
+    status: 'LOADING', // Changed from FINISHED to debug
     clicksByCountry: {},
     onlinePlayers: 0,
     onlineSpectatorsApprox: 0,
@@ -47,16 +47,21 @@ export function useGameState() {
   // --- 1. Polling Logic (Default) ---
   const fetchState = async () => {
       try {
+          console.log(`[Polling] Fetching ${API_URL}/state`); // Log attempt
           const res = await fetch(`${API_URL}/state`);
           if (res.ok) {
               const data = await res.json();
+              console.log("[Polling] Success:", data); // Log success
               setServerState(prev => {
                   if (data.lastUpdatedAt < prev.lastUpdatedAt && data.round === prev.round) return prev;
                   return data;
               });
+          } else {
+             console.error(`[Polling] Failed: ${res.status}`);
           }
       } catch (e) {
-          // console.error("Polling error", e);
+          console.error("[Polling] Error:", e); // Log specific error
+          setServerState(prev => ({ ...prev, status: 'ERROR', announcement: e.message }));
       }
   };
 

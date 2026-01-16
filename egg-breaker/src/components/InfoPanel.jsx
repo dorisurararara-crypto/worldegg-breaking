@@ -1,10 +1,50 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 
 const InfoPanel = ({ lang, recentWinners, prize, prizeUrl, isOpen, toggleMobilePanel }) => {
+  // --- Swipe Logic ---
+  const [translateY, setTranslateY] = useState(0);
+  const touchStartY = useRef(0);
+  const isDragging = useRef(false);
+
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = true;
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging.current) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStartY.current;
+    if (diff > 0) {
+        setTranslateY(diff);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    if (translateY > 100) {
+        toggleMobilePanel('none');
+    }
+    setTranslateY(0);
+  };
+
   return (
-    <aside className={`panel info-panel glass ${isOpen ? 'active' : ''}`}>
-      <div className="panel-header">
-        <h3>🎁 {lang.hallOfFame}</h3>
+    <aside 
+        className={`panel info-panel glass ${isOpen ? 'active' : ''}`} 
+        style={{ 
+            overflowY: 'auto',
+            transform: isOpen ? `translateY(${translateY}px)` : undefined,
+            transition: isDragging.current ? 'none' : 'transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)'
+        }}
+    >
+      <div 
+        className="panel-header"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ cursor: 'grab', touchAction: 'none' }}
+      >
+        <h3>{lang.hallOfFame}</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
       

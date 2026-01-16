@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { NativeAudio } from '@capacitor-community/native-audio';
+import { Capacitor } from '@capacitor/core';
 import { useGameState } from './hooks/useGameState';
+import { usePushNotifications } from './hooks/usePushNotifications';
 import './App.css';
 import Admin from './Admin';
 import Header from './components/Header';
@@ -98,6 +101,9 @@ function App() {
   
   // Custom Hook for API State
   const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken, connect } = useGameState(); 
+  
+  // Custom Hook for Push Notifications
+  usePushNotifications(API_URL, clientId);
   
   // Local HP for Optimistic Updates
   const [hp, setHp] = useState(1000000);
@@ -371,12 +377,26 @@ function App() {
     localStorage.setItem('egg_breaker_clicks', newTotalClicks.toString());
   };
 
-  const buyItem = (cost, powerAdd, toolName) => {
+  const buyItem = async (cost, powerAdd, toolName) => {
     if (myPoints >= cost) {
       setMyPoints(prev => prev - cost);
       setClickPower(prev => prev + powerAdd);
       setCurrentTool(toolName);
       
+      // Play Buy Sound (Hybrid)
+      try {
+          if (Capacitor.isNativePlatform()) {
+              // Assuming 'buy' is preloaded in GameArea, but App might be separate.
+              // Safer to load-and-play or assume GameArea loaded it. 
+              // NativeAudio shares state globally per app.
+              await NativeAudio.play({ assetId: 'buy' });
+          } else {
+              const audio = new Audio('/sounds/buy.mp3');
+              audio.volume = 0.5;
+              audio.play();
+          }
+      } catch(e) { console.log('Buy sound error', e); }
+
       const localizedToolName = lang[TOOL_NAMES[toolName]] || toolName;
       alert(`${lang.bought} ${localizedToolName}!`);
       showNotification(`${lang.bought} ${localizedToolName}!`);
@@ -499,6 +519,37 @@ function App() {
               <button onClick={() => window.location.reload()} style={{
                   marginTop: '20px', padding: '10px 20px', background: '#ff6f61', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer'
               }}>새로고침</button>
+          </div>
+      );
+  }
+
+  // Debug: Loading State
+  if (serverState.status === 'LOADING') {
+      return (
+          <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              height: '100vh', background: '#fff'
+          }}>
+              <h2>🔄 Connecting...</h2>
+              <p>서버와 연결 중입니다.</p>
+          </div>
+      );
+  }
+
+  // Debug: Error State
+  if (serverState.status === 'ERROR') {
+      return (
+          <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              height: '100vh', background: '#fff', padding: '20px', textAlign: 'center'
+          }}>
+              <h2 style={{color: 'red'}}>⚠️ Connection Error</h2>
+              <p>{serverState.announcement}</p>
+              <p style={{fontSize: '0.8rem', color: '#666', marginTop: '10px'}}>
+                  Check your internet connection or server URL.
+              </p>
+              <p style={{fontSize: '0.7rem', color: '#aaa'}}>API: {API_URL}</p>
+              <button onClick={() => window.location.reload()} style={{marginTop: '20px'}}>Retry</button>
           </div>
       );
   }

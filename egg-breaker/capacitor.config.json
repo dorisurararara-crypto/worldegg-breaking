@@ -1,0 +1,6 @@
+{
+  "appId": "com.funweb.eggbreaker",
+  "appName": "egg-breaker",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
