@@ -553,12 +553,19 @@ export class GameDO extends DurableObject {
           this.gameState.winnerInfo = null;
           this.gameState.lastUpdatedAt = Date.now();
           
+          // Clear invites table for the new round
+          try {
+              await this.env.DB.prepare("DELETE FROM invites").run();
+          } catch (e) {
+              console.error("Failed to clear invites:", e);
+          }
+          
           // Promote all possible players
           while (this.players.size < this.MAX_PLAYERS && this.queue.length > 0) {
               this.promoteFromQueue();
           }
           
-          details = `Reset Round to ${this.gameState.round}`;
+          details = `Reset Round to ${this.gameState.round} (Invites Cleared)`;
           await this.saveState();
           this.broadcastState();
 
