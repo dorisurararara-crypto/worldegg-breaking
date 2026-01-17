@@ -195,6 +195,9 @@ function Admin() {
             <button onClick={() => callAdminApi('reset-users')} style={{ background: '#ffc107', color: 'black', border: 'none', padding: '15px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
                 👥 접속자 0명<br/><span style={{fontSize:'0.8rem', fontWeight:'normal'}}>(초기화)</span>
             </button>
+            <button onClick={() => callAdminApi('check-invites')} style={{ background: '#6c757d', color: 'white', border: 'none', padding: '15px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', gridColumn: '1 / -1' }}>
+                🔍 초대 기록 확인<br/><span style={{fontSize:'0.8rem', fontWeight:'normal'}}>(DB 상태 점검)</span>
+            </button>
           </div>
         </div>
 
