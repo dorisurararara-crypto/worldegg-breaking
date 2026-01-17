@@ -466,7 +466,7 @@ function App() {
           } else {
               if (!buyAudioRef.current) {
                   buyAudioRef.current = new Audio('/sounds/buy.mp3');
-                  buyAudioRef.current.volume = 0.5;
+                  buyAudioRef.current.volume = 1.0;
               }
               buyAudioRef.current.currentTime = 0;
               buyAudioRef.current.play().catch(e => console.log("Buy sound fail", e));
