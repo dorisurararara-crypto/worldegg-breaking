@@ -733,11 +733,11 @@ function App() {
       {mobilePanel === 'none' && (
         <>
           <div className={`swipe-guide left ${hasSwiped ? 'used' : ''}`}>
-            <span>→</span>
+            <span>👉</span>
             <span className="swipe-label">{lang.users}</span>
           </div>
           <div className={`swipe-guide right ${hasSwiped ? 'used' : ''}`}>
-            <span>←</span>
+            <span>👈</span>
             <span className="swipe-label">{lang.shop}</span>
           </div>
         </>

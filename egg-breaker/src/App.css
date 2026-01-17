@@ -920,19 +920,65 @@ html.dark-theme .game-area, body.dark-theme .game-area {
   100% { opacity: 0; transform: translate(-50%, -120px) scale(1.5) rotate(10deg); }
 }
 
-/* Swipe Guides - Cuter labels */
+/* Swipe Guides - Cuter & Better Positioned */
 .swipe-guide {
-  width: 40px;
-  height: 140px;
-  background: rgba(255, 255, 255, 0.4);
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  position: fixed;
+  top: 55%;
+  transform: translateY(-50%);
+  width: 45px;
+  height: 90px;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+  pointer-events: none;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 25px rgba(255, 111, 97, 0.15);
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.swipe-guide.used {
+  opacity: 0.15 !important;
+  transform: translateY(-50%) scale(0.85);
+}
+
+.swipe-guide.left {
+  left: -5px;
+  border-radius: 0 30px 30px 0;
+  animation: swipePulseLeft 3s infinite ease-in-out;
+}
+
+.swipe-guide.right {
+  right: -5px;
+  border-radius: 30px 0 0 30px;
+  animation: swipePulseRight 3s infinite ease-in-out;
 }
 
 .swipe-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #ff6f61;
-  text-shadow: 1px 1px 0 #fff;
+  font-weight: 900;
+  writing-mode: vertical-lr;
+  margin-top: 5px;
+  letter-spacing: 1px;
+}
+
+@keyframes swipePulseLeft {
+  0%, 100% { transform: translateY(-50%) translateX(0); }
+  50% { transform: translateY(-50%) translateX(12px); }
+}
+
+@keyframes swipePulseRight {
+  0%, 100% { transform: translateY(-50%) translateX(0); }
+  50% { transform: translateY(-50%) translateX(-12px); }
+}
+
+/* 제목 위치 상향 조정하여 겹침 방지 */
+.header-glow {
+  margin-bottom: 25px;
 }
 
 /* 쿠팡 문구 영역도 귀엽게 */
