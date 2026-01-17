@@ -72,6 +72,9 @@ export class GameDO extends DurableObject {
   lastBroadcastTime: number = 0;
   lastBroadcastPlayers: number = -1;
 
+  // Version Tracking (Force Update)
+  codeVersion: string = "v1.1"; 
+
   constructor(state: DurableObjectState, env: any) {
     super(state, env);
     this.state = state;
