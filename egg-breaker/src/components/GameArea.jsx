@@ -588,20 +588,22 @@ const GameArea = ({
             <div 
                 style={{
                     position: 'absolute',
-                    top: '20px',
-                    right: '20px',
+                    top: '10px',
+                    right: '10px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '10px',
+                    gap: '8px',
                     zIndex: 100,
-                    padding: '15px',
-                    borderRadius: '20px',
-                    background: isSettingsFocused ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.1)',
+                    padding: '12px',
+                    borderRadius: '18px',
+                    background: isSettingsFocused ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.15)',
+                    border: isSettingsFocused ? '2px solid #fff' : '1px solid rgba(255, 255, 255, 0.3)',
+                    boxShadow: isSettingsFocused ? '0 10px 25px rgba(0,0,0,0.1)' : 'none',
                     backdropFilter: isSettingsFocused ? 'blur(10px)' : 'none',
-                    transition: 'all 0.4s ease',
-                    opacity: isSettingsFocused ? 1 : 0.2, 
+                    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    opacity: isSettingsFocused ? 1 : 0.25, 
                     cursor: 'pointer',
-                    minWidth: '130px'
+                    minWidth: '110px'
                 }}
                 onClick={(e) => {
                     e.stopPropagation();
@@ -614,14 +616,14 @@ const GameArea = ({
                     { label: '배경음', active: isBgmOn, toggle: toggleBgm },
                     { label: '진동', active: isVibrationOn, toggle: toggleVibration }
                 ].map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#5d4037' }}>{item.label}</span>
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#5d4037' }}>{item.label}</span>
                         <div 
                             onClick={(e) => { e.stopPropagation(); item.toggle(); }}
                             style={{
-                                width: '40px',
-                                height: '22px',
-                                background: item.active ? '#ff9a9e' : '#ccc',
+                                width: '36px',
+                                height: '20px',
+                                background: item.active ? '#ff9a9e' : '#bbb',
                                 borderRadius: '20px',
                                 position: 'relative',
                                 transition: 'background 0.3s',
@@ -629,13 +631,13 @@ const GameArea = ({
                             }}
                         >
                             <div style={{
-                                width: '18px',
-                                height: '18px',
+                                width: '16px',
+                                height: '16px',
                                 background: '#fff',
                                 borderRadius: '50%',
                                 position: 'absolute',
                                 top: '2px',
-                                left: item.active ? '20px' : '2px',
+                                left: item.active ? '18px' : '2px',
                                 transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                             }} />
