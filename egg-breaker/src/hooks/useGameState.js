@@ -1,13 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 // VITE_API_URL should be set
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8787";
+let rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:8787";
+// Normalize URL: remove trailing /api or /
+if (rawApiUrl.endsWith('/api')) {
+    rawApiUrl = rawApiUrl.substring(0, rawApiUrl.length - 4);
+}
+if (rawApiUrl.endsWith('/')) {
+    rawApiUrl = rawApiUrl.substring(0, rawApiUrl.length - 1);
+}
+const API_URL = rawApiUrl;
 
 const getWsUrl = (apiUrl) => {
-    let url = apiUrl;
-    if (url.endsWith('/api')) url = url.substring(0, url.length - 4);
-    if (url.endsWith('/')) url = url.substring(0, url.length - 1);
-    return url.replace(/^http/, 'ws') + "/ws";
+    return apiUrl.replace(/^http/, 'ws') + "/ws";
 };
 
 const WS_URL = getWsUrl(API_URL);
