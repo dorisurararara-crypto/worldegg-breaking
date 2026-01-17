@@ -104,7 +104,8 @@ function Admin() {
       const json = await res.json();
       
       if (res.ok) {
-        alert(json.details || "성공적으로 처리되었습니다!"); // 서버에서 보낸 상세 메시지 출력
+        // 디버깅: 서버 응답 전체를 보여줌
+        alert(JSON.stringify(json, null, 2)); 
         fetchState(); // UI 갱신
       } else {
         alert(`오류 발생: ${json.error || res.status}`);
