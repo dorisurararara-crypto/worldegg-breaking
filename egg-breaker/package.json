@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/cleanup-prizes.js",
+    "prebuild": "node scripts/cleanup-prizes.cjs",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
