@@ -101,11 +101,13 @@ function Admin() {
         body: JSON.stringify(body)
       });
       
+      const json = await res.json();
+      
       if (res.ok) {
-        alert("성공적으로 처리되었습니다!");
+        alert(json.details || "성공적으로 처리되었습니다!"); // 서버에서 보낸 상세 메시지 출력
         fetchState(); // UI 갱신
       } else {
-        alert(`오류 발생: ${res.status}`);
+        alert(`오류 발생: ${json.error || res.status}`);
       }
     } catch (e) {
       alert("네트워크 오류가 발생했습니다.");
