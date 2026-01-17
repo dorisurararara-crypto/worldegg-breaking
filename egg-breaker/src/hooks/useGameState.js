@@ -102,7 +102,10 @@ export function useGameState() {
 
   // --- 2. WebSocket Logic (On-Demand) ---
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    // Prevent duplicate connection if already connected or connecting
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
 
     const url = `${WS_URL}?mode=player`; // Always try to be player/queue
     const ws = new WebSocket(url);
