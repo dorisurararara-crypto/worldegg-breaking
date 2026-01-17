@@ -15,7 +15,7 @@ const Header = ({ lang, myCountry, getFlagEmoji, onToggleLanguage, showCountrySe
 
       {/* 2. Center: Logo */}
       <div className="logo-container">
-        <span className="logo-text">{lang.logo}</span>
+        <span className="logo-text title">{lang.logo}</span>
       </div>
 
       {/* 3. Right Group */}

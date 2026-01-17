@@ -801,162 +801,146 @@ html.dark-theme .game-area, body.dark-theme .game-area {
       justify-content: flex-start;
   }
 
-  /* Side Slide Transformation */
-  .panel {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    width: 85%;
-    height: 100vh;
-    z-index: 2000;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    transform: translateX(-100%); /* Default hide to left */
-    opacity: 1;
-    pointer-events: auto;
-    transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1);
-    border: none;
-    box-shadow: 0 0 40px rgba(0,0,0,0.15);
-    display: flex;
-    flex-direction: column;
-  }
-
-  .left-panel {
-    left: 0;
-    transform: translateX(-100%);
-    border-radius: 0 30px 30px 0;
-  }
-
-  .right-panel {
-    right: 0;
-    left: auto;
-    transform: translateX(100%);
-    border-radius: 30px 0 0 30px;
-  }
-  
-  .info-panel {
-    left: 0;
-    transform: translateX(-100%);
-    border-radius: 0 30px 30px 0;
-  }
-
-  .panel.active {
-    transform: translateX(0); /* Slide in */
-  }
-
-  /* Handle Bar Hidden for Side Panels */
-  .panel-header::before {
-      display: none;
-  }
-
-  .mobile-toggle-btn {
-    display: flex;
-  }
-
-  .panel-close-btn {
-    display: flex;
-    background: #f5f5f5;
-    color: #888;
-    width: 32px;
-    height: 32px;
-  }
-
-  .logo {
-    font-size: 1.3rem;
-  }
-  
-  .egg-svg-container {
-    max-width: 75%;
-  }
-
-  .panel h3 {
-    font-size: 1.1rem;
-    margin-top: 5px;
-  }
-
-  /* Cute Shop Cards for Mobile */
-  .shop-item {
-      padding: 15px;
-      margin-bottom: 12px;
-      border-radius: 18px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-      border: 1px solid rgba(0,0,0,0.02);
-  }
-  
-  .shop-item .icon {
-      font-size: 2.5rem;
-      background: #fff5f5;
-      width: 60px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 15px;
-  }
-  
-  .shop-item .info {
-      flex: 1;
-      padding-left: 5px;
-  }
-  
-  /* Rivalry Widget Tweaks */
-  .rivalry-widget {
-      background: linear-gradient(to right, rgba(255,255,255,0.8), rgba(255,240,245,0.8)) !important;
-      box-shadow: 0 4px 15px rgba(255,182,193,0.2);
-  }
-
-  /* --- Swipe Guide Styles --- */
-  .swipe-guide {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 35px;
-    height: 120px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(3px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 90;
-    pointer-events: none;
-    border-radius: 15px;
-    color: #ff6f61;
-    font-size: 1.2rem;
-    transition: opacity 0.5s;
-  }
-
-  .swipe-guide.used {
-    opacity: 0.15 !important; /* 희미하게 계속 유지 */
-  }
-
-  .swipe-guide.left {
-    left: 5px;
-    animation: swipePulse 3s infinite;
-  }
-
-  .swipe-guide.right {
-    right: 5px;
-    animation: swipePulseRight 3s infinite;
-  }
-
-  .swipe-label {
-    font-size: 0.55rem;
-    font-weight: bold;
-    writing-mode: vertical-lr;
-    margin-top: 8px;
-    opacity: 0.8;
-  }
-
-  @keyframes swipePulse {
-    0%, 100% { opacity: 0.4; transform: translateY(-50%) translateX(0); }
-    50% { opacity: 0.7; transform: translateY(-50%) translateX(8px); }
-  }
-
-  @keyframes swipePulseRight {
-    0%, 100% { opacity: 0.4; transform: translateY(-50%) translateX(0); }
-    50% { opacity: 0.7; transform: translateY(-50%) translateX(-8px); }
-  }
+/* --- Cute Bubbly Animations --- */
+@keyframes bubbly {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-5px) rotate(-2deg); }
+  75% { transform: translateY(-3px) rotate(2deg); }
 }
+
+@keyframes rainbow-glow {
+  0% { color: #ff9a9e; filter: drop-shadow(0 0 5px #ff9a9e); }
+  33% { color: #a1c4fd; filter: drop-shadow(0 0 5px #a1c4fd); }
+  66% { color: #c2ffd8; filter: drop-shadow(0 0 5px #c2ffd8); }
+  100% { color: #ff9a9e; filter: drop-shadow(0 0 5px #ff9a9e); }
+}
+
+@keyframes breathing {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+.title {
+  font-size: 2.8rem;
+  margin: 0;
+  font-weight: 900;
+  display: inline-block;
+  animation: bubbly 3s ease-in-out infinite, rainbow-glow 8s linear infinite;
+  letter-spacing: -1px;
+  cursor: default;
+  user-select: none;
+}
+
+.subtitle {
+  color: #8d6e63;
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* --- Side Slide Transformation with Elastic Bounce --- */
+.panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 85%;
+  height: 100vh;
+  z-index: 2000;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transform: translateX(-105%); /* Hidden left */
+  opacity: 1;
+  pointer-events: auto;
+  /* Elastic bounce effect */
+  transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border: none;
+  box-shadow: 0 0 50px rgba(255, 111, 97, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.left-panel, .info-panel {
+  left: 0;
+  border-radius: 0 40px 40px 0;
+}
+
+.right-panel {
+  right: 0;
+  left: auto;
+  transform: translateX(105%); /* Hidden right */
+  border-radius: 40px 0 0 40px;
+}
+
+.panel.active {
+  transform: translateX(0) !important;
+}
+
+/* --- Floating Background Decorations --- */
+.game-area::after {
+  content: '☁️';
+  position: absolute;
+  top: 15%; left: 10%;
+  font-size: 2rem; opacity: 0.4;
+  animation: floatBackground 10s infinite alternate ease-in-out;
+}
+
+.game-area::before {
+  content: '✨';
+  position: absolute;
+  bottom: 20%; right: 15%;
+  font-size: 1.5rem; opacity: 0.3;
+  animation: floatBackground 8s infinite alternate-reverse ease-in-out;
+}
+
+/* Egg Container Breathing */
+.egg-stage {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  height: 45vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: breathing 4s ease-in-out infinite;
+}
+
+/* Improved Damage Float */
+.damage-float {
+  position: absolute;
+  font-family: 'Fredoka', sans-serif;
+  pointer-events: none;
+  animation: floatUpCute 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes floatUpCute {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.5) rotate(-10deg); }
+  20% { opacity: 1; transform: translate(-50%, -30px) scale(1.2) rotate(0deg); }
+  100% { opacity: 0; transform: translate(-50%, -120px) scale(1.5) rotate(10deg); }
+}
+
+/* Swipe Guides - Cuter labels */
+.swipe-guide {
+  width: 40px;
+  height: 140px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.swipe-label {
+  font-size: 0.7rem;
+  color: #ff6f61;
+  text-shadow: 1px 1px 0 #fff;
+}
+
+/* 쿠팡 문구 영역도 귀엽게 */
+.coupang-notice {
+  background: rgba(255, 255, 255, 0.4);
+  padding: 5px 15px;
+  border-radius: 10px;
+  font-size: 10px !important;
+}
+
 }

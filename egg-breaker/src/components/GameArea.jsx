@@ -92,7 +92,13 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
     }
 
     return (
-        <div className={`egg-svg-container ${isShaking ? 'shake' : ''} cursor-${tool}`}>
+        <div 
+            className={`egg-svg-container ${isShaking ? 'shake' : ''} cursor-${tool}`}
+            style={{ 
+                transform: isShaking ? 'scale(0.92) translateY(5px)' : 'scale(1)',
+                transition: 'transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+            }}
+        >
             <svg viewBox="0 0 200 250" className="egg-svg" style={{ overflow: 'visible' }}>
                 <defs>
                     <radialGradient id="eggGradient" cx="40%" cy="30%" r="80%">
@@ -970,7 +976,7 @@ const GameArea = ({
             )}
 
             {adWatchCount < 1 && (
-                <div style={{
+                <div className="coupang-notice" style={{
                     fontSize: '8px', 
                     color: 'rgba(0,0,0,0.4)', 
                     textAlign: 'center', 
