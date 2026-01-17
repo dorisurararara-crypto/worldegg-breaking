@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './App.css'; // 기존 스타일 재사용 (Glassmorphism)
 
-// 백엔드 API 주소
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8787/api";
+// 백엔드 API 주소 정규화 (useGameState.js와 동일)
+let rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:8787";
+if (rawApiUrl.endsWith('/api')) {
+    rawApiUrl = rawApiUrl.substring(0, rawApiUrl.length - 4);
+}
+if (rawApiUrl.endsWith('/')) {
+    rawApiUrl = rawApiUrl.substring(0, rawApiUrl.length - 1);
+}
+const API_URL = rawApiUrl;
 
 function Admin() {
   const [password, setPassword] = useState("");
@@ -33,7 +40,7 @@ function Admin() {
 
   const fetchState = async () => {
     try {
-      const res = await fetch(`${API_URL}/state`);
+      const res = await fetch(`${API_URL}/api/state`);
       const data = await res.json();
       setServerState(data);
       // 현재 서버 값으로 입력창 초기화
@@ -50,7 +57,7 @@ function Admin() {
 
   const fetchWinners = async () => {
       try {
-          const res = await fetch(`${API_URL}/admin/winners`, {
+          const res = await fetch(`${API_URL}/api/admin/winners`, {
               headers: { 'x-admin-key': password }
           });
           if (res.ok) {
@@ -66,7 +73,7 @@ function Admin() {
       if (!confirm("정말로 이 우승자 기록을 삭제하시겠습니까? (복구 불가)")) return;
       
       try {
-          const res = await fetch(`${API_URL}/admin/winners/${id}`, {
+          const res = await fetch(`${API_URL}/api/admin/winners/${id}`, {
               method: 'DELETE',
               headers: { 'x-admin-key': password }
           });
@@ -85,7 +92,7 @@ function Admin() {
     if (!confirm(`정말로 '${endpoint}' 명령을 실행하시겠습니까?`)) return;
 
     try {
-      const res = await fetch(`${API_URL}/admin/${endpoint}`, {
+      const res = await fetch(`${API_URL}/api/admin/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
