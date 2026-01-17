@@ -105,6 +105,11 @@ export class GameDO extends DurableObject {
       const stored: any = await this.state.storage.get("fullState");
       if (stored) {
         this.gameState = { ...this.gameState, ...stored };
+        // [Sync] Ensure defaults for new fields if missing in stored state
+        this.gameState.maxAtk = this.gameState.maxAtk || 1;
+        this.gameState.maxAtkCountry = this.gameState.maxAtkCountry || "UN";
+        this.gameState.maxPoints = this.gameState.maxPoints || 0;
+        this.gameState.maxClicks = this.gameState.maxClicks || 0;
       }
       
       const storedRewards: any = await this.state.storage.get("pendingRewards");
@@ -387,6 +392,8 @@ export class GameDO extends DurableObject {
           const userAtk = Number(msg.atk || 1); // [Sync]
           const userPoints = Number(msg.points || 0);
           const userTotalClicks = Number(msg.totalClicks || 0);
+          
+          // console.log(`[DEBUG] Delta:${delta} Atk:${userAtk} Pts:${userPoints} Clicks:${userTotalClicks}`);
 
           if (isNaN(delta) || delta <= 0 || delta > 1000) { 
               ws.send(JSON.stringify({ type: 'error', code: 'BAD_DELTA', message: 'Invalid delta' }));
