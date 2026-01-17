@@ -24,6 +24,8 @@ function Admin() {
   const [announcement, setAnnouncement] = useState("");
   const [prize, setPrize] = useState("");
   const [prizeUrl, setPrizeUrl] = useState("");
+  const [prizeImageUrl, setPrizeImageUrl] = useState("");
+  const [prizeSecretUrl, setPrizeSecretUrl] = useState("");
   const [adUrl, setAdUrl] = useState("");
   const [winners, setWinners] = useState([]);
 
@@ -49,6 +51,8 @@ function Admin() {
       setAnnouncement(data.announcement || "");
       setPrize(data.prize || "");
       setPrizeUrl(data.prizeUrl || "");
+      setPrizeImageUrl(data.prizeImageUrl || "");
+      setPrizeSecretUrl(data.prizeSecretUrl || "");
       setAdUrl(data.adUrl || "");
     } catch (e) {
       console.error("데이터 불러오기 실패:", e);
@@ -252,10 +256,34 @@ function Admin() {
                     placeholder="https://..."
                 />
              </div>
+
+             <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>🖼️ 상품 예고 이미지 URL (모두 공개)</label>
+                <input 
+                    type="text" 
+                    value={prizeImageUrl} 
+                    onChange={e => setPrizeImageUrl(e.target.value)}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', boxSizing: 'border-box' }} 
+                    placeholder="https://..."
+                />
+                <span style={{fontSize:'0.7rem', color:'#aaa'}}>* 상단 보드나 명예의 전당에 표시됩니다.</span>
+             </div>
+
+             <div style={{ background: 'rgba(255, 193, 7, 0.1)', padding: '10px', borderRadius: '10px', border: '1px dashed #ffc107' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#ffc107' }}>🔑 실제 상품권 이미지 URL (우승자 전용)</label>
+                <input 
+                    type="text" 
+                    value={prizeSecretUrl} 
+                    onChange={e => setPrizeSecretUrl(e.target.value)}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', boxSizing: 'border-box', background: '#fff' }} 
+                    placeholder="상품권 일련번호가 포함된 이미지 주소"
+                />
+                <span style={{fontSize:'0.7rem', color:'#ffc107'}}>* 주의: 이 이미지는 우승자에게만 즉시 노출됩니다.</span>
+             </div>
           </div>
           
           <button 
-            onClick={() => callAdminApi('config', { announcement, prize, prizeUrl, adUrl })} 
+            onClick={() => callAdminApi('config', { announcement, prize, prizeUrl, prizeImageUrl, prizeSecretUrl, adUrl })} 
             style={{ marginTop: '25px', width: '100%', background: '#28a745', color: 'white', border: 'none', padding: '15px', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}
           >
             💾 설정 저장하기

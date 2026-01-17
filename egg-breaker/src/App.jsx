@@ -104,7 +104,7 @@ function App() {
   const [route, setRoute] = useState(window.location.hash);
   
   // Custom Hook for API State
-  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken, connect, rewardEvent } = useGameState(); 
+  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken, prizeSecretImageUrl, connect, rewardEvent } = useGameState(); 
   
   // Custom Hook for Push Notifications
   usePushNotifications(API_URL, clientId);
@@ -783,6 +783,7 @@ function App() {
               API_URL={API_URL}
               myCountry={myCountry}
               winningToken={winningToken}
+              prizeSecretImageUrl={prizeSecretImageUrl}
               connected={connected}
             />
 

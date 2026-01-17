@@ -12,9 +12,13 @@ interface GameState {
   clicksByCountry: Record<string, number>;
   maxAtk: number;          // [Sync] Added
   maxAtkCountry: string;   // [Sync] Added
+  maxPoints: number;       // [Sync] Added
+  maxClicks: number;       // [Sync] Added
   announcement: string;
   prize: string;
   prizeUrl: string;
+  prizeImageUrl: string;   // [New] Public preview image
+  prizeSecretUrl: string;  // [New] Secret image for winner only
   adUrl: string;
   recentWinners: any[];
   rev: number;
@@ -94,6 +98,8 @@ export class GameDO extends DurableObject {
       announcement: "Welcome to Egg Pong!",
       prize: "Amazon Gift Card $50",
       prizeUrl: "https://amazon.com",
+      prizeImageUrl: "",
+      prizeSecretUrl: "",
       adUrl: "",
       recentWinners: [],
       rev: 0,
@@ -110,6 +116,8 @@ export class GameDO extends DurableObject {
         this.gameState.maxAtkCountry = this.gameState.maxAtkCountry || "UN";
         this.gameState.maxPoints = this.gameState.maxPoints || 0;
         this.gameState.maxClicks = this.gameState.maxClicks || 0;
+        this.gameState.prizeImageUrl = this.gameState.prizeImageUrl || "";
+        this.gameState.prizeSecretUrl = this.gameState.prizeSecretUrl || "";
       }
       
       const storedRewards: any = await this.state.storage.get("pendingRewards");
@@ -429,7 +437,8 @@ export class GameDO extends DurableObject {
                   session.ws.send(JSON.stringify({
                       type: 'you_won',
                       token: this.gameState.winningToken,
-                      round: this.gameState.round
+                      round: this.gameState.round,
+                      prizeSecretUrl: this.gameState.prizeSecretUrl // Only sent to the winner!
                   }));
                   
                   this.saveState(); 
@@ -629,6 +638,8 @@ export class GameDO extends DurableObject {
           if (body.announcement !== undefined) this.gameState.announcement = body.announcement;
           if (body.prize !== undefined) this.gameState.prize = body.prize;
           if (body.prizeUrl !== undefined) this.gameState.prizeUrl = body.prizeUrl;
+          if (body.prizeImageUrl !== undefined) this.gameState.prizeImageUrl = body.prizeImageUrl;
+          if (body.prizeSecretUrl !== undefined) this.gameState.prizeSecretUrl = body.prizeSecretUrl;
           if (body.adUrl !== undefined) this.gameState.adUrl = body.adUrl;
           this.gameState.lastUpdatedAt = Date.now();
           details = `Config Updated`;

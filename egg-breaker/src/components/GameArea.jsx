@@ -168,7 +168,7 @@ const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, showGuide,
     winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry,
-    clientId, serverState, API_URL, myCountry, winningToken, connected
+    clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected
 }) => {
     const [clickEffects, setClickEffects] = useState([]);
     const stageRef = useRef(null); // 스테이지 좌표 기준점
@@ -835,31 +835,57 @@ const GameArea = ({
                                         <p style={{ fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '20px' }}>{lang.modalDesc}</p>
                                         
                                         <div style={{ background: '#fff0f5', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #ffb6c1', width: '100%' }}>
-                                            <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>⚠️ {lang.winnerTimerWarning}</p>
+                                            <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>⚠️ {lang.winnerTimerWarning || "이 화면은 한 번만 보여지니 꼭 저장하세요!"}</p>
                                             <p style={{ fontSize: '1.5rem', fontWeight: '900', color: '#d32f2f' }}>
                                                 {lang.timeLeft}: {formatTime(winnerCountdown)}
                                             </p>
                                         </div>
 
-                                        {!emailSubmitted ? (
-                                            <>
-                                                <div style={{ background: 'rgba(255, 182, 193, 0.2)', padding: '20px', borderRadius: '15px', marginBottom: '20px', width: '100%' }}>
-                                                    <p style={{ margin: '0 0 10px 0', color: '#ff6f61', fontWeight: 'bold' }}>{lang.modalPrize}</p>
-                                                    <input 
-                                                        type="email" 
-                                                        placeholder="example@email.com"
-                                                        value={winnerEmail}
-                                                        onChange={(e) => setWinnerEmail(e.target.value)}
-                                                        style={{ width: '90%', padding: '12px', borderRadius: '10px', border: '2px solid #ffe4e1', background: '#fff', color: '#5d4037', textAlign: 'center', fontSize: '1rem' }}
+                                        {/* Prize Image Display */}
+                                        <div style={{ 
+                                            background: 'linear-gradient(135deg, #fff9c4 0%, #fbc02d 100%)', 
+                                            padding: '20px', 
+                                            borderRadius: '20px', 
+                                            marginBottom: '20px', 
+                                            width: '100%',
+                                            boxShadow: '0 10px 30px rgba(251, 192, 45, 0.4)',
+                                            border: '3px solid #f9a825'
+                                        }}>
+                                            <h3 style={{ color: '#5d4037', marginBottom: '15px' }}>🎁 {lang.prizeTitle || "우승 상품"}</h3>
+                                            
+                                            {prizeSecretImageUrl ? (
+                                                <>
+                                                    <img 
+                                                        src={prizeSecretImageUrl} 
+                                                        alt="Prize" 
+                                                        style={{ width: '100%', borderRadius: '10px', marginBottom: '15px', border: '2px solid #fff' }} 
                                                     />
-                                                </div>
-                                                <button className="send-btn" onClick={submitWinnerEmail} style={{ fontSize: '1.1rem', padding: '12px 40px' }}>
-                                                    {lang.send}
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <h2 style={{ color: '#4CAF50', marginTop: '20px' }}>✅ {lang.sent}</h2>
-                                        )}
+                                                    <a 
+                                                        href={prizeSecretImageUrl} 
+                                                        download="my_prize.png"
+                                                        style={{ 
+                                                            display: 'inline-block',
+                                                            background: '#5d4037', 
+                                                            color: '#fff', 
+                                                            padding: '12px 30px', 
+                                                            borderRadius: '30px', 
+                                                            textDecoration: 'none',
+                                                            fontWeight: 'bold',
+                                                            fontSize: '1rem',
+                                                            boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                                                        }}
+                                                    >
+                                                        📥 이미지 저장하기
+                                                    </a>
+                                                </>
+                                            ) : (
+                                                <p style={{ color: '#5d4037', fontWeight: 'bold' }}>상품권 이미지를 불러오는 중입니다...</p>
+                                            )}
+                                        </div>
+
+                                        <button className="send-btn" onClick={handleRetry} style={{ fontSize: '1.1rem', padding: '12px 40px', background: '#ff6f61' }}>
+                                            확인했습니다
+                                        </button>
                                     </>
                                 ) : (
                                     // B. I AM NOT THE WINNER (Loser or Spectator)
