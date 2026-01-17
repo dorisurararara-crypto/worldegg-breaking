@@ -584,58 +584,70 @@ const GameArea = ({
                 </div>
             )}
 
-            {/* Minimal Settings Toggles (Replacing Gear Icon) */}
+            {/* Minimal Settings Toggles (Text + Pill Switches) */}
             <div 
                 style={{
                     position: 'absolute',
                     top: '20px',
                     right: '20px',
                     display: 'flex',
-                    gap: '12px',
+                    flexDirection: 'column',
+                    gap: '10px',
                     zIndex: 100,
-                    padding: '10px 15px',
-                    borderRadius: '25px',
-                    background: isSettingsFocused ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.1)',
+                    padding: '15px',
+                    borderRadius: '20px',
+                    background: isSettingsFocused ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: isSettingsFocused ? 'blur(10px)' : 'none',
                     transition: 'all 0.4s ease',
-                    opacity: isSettingsFocused ? 1 : 0.3, 
-                    transform: isSettingsFocused ? 'scale(1.05)' : 'scale(1)',
-                    cursor: 'pointer'
+                    opacity: isSettingsFocused ? 1 : 0.2, 
+                    cursor: 'pointer',
+                    minWidth: '130px'
                 }}
                 onClick={(e) => {
                     e.stopPropagation();
                     setIsSettingsFocused(true);
                 }}
             >
-                {/* SFX Toggle */}
-                <button 
-                    onClick={(e) => { e.stopPropagation(); toggleSound(); }}
-                    style={{ background: 'none', border: 'none', fontSize: '1.4rem', filter: isSoundOn ? 'none' : 'grayscale(1)', cursor: 'pointer' }}
-                >
-                    {isSoundOn ? '🔊' : '🔇'}
-                </button>
-
-                {/* BGM Toggle */}
-                <button 
-                    onClick={(e) => { e.stopPropagation(); toggleBgm(); }}
-                    style={{ background: 'none', border: 'none', fontSize: '1.4rem', filter: isBgmOn ? 'none' : 'grayscale(1)', cursor: 'pointer' }}
-                >
-                    {isBgmOn ? '🎵' : '🔇'}
-                </button>
-
-                {/* Vibration Toggle */}
-                <button 
-                    onClick={(e) => { e.stopPropagation(); toggleVibration(); }}
-                    style={{ background: 'none', border: 'none', fontSize: '1.4rem', filter: isVibrationOn ? 'none' : 'grayscale(1)', cursor: 'pointer' }}
-                >
-                    {isVibrationOn ? '📳' : '📴'}
-                </button>
+                {/* Switch Item Helper */}
+                {[
+                    { label: '효과음', active: isSoundOn, toggle: toggleSound },
+                    { label: '배경음', active: isBgmOn, toggle: toggleBgm },
+                    { label: '진동', active: isVibrationOn, toggle: toggleVibration }
+                ].map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#5d4037' }}>{item.label}</span>
+                        <div 
+                            onClick={(e) => { e.stopPropagation(); item.toggle(); }}
+                            style={{
+                                width: '40px',
+                                height: '22px',
+                                background: item.active ? '#ff9a9e' : '#ccc',
+                                borderRadius: '20px',
+                                position: 'relative',
+                                transition: 'background 0.3s',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <div style={{
+                                width: '18px',
+                                height: '18px',
+                                background: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: item.active ? '20px' : '2px',
+                                transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }} />
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* Debug Console Removed */}
             
             <div className="header-glow">
-                <h1 className="title">{lang.title}</h1>
+                {/* 에그퐁 제목 제거 (상단 바와 중복) */}
                 <p className="subtitle">{lang.subtitle}</p>
             </div>
 
