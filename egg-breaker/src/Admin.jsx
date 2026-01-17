@@ -28,6 +28,12 @@ function Admin() {
   const [prizeSecretUrl, setPrizeSecretUrl] = useState("");
   const [adUrl, setAdUrl] = useState("");
   const [winners, setWinners] = useState([]);
+  const [prizePool, setPrizePool] = useState([]);
+  
+  // New Prize Input
+  const [newPrizeName, setNewPrizeName] = useState("");
+  const [newPrizeImg, setNewPrizeImg] = useState("");
+  const [newPrizeSecret, setNewPrizeSecret] = useState("");
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -35,9 +41,50 @@ function Admin() {
       setIsAuthenticated(true);
       fetchState();
       fetchWinners();
+      fetchPrizePool();
     } else {
       alert("비밀번호가 틀렸습니다.");
     }
+  };
+
+  const fetchPrizePool = async () => {
+      try {
+          const res = await fetch(`${API_URL}/api/admin/prize-pool`, {
+              headers: { 'x-admin-key': password }
+          });
+          if (res.ok) {
+              const data = await res.json();
+              setPrizePool(data);
+          }
+      } catch (e) {
+          console.error("상품 풀 실패", e);
+      }
+  };
+
+  const addPrize = async () => {
+      if (!newPrizeName || !newPrizeSecret) return alert("상품명과 실제 주소를 입력하세요.");
+      try {
+          const res = await fetch(`${API_URL}/api/admin/add-prize`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-key': password },
+              body: JSON.stringify({ name: newPrizeName, image_url: newPrizeImg, secret_url: newPrizeSecret })
+          });
+          if (res.ok) {
+              setNewPrizeName(""); setNewPrizeImg(""); setNewPrizeSecret("");
+              fetchPrizePool();
+          }
+      } catch (e) {}
+  };
+
+  const deletePrize = async (id) => {
+      if (!confirm("정말로 삭제하시겠습니까?")) return;
+      try {
+          const res = await fetch(`${API_URL}/api/admin/prize-pool/${id}`, {
+              method: 'DELETE',
+              headers: { 'x-admin-key': password }
+          });
+          if (res.ok) fetchPrizePool();
+      } catch (e) {}
   };
 
   const fetchState = async () => {
@@ -290,7 +337,54 @@ function Admin() {
           </button>
         </div>
 
-        {/* 4. 우승자 목록 (New) */}
+        {/* 5. 상품 창고 관리 (New) */}
+        <div className="glass" style={{ padding: '20px', borderRadius: '15px', background: 'rgba(255,255,255,0.1)', gridColumn: '1 / -1' }}>
+          <h3 style={{ borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '10px', marginBottom: '15px' }}>📦 상품 창고 (자동 지급 큐)</h3>
+          
+          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '10px', marginBottom: '20px' }}>
+             <h4 style={{marginTop: 0}}>➕ 새 상품 등록</h4>
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                <input type="text" placeholder="상품명 (예: 신세계 1만원)" value={newPrizeName} onChange={e => setNewPrizeName(e.target.value)} style={{padding:'10px', borderRadius:'5px', border:'none'}} />
+                <input type="text" placeholder="예고 이미지 URL (선택)" value={newPrizeImg} onChange={e => setNewPrizeImg(e.target.value)} style={{padding:'10px', borderRadius:'5px', border:'none'}} />
+                <input type="text" placeholder="실제 상품권 URL (필수)" value={newPrizeSecret} onChange={e => setNewPrizeSecret(e.target.value)} style={{padding:'10px', borderRadius:'5px', border:'none'}} />
+                <button onClick={addPrize} style={{background:'#28a745', color:'#fff', border:'none', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>창고에 추가</button>
+             </div>
+             <p style={{fontSize:'0.8rem', color:'#aaa', marginTop:'10px'}}>* 창고에 등록된 순서대로 우승자에게 자동 지급됩니다.</p>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.1)' }}>
+                        <th>순번</th>
+                        <th>상품명</th>
+                        <th>상태</th>
+                        <th>배정 라운드</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {prizePool.length > 0 ? prizePool.map((p, idx) => (
+                        <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: p.is_used ? 'rgba(0,0,0,0.2)' : 'transparent' }}>
+                            <td style={{ padding: '10px', textAlign:'center' }}>{idx + 1}</td>
+                            <td style={{ padding: '10px' }}>{p.name}</td>
+                            <td style={{ padding: '10px', textAlign:'center' }}>
+                                {p.is_used ? <span style={{color:'#888'}}>지급 완료</span> : <span style={{color:'#28a745', fontWeight:'bold'}}>대기 중</span>}
+                            </td>
+                            <td style={{ padding: '10px', textAlign:'center' }}>{p.round || '-'}</td>
+                            <td style={{ padding: '10px', textAlign: 'center' }}>
+                                <button onClick={() => deletePrize(p.id)} style={{ background: '#ff4444', border: 'none', borderRadius: '5px', padding: '5px 10px', color: 'white', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
+                            </td>
+                        </tr>
+                    )) : (
+                        <tr><td colSpan="5" style={{padding:'20px', textAlign:'center', color:'#888'}}>등록된 상품이 없습니다.</td></tr>
+                    )}
+                </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 4. 우승자 목록 */}
         <div className="glass" style={{ padding: '20px', borderRadius: '15px', background: 'rgba(255,255,255,0.1)', gridColumn: '1 / -1' }}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom:'10px'}}>
              <h3>🏆 명예의 전당 (당첨자 관리)</h3>

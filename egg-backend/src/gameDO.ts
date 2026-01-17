@@ -252,22 +252,43 @@ export class GameDO extends DurableObject {
           return new Response(JSON.stringify({ error: "Invalid winning token" }), { status: 403 });
       }
       
+      // [New] Fetch specific prize from pool for this round
+      let finalPrizeName = this.gameState.prize;
+      let finalPrizeSecret = this.gameState.prizeSecretUrl;
+      
       try {
+          // 아직 사용되지 않은 상품 중 가장 먼저 등록된 것 하나를 가져옵니다.
+          const prizeData: any = await this.env.DB.prepare(
+              "SELECT id, name, secret_url FROM prize_pool WHERE is_used = 0 ORDER BY id ASC LIMIT 1"
+          ).first();
+          
+          if (prizeData) {
+              finalPrizeName = prizeData.name;
+              finalPrizeSecret = prizeData.secret_url;
+              // 상품 사용 완료 처리
+              await this.env.DB.prepare(
+                  "UPDATE prize_pool SET is_used = 1, winner_id = ?, round = ? WHERE id = ?"
+              ).bind(this.gameState.winningClientId, this.gameState.round, prizeData.id).run();
+          }
+          
           await this.env.DB.prepare(
             "INSERT INTO winners (round, email, country, prize) VALUES (?, ?, ?, ?)"
-          ).bind(this.gameState.round, body.email, body.country, this.gameState.prize).run();
-      } catch (e) {}
+          ).bind(this.gameState.round, body.email, body.country, finalPrizeName).run();
+      } catch (e) {
+          console.error("DB Error in winner process:", e);
+      }
       
       const maskedEmail = body.email.replace(/(^.{3}).+(@.+)/, "$1***$2");
       this.gameState.winnerInfo = { country: body.country, email: maskedEmail };
       this.gameState.status = 'FINISHED'; 
+      this.gameState.prize = finalPrizeName; // 실제 지급된 상품명으로 업데이트
       
       this.gameState.winningClientId = undefined;
       this.gameState.winningToken = undefined;
 
       this.gameState.recentWinners.unshift({
           round: this.gameState.round,
-          prize: this.gameState.prize,
+          prize: finalPrizeName,
           date: new Date().toISOString()
       });
       if (this.gameState.recentWinners.length > 5) this.gameState.recentWinners.pop();
@@ -652,6 +673,34 @@ export class GameDO extends DurableObject {
               return new Response(JSON.stringify(results));
           } catch(e) {
               return new Response(JSON.stringify([]));
+          }
+
+      } else if (action === "prize-pool" && request.method === "GET") {
+          try {
+              const { results } = await this.env.DB.prepare("SELECT * FROM prize_pool ORDER BY id ASC").all();
+              return new Response(JSON.stringify(results));
+          } catch(e) {
+              return new Response(JSON.stringify([]));
+          }
+
+      } else if (action === "add-prize" && request.method === "POST") {
+          const body: any = await request.json();
+          try {
+              await this.env.DB.prepare(
+                  "INSERT INTO prize_pool (name, image_url, secret_url) VALUES (?, ?, ?)"
+              ).bind(body.name, body.image_url, body.secret_url).run();
+              details = `Added prize: ${body.name}`;
+          } catch(e) {
+              return new Response("DB Error: " + e, { status: 500 });
+          }
+
+      } else if (action.startsWith("prize-pool/") && request.method === "DELETE") {
+          const id = action.split("/")[1];
+          try {
+              await this.env.DB.prepare("DELETE FROM prize_pool WHERE id = ?").bind(id).run();
+              details = `Deleted prize ID ${id}`;
+          } catch(e) {
+              return new Response("DB Error: " + e, { status: 500 });
           }
 
       } else if (action.startsWith("winners/") && request.method === "DELETE") {
