@@ -136,10 +136,16 @@ function App() {
   const [showGuide, setShowGuide] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [hideAnnouncement, setHideAnnouncement] = useState(false);
+  const [debugLogs, setDebugLogs] = useState([]); // 디버그 로그 상태
 
   // Timestamp for synchronization
   const lastServerTs = useRef(0);
   const buyAudioRef = useRef(null); // Singleton for buy sound
+  
+  // Debug Helper
+  const addDebugLog = (msg) => {
+      setDebugLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 5));
+  };
 
   // Timers
   const [winnerCountdown, setWinnerCountdown] = useState(300); // 5 minutes
@@ -271,25 +277,34 @@ function App() {
   // Handle Invite Link Check
   useEffect(() => {
       const checkInvite = async (url) => {
+          addDebugLog(`URL: ${url}`);
           if (!url) return;
           const params = new URLSearchParams(new URL(url).search);
           const referrer = params.get('referrer');
+          addDebugLog(`Ref: ${referrer}, Me: ${clientId}`);
           
           // Remove client-side check to allow round resets to work
           if (referrer && referrer !== clientId) {
               try {
+                  addDebugLog("Sending invite req...");
                   const res = await fetch(`${API_URL}/api/invite-reward`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ from: referrer, to: clientId })
                   });
+                  const json = await res.json();
+                  addDebugLog(`Resp: ${res.status} ${JSON.stringify(json)}`);
+                  
                   if (res.ok) {
                       console.log("Invite verified by server!");
                       // Optional: mark locally if needed for UI, but rely on server for logic
                   }
               } catch (e) {
                   console.error("Invite check failed", e);
+                  addDebugLog(`Err: ${e.message}`);
               }
+          } else {
+              addDebugLog("No valid referrer");
           }
       };
       
@@ -317,8 +332,13 @@ function App() {
             ? (lang.inviteSuccess || "Friend joined! +800P") 
             : rewardEvent.msg;
         alert(msg);
+        addDebugLog(`Reward: ${msg}`);
     }
   }, [rewardEvent, lang]);
+
+  // ... (Sync Local HP Logic) ... 
+  // (We need to insert the render part before the closing brace of the component)
+
 
   // Sync Local HP with Server HP (Correction with Pending Damage)
   useEffect(() => {
@@ -760,6 +780,16 @@ function App() {
           isOpen={mobilePanel === 'right'}
           toggleMobilePanel={toggleMobilePanel}
         />
+      </div>
+
+      {/* Debug Logs Overlay */}
+      <div style={{
+          position: 'fixed', bottom: 0, left: 0, width: '100%', 
+          background: 'rgba(0,0,0,0.7)', color: '#0f0', fontSize: '10px', 
+          padding: '5px', pointerEvents: 'none', zIndex: 9999,
+          maxHeight: '100px', overflow: 'hidden'
+      }}>
+          {debugLogs.map((log, i) => <div key={i}>{log}</div>)}
       </div>
     </div>
   );
