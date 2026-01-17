@@ -88,41 +88,40 @@ function Admin() {
       }
   };
 
-  const callAdminApi = async (endpoint, body = {}) => {
-    if (!confirm(`정말로 '${endpoint}' 명령을 실행하시겠습니까?`)) return;
-
-    try {
-      const res = await fetch(`${API_URL}/api/admin/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': password // 비밀번호를 인증 키로 전송
-        },
-        body: JSON.stringify(body)
-      });
-      
-      const json = await res.json();
-      
-      if (res.ok) {
-        alert(json.details || "성공적으로 처리되었습니다!");
-        fetchState(); // UI 갱신
-      } else {
-        alert(`오류 발생: ${json.error || res.status}`);
+    const callAdminApi = async (endpoint, body = {}) => {
+      if (!confirm(`정말로 '${endpoint}' 명령을 실행하시겠습니까?`)) return;
+  
+      try {
+        const res = await fetch(`${API_URL}/api/admin/${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': password // 비밀번호를 인증 키로 전송
+          },
+          body: JSON.stringify(body)
+        });
+        
+        const json = await res.json();
+        
+        if (res.ok) {
+          alert(json.details || "성공적으로 처리되었습니다!");
+          fetchState(); // UI 갱신
+        } else {
+          alert(`오류 발생: ${json.error || res.status}`);
+        }
+      } catch (e) {
+        alert("네트워크 오류가 발생했습니다.");
       }
-    } catch (e) {
-      alert("네트워크 오류가 발생했습니다.");
-    }
-  };
-
-  // Force Reset Handler
-  const handleForceReset = async () => {
-      if (!confirm("정말로 강제 리셋하시겠습니까? (라운드 초기화 + 초대 기록 삭제)")) return;
-      // Now reset-round handles everything
-      callAdminApi('reset-round'); 
-  };
-
-  if (!isAuthenticated) {
-    return (
+    };
+  
+    // Force Reset Handler
+    const handleForceReset = async () => {
+        if (!confirm("정말로 강제 리셋하시겠습니까? (라운드 초기화 + 초대 기록 삭제)")) return;
+        // Now reset-round handles everything internally on backend
+        callAdminApi('reset-round'); 
+    };
+  
+    if (!isAuthenticated) {    return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#333', padding: '20px' }}>
         <form onSubmit={handleLogin} className="glass" style={{ padding: '30px', borderRadius: '20px', textAlign: 'center', width: '100%', maxWidth: '400px' }}>
           <h2 style={{ color: '#fff', marginBottom: '20px' }}>관리자 접속</h2>
@@ -201,12 +200,6 @@ function Admin() {
             </button>
             <button onClick={() => callAdminApi('reset-users')} style={{ background: '#ffc107', color: 'black', border: 'none', padding: '15px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
                 👥 접속자 0명<br/><span style={{fontSize:'0.8rem', fontWeight:'normal'}}>(초기화)</span>
-            </button>
-            <button onClick={() => callAdminApi('check-invites')} style={{ background: '#6c757d', color: 'white', border: 'none', padding: '15px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
-                🔍 초대 기록 확인<br/><span style={{fontSize:'0.8rem', fontWeight:'normal'}}>(DB 상태 점검)</span>
-            </button>
-            <button onClick={() => callAdminApi('clear-invites')} style={{ background: '#dc3545', color: 'white', border: 'none', padding: '15px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
-                🗑️ DB 청소<br/><span style={{fontSize:'0.8rem', fontWeight:'normal'}}>(초대 기록 삭제)</span>
             </button>
           </div>
         </div>
