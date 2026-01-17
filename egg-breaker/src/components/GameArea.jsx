@@ -171,6 +171,7 @@ const GameArea = ({
     clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected
 }) => {
     const [clickEffects, setClickEffects] = useState([]);
+    const [isPrizeSaved, setIsPrizeSaved] = useState(false); // [New] Track if prize image is saved
     const stageRef = useRef(null); // 스테이지 좌표 기준점
     const wasActivePlayer = useRef(false);
     const [localLoserTimer, setLocalLoserTimer] = useState(null);
@@ -835,57 +836,91 @@ const GameArea = ({
                                         <p style={{ fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '20px' }}>{lang.modalDesc}</p>
                                         
                                         <div style={{ background: '#fff0f5', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #ffb6c1', width: '100%' }}>
-                                            <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>⚠️ {lang.winnerTimerWarning || "이 화면은 한 번만 보여지니 꼭 저장하세요!"}</p>
+                                            <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>
+                                                ⚠️ {prizeSecretImageUrl ? "5분 안에 상품을 수령하세요!" : lang.winnerTimerWarning}
+                                            </p>
                                             <p style={{ fontSize: '1.5rem', fontWeight: '900', color: '#d32f2f' }}>
                                                 {lang.timeLeft}: {formatTime(winnerCountdown)}
                                             </p>
                                         </div>
 
-                                        {/* Prize Image Display */}
-                                        <div style={{ 
-                                            background: 'linear-gradient(135deg, #fff9c4 0%, #fbc02d 100%)', 
-                                            padding: '20px', 
-                                            borderRadius: '20px', 
-                                            marginBottom: '20px', 
-                                            width: '100%',
-                                            boxShadow: '0 10px 30px rgba(251, 192, 45, 0.4)',
-                                            border: '3px solid #f9a825'
-                                        }}>
-                                            <h3 style={{ color: '#5d4037', marginBottom: '15px' }}>🎁 {lang.prizeTitle || "우승 상품"}</h3>
-                                            
-                                            {prizeSecretImageUrl ? (
-                                                <>
-                                                    <img 
-                                                        src={prizeSecretImageUrl} 
-                                                        alt="Prize" 
-                                                        style={{ width: '100%', borderRadius: '10px', marginBottom: '15px', border: '2px solid #fff' }} 
-                                                    />
-                                                    <a 
-                                                        href={prizeSecretImageUrl} 
-                                                        download="my_prize.png"
-                                                        style={{ 
-                                                            display: 'inline-block',
-                                                            background: '#5d4037', 
-                                                            color: '#fff', 
-                                                            padding: '12px 30px', 
-                                                            borderRadius: '30px', 
-                                                            textDecoration: 'none',
-                                                            fontWeight: 'bold',
-                                                            fontSize: '1rem',
-                                                            boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
-                                                        }}
-                                                    >
-                                                        📥 이미지 저장하기
-                                                    </a>
-                                                </>
-                                            ) : (
-                                                <p style={{ color: '#5d4037', fontWeight: 'bold' }}>상품권 이미지를 불러오는 중입니다...</p>
-                                            )}
-                                        </div>
+                                        {/* CASE 1: Prize Image exists */}
+                                        {prizeSecretImageUrl ? (
+                                            <div style={{ 
+                                                background: 'linear-gradient(135deg, #fff9c4 0%, #fbc02d 100%)', 
+                                                padding: '20px', 
+                                                borderRadius: '20px', 
+                                                marginBottom: '20px', 
+                                                width: '100%',
+                                                boxShadow: '0 10px 30px rgba(251, 192, 45, 0.4)',
+                                                border: '3px solid #f9a825'
+                                            }}>
+                                                <h3 style={{ color: '#5d4037', marginBottom: '15px' }}>🎁 {lang.prizeTitle || "우승 상품"}</h3>
+                                                
+                                                <img 
+                                                    src={prizeSecretImageUrl} 
+                                                    alt="Prize" 
+                                                    style={{ width: '100%', borderRadius: '10px', marginBottom: '15px', border: '2px solid #fff' }} 
+                                                />
+                                                
+                                                {isPrizeSaved && <p style={{ color: '#2e7d32', fontWeight: 'bold', marginBottom: '10px' }}>✅ 앨범에 저장되었습니다!</p>}
 
-                                        <button className="send-btn" onClick={handleRetry} style={{ fontSize: '1.1rem', padding: '12px 40px', background: '#ff6f61' }}>
-                                            확인했습니다
-                                        </button>
+                                                {!emailSubmitted ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                        <a 
+                                                            href={prizeSecretImageUrl} 
+                                                            download={`egg_prize_round_${serverState.round}.png`}
+                                                            onClick={() => setIsPrizeSaved(true)}
+                                                            style={{ 
+                                                                display: 'block',
+                                                                background: '#5d4037', 
+                                                                color: '#fff', 
+                                                                padding: '12px', 
+                                                                borderRadius: '30px', 
+                                                                textDecoration: 'none',
+                                                                fontWeight: 'bold'
+                                                            }}
+                                                        >
+                                                            {isPrizeSaved ? "📥 다시 저장하기" : "📥 이미지 저장하기"}
+                                                        </a>
+                                                        {isPrizeSaved && (
+                                                            <button 
+                                                                onClick={() => submitWinnerEmail("IMAGE_CLAIMED")} 
+                                                                className="send-btn" 
+                                                                style={{ background: '#2e7d32', width: '100%' }}
+                                                            >
+                                                                상품 수령 완료
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <h3 style={{ color: '#2e7d32' }}>수령이 완료되었습니다!</h3>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            /* CASE 2: No Image, show Email Input */
+                                            <div style={{ width: '100%' }}>
+                                                {!emailSubmitted ? (
+                                                    <>
+                                                        <div style={{ background: 'rgba(255, 182, 193, 0.2)', padding: '20px', borderRadius: '15px', marginBottom: '20px' }}>
+                                                            <p style={{ margin: '0 0 10px 0', color: '#ff6f61', fontWeight: 'bold' }}>{lang.modalPrize}</p>
+                                                            <input 
+                                                                type="email" 
+                                                                placeholder="example@email.com"
+                                                                value={winnerEmail}
+                                                                onChange={(e) => setWinnerEmail(e.target.value)}
+                                                                style={{ width: '90%', padding: '12px', borderRadius: '10px', border: '2px solid #ffe4e1', background: '#fff', color: '#5d4037', textAlign: 'center', fontSize: '1rem' }}
+                                                            />
+                                                        </div>
+                                                        <button className="send-btn" onClick={() => submitWinnerEmail()} style={{ fontSize: '1.1rem', padding: '12px 40px' }}>
+                                                            {lang.send}
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <h2 style={{ color: '#4CAF50', marginTop: '20px' }}>✅ {lang.sent}</h2>
+                                                )}
+                                            </div>
+                                        )}
                                     </>
                                 ) : (
                                     // B. I AM NOT THE WINNER (Loser or Spectator)
@@ -934,16 +969,18 @@ const GameArea = ({
                 </button>
             )}
 
-            <div style={{
-                fontSize: '8px', 
-                color: 'rgba(0,0,0,0.4)', 
-                textAlign: 'center', 
-                marginBottom: '15px',
-                marginTop: '-10px',
-                pointerEvents: 'none'
-            }}>
-                이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다
-            </div>
+            {adWatchCount < 1 && (
+                <div style={{
+                    fontSize: '8px', 
+                    color: 'rgba(0,0,0,0.4)', 
+                    textAlign: 'center', 
+                    marginBottom: '15px',
+                    marginTop: '-10px',
+                    pointerEvents: 'none'
+                }}>
+                    이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다
+                </div>
+            )}
 
           <div className="status-row glass">
             <div>{lang.myPoint}: <span>{myPoints}</span></div>

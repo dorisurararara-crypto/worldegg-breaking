@@ -314,7 +314,11 @@ function Admin() {
                         <tr key={w.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                             <td style={{ padding: '10px' }}>{w.round}</td>
                             <td style={{ padding: '10px' }}>{w.country}</td>
-                            <td style={{ padding: '10px', fontWeight: 'bold', color: '#ffb6c1' }}>{w.email}</td>
+                            <td style={{ padding: '10px', fontWeight: 'bold', color: '#ffb6c1' }}>
+                                {w.email === "IMAGE_CLAIMED" ? (
+                                    <span style={{ background: '#2e7d32', color: '#fff', padding: '2px 8px', borderRadius: '5px', fontSize: '0.8rem' }}>🖼️ 이미지 수령</span>
+                                ) : w.email}
+                            </td>
                             <td style={{ padding: '10px' }}>{w.prize || '-'}</td>
                             <td style={{ padding: '10px', color: '#aaa' }}>{new Date(w.created_at).toLocaleString()}</td>
                             <td style={{ padding: '10px', textAlign: 'center' }}>

@@ -522,18 +522,23 @@ function App() {
     }
   };
 
-  const submitWinnerEmail = async () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(winnerEmail)) {
-        alert("이메일 형식이 올바르지 않습니다.");
-        return;
+  const submitWinnerEmail = async (customEmail = null) => {
+    const targetEmail = customEmail || winnerEmail;
+    
+    // 일반적인 경우에만 이메일 형식 체크
+    if (!customEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(targetEmail)) {
+            alert("이메일 형식이 올바르지 않습니다.");
+            return;
+        }
     }
     
     try {
         await fetch(`${API_URL}/api/winner`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: winnerEmail, country: myCountry, token: winningToken })
+            body: JSON.stringify({ email: targetEmail, country: myCountry, token: winningToken })
         });
         setEmailSubmitted(true);
         // Start exit timer
