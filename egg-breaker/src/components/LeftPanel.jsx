@@ -1,9 +1,14 @@
 import React, { useState, useRef } from 'react';
 
-const LeftPanel = ({ lang, countryStats, onlineUsersCount, recentWinners, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
-  // Stats for Rivalry Widget (Top 2 Countries)
-  const top1 = countryStats[0];
-  const top2 = countryStats[1];
+const LeftPanel = ({ lang, serverState, countryStats, onlineUsersCount, recentWinners, prize, prizeUrl, getFlagEmoji, isOpen, toggleMobilePanel }) => {
+  
+  const maxAtk = serverState?.maxAtk || 0;
+  const maxAtkCountry = serverState?.maxAtkCountry || "UN";
+  const hasRecord = maxAtk > 1; 
+
+  const onlinePlayers = serverState?.onlinePlayers || 0;
+  const waitingCount = serverState?.queueLength || 0;
+  const spectators = serverState?.onlineSpectatorsApprox || 0;
 
   // --- Swipe Logic ---
   const [translateY, setTranslateY] = useState(0);
@@ -37,8 +42,8 @@ const LeftPanel = ({ lang, countryStats, onlineUsersCount, recentWinners, prize,
         className={`panel left-panel glass ${isOpen ? 'active' : ''}`} 
         style={{ 
             overflowY: 'auto',
-            transform: isOpen ? `translateY(${translateY}px)` : undefined, // Apply drag offset
-            transition: isDragging.current ? 'none' : 'transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)' // Disable transition while dragging for instant response
+            transform: isOpen ? `translateY(${translateY}px)` : undefined, 
+            transition: isDragging.current ? 'none' : 'transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)' 
         }}
     >
       <div 
@@ -46,70 +51,82 @@ const LeftPanel = ({ lang, countryStats, onlineUsersCount, recentWinners, prize,
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ cursor: 'grab', touchAction: 'none' }} // Ensure touches are caught
+        style={{ cursor: 'grab', touchAction: 'none' }}
       >
-        <h3>{lang.users}</h3>
+        <h3 style={{ color: '#ff6f61' }}>{lang.users}</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
       
-      {/* --- 🔥 국가 대항전 위젯 --- */}
-      <div className="rivalry-widget" style={{ padding: '20px 10px', background: 'rgba(255, 255, 255, 0.5)', marginBottom: '10px', textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.5)', borderRadius: '20px' }}>
-        <h4 style={{ margin: '0 0 15px 0', color: '#ff6f61', fontSize: '1rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '800' }}>🏆 {lang.rivalryTitle}</h4>
-        
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px' }}>
-            {/* 1위 국가 */}
-            {top1 ? (
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '2.5rem', lineHeight: 1, marginBottom: '5px' }}>{getFlagEmoji(top1[0])}</div>
-                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#5d4037' }}>{top1[1].toLocaleString()}</div>
-                </div>
-            ) : (
-                <div style={{ color: '#8d6e63' }}>{lang.waiting}</div>
-            )}
-
-            <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#ff9a9e', fontStyle: 'italic' }}>VS</div>
-
-            {/* 2위 국가 */}
-            {top2 ? (
-                <div style={{ textAlign: 'center' }}>
-                     <div style={{ fontSize: '2rem', lineHeight: 1, marginBottom: '5px', opacity: 0.8 }}>{getFlagEmoji(top2[0])}</div>
-                     <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#8d6e63' }}>{top2[1].toLocaleString()}</div>
-                </div>
-            ) : (
-                <div style={{ color: '#a1887f', fontSize: '0.8rem' }}>{lang.noRival}</div>
-            )}
-        </div>
-        
-        {top1 && top2 && (
-            <div style={{ marginTop: '10px', fontSize: '0.8rem', color: '#ff6f61', fontWeight: '600' }}>
-                {lang.gap}: {(top1[1] - top2[1]).toLocaleString()}
-            </div>
-        )}
-      </div>
-
-      <h3>🌐 {lang.users}</h3>
-      <div className="scroll-box" style={{ flex: '0 0 150px' }}> {/* Limit height */}
-        {/* Country Stats List */}
-        {countryStats.map(([code, count], index) => (
-          <div key={code} className="user-row" style={index === 0 ? { background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)' } : {}}>
-            <span className="flag">
-                {index === 0 && '🥇 '}
-                {index === 1 && '🥈 '}
-                {index === 2 && '🥉 '}
-                {getFlagEmoji(code)}
-            </span>
-            <span className="count">{count}</span>
+      {/* MVP Card */}
+      <div style={{ 
+          background: '#fff0f5', 
+          borderRadius: '20px', 
+          padding: '20px', 
+          textAlign: 'center', 
+          marginBottom: '20px',
+          boxShadow: '0 4px 15px rgba(255, 111, 97, 0.1)'
+      }}>
+          <h4 style={{ margin: '0 0 10px 0', color: '#ff6f61', fontSize: '1rem' }}>
+             👑 {lang.maxAtkTitle || "Highest Attack"}
+          </h4>
+          
+          <div style={{ fontSize: '2.5rem', marginBottom: '5px' }}>
+              {hasRecord ? getFlagEmoji(maxAtkCountry) : '🏳️'}
           </div>
-        ))}
+          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#5d4037' }}>
+              {hasRecord ? maxAtkCountry : "UN"}
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: '900', color: '#ff9a9e', margin: '5px 0' }}>
+              {hasRecord ? maxAtk.toLocaleString() : "1"}
+          </div>
+          <div style={{ fontSize: '0.9rem', color: '#a1887f' }}>
+              {hasRecord ? "" : "기록 없음"}
+          </div>
       </div>
+
+      {/* Server Status */}
+      <h4 style={{ color: '#ff6f61', marginLeft: '5px', marginBottom: '10px' }}>
+          📊 {lang.serverStatusTitle || "Server Status"}
+      </h4>
       
-      {/* Recent Winners Section Removed */}
-
-      <div className="total-badge" style={{ color: '#4caf50', background: 'rgba(76, 175, 80, 0.1)', borderTop: '1px solid rgba(76, 175, 80, 0.2)' }}>
-        🟢 {lang.users}: {onlineUsersCount.toLocaleString()}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+          {/* Participants */}
+          <div style={{ flex: 1, background: '#fff', padding: '15px 5px', borderRadius: '15px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '5px' }}>⚔️</div>
+              <div style={{ fontSize: '0.8rem', color: '#5d4037', fontWeight: 'bold' }}>{lang.participants || "Active"}</div>
+              <div style={{ fontSize: '1.2rem', color: '#ff6f61', fontWeight: '900' }}>{onlinePlayers}</div>
+          </div>
+          
+          {/* Waiting */}
+          <div style={{ flex: 1, background: '#fff', padding: '15px 5px', borderRadius: '15px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '5px' }}>⏳</div>
+              <div style={{ fontSize: '0.8rem', color: '#5d4037', fontWeight: 'bold' }}>{lang.waiting || "Queue"}</div>
+              <div style={{ fontSize: '1.2rem', color: '#ffb74d', fontWeight: '900' }}>{waitingCount}</div>
+          </div>
+          
+          {/* Spectators */}
+          <div style={{ flex: 1, background: '#fff', padding: '15px 5px', borderRadius: '15px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: '5px' }}>👀</div>
+              <div style={{ fontSize: '0.8rem', color: '#5d4037', fontWeight: 'bold' }}>{lang.spectators || "Spectators"}</div>
+              <div style={{ fontSize: '1.2rem', color: '#8d6e63', fontWeight: '900' }}>{spectators}</div>
+          </div>
       </div>
 
-      <div className="rule-notice-box" style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.3)', borderRadius: '15px', margin: '10px 0', fontSize: '0.85rem', textAlign: 'left' }}>
+      {/* Total Online Badge */}
+      <div className="total-badge" style={{ 
+          color: '#2e7d32', 
+          background: '#e8f5e9', 
+          border: 'none',
+          borderRadius: '15px',
+          padding: '15px',
+          fontSize: '1.1rem',
+          fontWeight: 'bold',
+          marginBottom: '20px'
+      }}>
+        🟢 {lang.totalOnline || "Total Online"}: {onlineUsersCount.toLocaleString()}
+      </div>
+
+      <div className="rule-notice-box" style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.5)', borderRadius: '15px', margin: '10px 0', fontSize: '0.85rem', textAlign: 'left' }}>
         <h4 style={{ margin: '0 0 8px 0', color: '#ff6f61' }}>📜 {lang.gameRuleTitle}</h4>
         <ul style={{ paddingLeft: '20px', margin: '0 0 15px 0', color: '#5d4037', lineHeight: '1.4' }}>
           <li>{lang.gameRule1}</li>
