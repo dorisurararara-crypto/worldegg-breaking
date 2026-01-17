@@ -173,7 +173,10 @@ export class GameDO extends DurableObject {
             // const lastReq = this.inviteCooldowns.get(from);
             // if (lastReq && Date.now() - lastReq < 5000) { ... }
             
-            const today = new Date().toISOString().split('T')[0];
+            // Use KST (UTC+9) for date
+            const now = new Date();
+            const kstDate = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+            const today = kstDate.toISOString().split('T')[0];
             
             const { results } = await this.env.DB.prepare(
                 "SELECT (SELECT COUNT(*) FROM invites WHERE from_user = ? AND date = ?) as daily_count, (SELECT COUNT(*) FROM invites WHERE from_user = ? AND to_user = ?) as pair_exists"
