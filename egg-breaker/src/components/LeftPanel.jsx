@@ -100,7 +100,7 @@ const LeftPanel = ({ lang, serverState, countryStats, onlineUsersCount, recentWi
           {/* Waiting */}
           <div style={{ flex: 1, background: '#fff', padding: '15px 5px', borderRadius: '15px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
               <div style={{ fontSize: '1.5rem', marginBottom: '5px' }}>⏳</div>
-              <div style={{ fontSize: '0.8rem', color: '#5d4037', fontWeight: 'bold' }}>{lang.waiting || "Queue"}</div>
+              <div style={{ fontSize: '0.8rem', color: '#5d4037', fontWeight: 'bold' }}>{lang.queueLabel || "Queue"}</div>
               <div style={{ fontSize: '1.2rem', color: '#ffb74d', fontWeight: '900' }}>{waitingCount}</div>
           </div>
           
