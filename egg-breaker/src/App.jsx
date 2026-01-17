@@ -152,6 +152,9 @@ function App() {
   const [isSpectating, setIsSpectating] = useState(false);
   const isFirstLoad = useRef(true); // Track first load to detect latecomers
 
+  const addDebugLog = (msg) => {
+    console.log(`[App] ${msg}`);
+  };
   
   // Data from Server State
   const announcement = serverState.announcement || "";
