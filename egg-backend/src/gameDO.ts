@@ -19,6 +19,7 @@ interface GameState {
   prizeUrl: string;
   prizeImageUrl: string;   // [New] Public preview image
   prizeSecretUrl: string;  // [New] Secret image for winner only
+  nextPrizeName?: string;  // [New] Next prize in queue
   adUrl: string;
   recentWinners: any[];
   rev: number;
@@ -138,7 +139,17 @@ export class GameDO extends DurableObject {
       }
 
       this.startLoops();
+      this.updateNextPrize(); // [New] Initial prize check
     });
+  }
+
+  async updateNextPrize() {
+      try {
+          const nextPrize: any = await this.env.DB.prepare(
+              "SELECT name FROM prize_pool WHERE is_used = 0 ORDER BY id ASC LIMIT 1"
+          ).first();
+          this.gameState.nextPrizeName = nextPrize ? nextPrize.name : undefined;
+      } catch (e) {}
   }
 
   startLoops() {
@@ -297,6 +308,7 @@ export class GameDO extends DurableObject {
 
       this.gameState.lastUpdatedAt = Date.now();
       await this.saveState();
+      await this.updateNextPrize(); // [New] Prize used, find next
       this.broadcastState();
 
       return new Response(JSON.stringify({ success: true }));
@@ -572,6 +584,7 @@ export class GameDO extends DurableObject {
           maxAtkCountry: this.gameState.maxAtkCountry, // [Sync]
           maxPoints: this.gameState.maxPoints,
           maxClicks: this.gameState.maxClicks,
+          nextPrizeName: this.gameState.nextPrizeName, // [New]
           announcement: this.gameState.announcement,
           prize: this.gameState.prize,
           prizeUrl: this.gameState.prizeUrl,
@@ -689,6 +702,7 @@ export class GameDO extends DurableObject {
               await this.env.DB.prepare(
                   "INSERT INTO prize_pool (name, image_url, secret_url) VALUES (?, ?, ?)"
               ).bind(body.name, body.image_url, body.secret_url).run();
+              await this.updateNextPrize(); // [New]
               details = `Added prize: ${body.name}`;
           } catch(e) {
               return new Response("DB Error: " + e, { status: 500 });

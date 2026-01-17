@@ -139,7 +139,7 @@ function App() {
 
   // --- Global Swipe Logic ---
   const touchStart = useRef({ x: 0, y: 0 });
-  const [showSwipeGuides, setShowSwipeGuides] = useState(true);
+  const [hasSwiped, setHasSwiped] = useState(false); // [New] Track if used
 
   useEffect(() => {
     const handleTouchStart = (e) => {
@@ -160,7 +160,7 @@ function App() {
           // Swipe Left -> Open Right Panel (Shop)
           toggleMobilePanel('right');
         }
-        setShowSwipeGuides(false); // Hide guides once used
+        setHasSwiped(true); // Keep it visible but faint
       }
     };
 
@@ -188,7 +188,9 @@ function App() {
   const isFirstLoad = useRef(true); // Track first load to detect latecomers
 
   // Data from Server State
-  const announcement = serverState.announcement || "";
+  const announcement = serverState.nextPrizeName 
+    ? `🎁 이번 라운드 상품: ${serverState.nextPrizeName}` 
+    : (serverState.announcement || "");
   const prize = serverState.prize || "";
   const prizeUrl = serverState.prizeUrl || "";
   const adUrl = serverState.adUrl || "";
@@ -727,14 +729,14 @@ function App() {
         />
       )}
 
-      {/* Swipe Guides (Mobile Only) */}
-      {showSwipeGuides && mobilePanel === 'none' && (
+      {/* Swipe Guides (Mobile Only) - Stay visible but faint after use */}
+      {mobilePanel === 'none' && (
         <>
-          <div className="swipe-guide left">
+          <div className={`swipe-guide left ${hasSwiped ? 'used' : ''}`}>
             <span>→</span>
             <span className="swipe-label">{lang.users}</span>
           </div>
-          <div className="swipe-guide right">
+          <div className={`swipe-guide right ${hasSwiped ? 'used' : ''}`}>
             <span>←</span>
             <span className="swipe-label">{lang.shop}</span>
           </div>
