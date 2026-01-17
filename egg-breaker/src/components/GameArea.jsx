@@ -182,9 +182,9 @@ const GameArea = ({
     const wasActivePlayer = useRef(false);
     const [localLoserTimer, setLocalLoserTimer] = useState(null);
     const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
+    const [isSettingsFocused, setIsSettingsFocused] = useState(false); // [New] For fading icons
     
-    // Settings Toggle State
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    // Settings Toggle State (Removed isSettingsOpen)
     
     // --- Sound State (Persisted in localStorage) ---
     const [audioLoaded, setAudioLoaded] = useState(false); 
@@ -469,8 +469,10 @@ const GameArea = ({
         // Only allow click if connected and playing
         if (!connected) return; 
 
-        // 0. Trigger Vibration & Sound & Check Autoplay
-        checkWebAudioAutoplay();
+        // 0. Blur settings when clicking the egg/game area
+        setIsSettingsFocused(false);
+
+        // 1. Trigger Vibration & Sound & Check Autoplay
         triggerVibration();
         playToolSound(currentTool);
 
@@ -582,140 +584,53 @@ const GameArea = ({
                 </div>
             )}
 
-            {/* Gear Icon (Toggle Settings) */}
-            <button 
-                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+            {/* Minimal Settings Toggles (Replacing Gear Icon) */}
+            <div 
                 style={{
                     position: 'absolute',
                     top: '20px',
                     right: '20px',
-                    width: '45px',
-                    height: '45px',
-                    borderRadius: '50%',
-                    border: '2px solid rgba(255,255,255,0.8)',
-                    background: 'rgba(255,255,255,0.4)',
-                    backdropFilter: 'blur(5px)',
-                    color: '#5d4037',
-                    fontSize: '1.5rem',
-                    cursor: 'pointer',
-                    zIndex: 51,
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                    transition: 'transform 0.2s'
+                    gap: '12px',
+                    zIndex: 100,
+                    padding: '10px 15px',
+                    borderRadius: '25px',
+                    background: isSettingsFocused ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: isSettingsFocused ? 'blur(10px)' : 'none',
+                    transition: 'all 0.4s ease',
+                    opacity: isSettingsFocused ? 1 : 0.3, 
+                    transform: isSettingsFocused ? 'scale(1.05)' : 'scale(1)',
+                    cursor: 'pointer'
+                }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSettingsFocused(true);
                 }}
             >
-                ⚙️
-            </button>
+                {/* SFX Toggle */}
+                <button 
+                    onClick={(e) => { e.stopPropagation(); toggleSound(); }}
+                    style={{ background: 'none', border: 'none', fontSize: '1.4rem', filter: isSoundOn ? 'none' : 'grayscale(1)', cursor: 'pointer' }}
+                >
+                    {isSoundOn ? '🔊' : '🔇'}
+                </button>
 
-            {/* Settings Box (Conditionally Rendered) */}
-            {isSettingsOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: '75px', // Below the gear icon
-                    right: '20px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '15px',
-                    zIndex: 50,
-                    background: 'rgba(255, 255, 255, 0.85)',
-                    padding: '20px',
-                    borderRadius: '20px',
-                    backdropFilter: 'blur(10px)',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-                    border: '1px solid rgba(255,255,255,0.9)',
-                    minWidth: '150px',
-                    animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                }}>
-                    {/* Sound Toggle */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#5d4037' }}>효과음</span>
-                        <div 
-                            onClick={toggleSound}
-                            style={{
-                                width: '50px',
-                                height: '28px',
-                                background: isSoundOn ? '#ff9a9e' : '#e0e0e0',
-                                borderRadius: '30px',
-                                position: 'relative',
-                                cursor: 'pointer',
-                                transition: 'background 0.3s'
-                            }}
-                        >
-                            <div style={{
-                                width: '24px',
-                                height: '24px',
-                                background: '#fff',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                top: '2px',
-                                left: isSoundOn ? '24px' : '2px',
-                                transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                            }} />
-                        </div>
-                    </div>
+                {/* BGM Toggle */}
+                <button 
+                    onClick={(e) => { e.stopPropagation(); toggleBgm(); }}
+                    style={{ background: 'none', border: 'none', fontSize: '1.4rem', filter: isBgmOn ? 'none' : 'grayscale(1)', cursor: 'pointer' }}
+                >
+                    {isBgmOn ? '🎵' : '🔇'}
+                </button>
 
-                    {/* BGM Toggle */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#5d4037' }}>배경음</span>
-                        <div 
-                            onClick={toggleBgm}
-                            style={{
-                                width: '50px',
-                                height: '28px',
-                                background: isBgmOn ? '#ff9a9e' : '#e0e0e0',
-                                borderRadius: '30px',
-                                position: 'relative',
-                                cursor: 'pointer',
-                                transition: 'background 0.3s'
-                            }}
-                        >
-                            <div style={{
-                                width: '24px',
-                                height: '24px',
-                                background: '#fff',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                top: '2px',
-                                left: isBgmOn ? '24px' : '2px',
-                                transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                            }} />
-                        </div>
-                    </div>
-
-                    {/* Vibration Toggle */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#5d4037' }}>진동</span>
-                        <div 
-                            onClick={toggleVibration}
-                            style={{
-                                width: '50px',
-                                height: '28px',
-                                background: isVibrationOn ? '#ff9a9e' : '#e0e0e0',
-                                borderRadius: '30px',
-                                position: 'relative',
-                                cursor: 'pointer',
-                                transition: 'background 0.3s'
-                            }}
-                        >
-                            <div style={{
-                                width: '24px',
-                                height: '24px',
-                                background: '#fff',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                top: '2px',
-                                left: isVibrationOn ? '24px' : '2px',
-                                transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                            }} />
-                        </div>
-                    </div>
-                </div>
-            )}
+                {/* Vibration Toggle */}
+                <button 
+                    onClick={(e) => { e.stopPropagation(); toggleVibration(); }}
+                    style={{ background: 'none', border: 'none', fontSize: '1.4rem', filter: isVibrationOn ? 'none' : 'grayscale(1)', cursor: 'pointer' }}
+                >
+                    {isVibrationOn ? '📳' : '📴'}
+                </button>
+            </div>
 
             {/* Debug Console Removed */}
             
