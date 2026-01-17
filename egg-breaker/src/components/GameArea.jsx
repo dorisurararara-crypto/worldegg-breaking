@@ -476,17 +476,24 @@ const GameArea = ({
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        // Determine scale based on tool
+        // Determine scale and color based on damage (clickPower)
         let scale = 1;
         let toolSize = 2; 
+        let dmgColor = '#ff6f61'; // Default (Low)
+        
+        if (clickPower >= 10000) dmgColor = '#ffd700'; // Gold (Legendary)
+        else if (clickPower >= 1000) dmgColor = '#9c27b0'; // Purple (Epic)
+        else if (clickPower >= 100) dmgColor = '#e91e63'; // Pink (Rare)
+        else if (clickPower >= 10) dmgColor = '#ff9800'; // Orange (Uncommon)
+
         switch(currentTool) {
             case 'hammer': scale = 1.2; toolSize = 2.5; break;
             case 'pickaxe': scale = 1.5; toolSize = 3.5; break;
             case 'dynamite': scale = 2.0; toolSize = 5.0; break;
             case 'drill': scale = 2.5; toolSize = 7.0; break;
             case 'excavator': scale = 3.0; toolSize = 10.0; break;
-            case 'laser': scale = 4.0; toolSize = 14.0; break;
-            case 'nuke': scale = 6.0; toolSize = 20.0; break;
+            case 'laser': scale = 4.5; toolSize = 14.0; break; // Increased scale
+            case 'nuke': scale = 7.0; toolSize = 20.0; break; // Increased scale
             default: scale = 1; toolSize = 2;
         }
 
@@ -500,6 +507,7 @@ const GameArea = ({
             val: clickPower,
             scale,
             toolSize,
+            dmgColor,
             toolEmoji: TOOL_EMOJIS[currentTool] || '👊',
             particle: randomParticle
         };
@@ -748,20 +756,21 @@ const GameArea = ({
                     <React.Fragment key={effect.id}>
                         {/* Damage Number */}
                         <span 
-                            className="damage-float"
+                            className={`damage-float ${effect.val >= 1000 ? 'critical' : ''}`}
                             style={{ 
                                 left: effect.x, 
                                 top: effect.y - 50,
                                 fontSize: `${1.8 * effect.scale}rem`,
                                 fontWeight: '900',
-                                color: '#ff6f61',
-                                WebkitTextStroke: '2px #fff',
+                                color: effect.dmgColor,
+                                WebkitTextStroke: effect.val >= 10000 ? '2px #000' : '2px #fff',
+                                textShadow: effect.val >= 10000 ? '0 0 10px rgba(255, 215, 0, 0.8)' : 'none',
                                 pointerEvents: 'none',
                                 zIndex: 12,
                                 transform: `rotate(${Math.random() * 20 - 10}deg)`
                             }}
                         >
-                            -{effect.val}
+                            -{effect.val.toLocaleString()}
                         </span>
                         
                         {/* Tool Icon */}
