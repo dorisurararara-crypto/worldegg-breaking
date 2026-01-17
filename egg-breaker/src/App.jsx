@@ -732,11 +732,19 @@ function App() {
       {/* Swipe Guides (Mobile Only) - Stay visible but faint after use */}
       {mobilePanel === 'none' && (
         <>
-          <div className={`swipe-guide left ${hasSwiped ? 'used' : ''}`}>
+          <div 
+            className={`swipe-guide left ${hasSwiped ? 'used' : ''}`}
+            onClick={() => { toggleMobilePanel('left'); setHasSwiped(true); }}
+            style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+          >
             <span>👉</span>
             <span className="swipe-label">{lang.users}</span>
           </div>
-          <div className={`swipe-guide right ${hasSwiped ? 'used' : ''}`}>
+          <div 
+            className={`swipe-guide right ${hasSwiped ? 'used' : ''}`}
+            onClick={() => { toggleMobilePanel('right'); setHasSwiped(true); }}
+            style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+          >
             <span>👈</span>
             <span className="swipe-label">{lang.shop}</span>
           </div>
