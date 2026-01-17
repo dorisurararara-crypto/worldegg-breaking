@@ -46,7 +46,21 @@ export function useGameState() {
   const wsRef = useRef(null);
   const clickAccumulator = useRef(0);
   const lastDeltaSentTime = useRef(0);
-  const clientIdRef = useRef(crypto.randomUUID());
+  
+  // Persist Client ID across reloads/tabs
+  const clientIdRef = useRef(() => {
+      let stored = localStorage.getItem('egg_game_client_id');
+      if (!stored) {
+          stored = crypto.randomUUID();
+          localStorage.setItem('egg_game_client_id', stored);
+      }
+      return stored;
+  });
+  
+  // Fix: useRef value initialization needs to be called if function
+  const clientId = typeof clientIdRef.current === 'function' ? clientIdRef.current() : clientIdRef.current;
+  clientIdRef.current = clientId; // Ensure ref holds the string value
+
   const countryRef = useRef("UN");
   const pollingIntervalRef = useRef(null);
 

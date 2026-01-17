@@ -145,7 +145,7 @@ const LeftPanel = ({ lang, serverState, countryStats, onlineUsersCount, recentWi
 
       <div className="info-box">
         <h4>{lang.contactTitle}</h4>
-        <p>dorisurararara@gmail.com</p>
+        <p>bbbofficial95@gmail.com</p>
       </div>
     </aside>
   );
