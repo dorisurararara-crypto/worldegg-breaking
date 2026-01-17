@@ -290,20 +290,23 @@ const GameArea = ({
     const playBgm = async (phase) => {
         const trackName = `bgm_${phase}`;
         
-        // Stop others strictly before starting new one
-        await stopBgm();
+        // Ensure previous BGM is fully stopped and cleared
+        if (!Capacitor.isNativePlatform()) {
+             if (bgmRef.current) {
+                 bgmRef.current.pause();
+                 bgmRef.current.currentTime = 0;
+                 bgmRef.current.src = ""; // Detach
+                 bgmRef.current = null;
+             }
+        } else {
+             await stopBgm();
+        }
 
         if (Capacitor.isNativePlatform()) {
             try {
-                // 1. Set Volume
                 await NativeAudio.setVolume({ assetId: trackName, volume: 0.8 });
-                
-                // 2. Play first (To wake up the audio channel reliability)
                 await NativeAudio.play({ assetId: trackName });
-                
-                // 3. Loop (For continuous play)
                 await NativeAudio.loop({ assetId: trackName });
-                
             } catch(e) { 
                 console.log("BGM Play/Loop Error:", e);
             }

@@ -7,9 +7,11 @@ interface GameState {
   status: 'PLAYING' | 'WINNER_CHECK' | 'FINISHED';
   winnerInfo: any;
   winnerCheckStartTime: number;
-  winningClientId?: string; // ID of the winner (before email is set)
-  winningToken?: string;    // Secret token for the winner to claim prize
+  winningClientId?: string; 
+  winningToken?: string;    
   clicksByCountry: Record<string, number>;
+  maxAtk: number;          // [Sync] Added
+  maxAtkCountry: string;   // [Sync] Added
   announcement: string;
   prize: string;
   prizeUrl: string;
@@ -25,8 +27,8 @@ interface PlayerSession {
   clientId: string;
   country: string;
   lastSeen: number;
-  lastDeltaTime: number; // For rate limiting
-  warnings?: number;     // For abuse detection
+  lastDeltaTime: number; 
+  warnings?: number;     
   role: 'player' | 'spectator';
   queueToken?: string;
 }
@@ -35,7 +37,7 @@ interface QueueItem {
   token: string;
   clientId: string;
   joinedAt: number;
-  ws: WebSocket; // We need WS ref to upgrade them
+  ws: WebSocket; 
 }
 
 export class GameDO extends DurableObject {
@@ -46,28 +48,35 @@ export class GameDO extends DurableObject {
   gameState: GameState;
   
   // Connections
-  sessions: Map<WebSocket, PlayerSession> = new Map(); // Reverse lookup
-  players: Map<string, PlayerSession> = new Map(); // clientId -> Session (Active Players)
-  // Spectators are just in sessions with role='spectator'
+  sessions: Map<WebSocket, PlayerSession> = new Map(); 
+  players: Map<string, PlayerSession> = new Map(); 
   
   queue: QueueItem[] = [];
   
+  // Invite System
+  pendingRewards: Map<string, number> = new Map();
+  inviteCooldowns: Map<string, number> = new Map(); // Rate limiting (Memory only)
+  
   // Constants
   MAX_PLAYERS = 1000;
-  MAX_QUEUE = 1000; // Limit queue size to save cost
-  BROADCAST_INTERVAL_MS = 2000; // 2 seconds
-  SAVE_INTERVAL_MS = 20000; // 20 seconds
+  MAX_QUEUE = 1000; 
+  BROADCAST_INTERVAL_MS = 2000; 
+  SAVE_INTERVAL_MS = 20000; 
   
   // Loop Handles
   broadcastInterval: any = null;
   saveInterval: any = null;
+  
+  // Optimization
+  lastBroadcastHp: number = -1;
+  lastBroadcastTime: number = 0;
+  lastBroadcastPlayers: number = -1;
 
   constructor(state: DurableObjectState, env: any) {
     super(state, env);
     this.state = state;
     this.env = env;
 
-    // Default State
     this.gameState = {
       hp: 1000000,
       maxHp: 1000000,
@@ -78,6 +87,8 @@ export class GameDO extends DurableObject {
       winningClientId: undefined,
       winningToken: undefined,
       clicksByCountry: {},
+      maxAtk: 1,              // [Sync] Added
+      maxAtkCountry: "UN",    // [Sync] Added
       announcement: "Welcome to Egg Pong!",
       prize: "Amazon Gift Card $50",
       prizeUrl: "https://amazon.com",
@@ -94,15 +105,16 @@ export class GameDO extends DurableObject {
         this.gameState = { ...this.gameState, ...stored };
       }
       
-      // Load recent winners from DB to ensure persistence
+      const storedRewards: any = await this.state.storage.get("pendingRewards");
+      if (storedRewards) {
+          this.pendingRewards = storedRewards;
+      }
+      
       try {
           const { results } = await this.env.DB.prepare(
               "SELECT round, prize, created_at as date FROM winners ORDER BY id DESC LIMIT 5"
           ).all();
           
-          // Debug Log
-          console.log("[Recovery] Loaded winners from DB:", JSON.stringify(results));
-
           if (results && Array.isArray(results)) {
               this.gameState.recentWinners = results;
           }
@@ -110,7 +122,6 @@ export class GameDO extends DurableObject {
           console.error("[Recovery] Failed to load winners:", e);
       }
 
-      // Start loops
       this.startLoops();
     });
   }
@@ -127,33 +138,95 @@ export class GameDO extends DurableObject {
   async fetch(request: Request) {
     const url = new URL(request.url);
 
-    // WebSocket Upgrade
     if (url.pathname === "/ws") {
       if (request.headers.get("Upgrade") !== "websocket") {
         return new Response("Expected Upgrade: websocket", { status: 426 });
       }
       
       const { 0: client, 1: server } = new WebSocketPair();
-      
       const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-      const mode = url.searchParams.get("mode") || "spectator"; // Default to spectator
+      const mode = url.searchParams.get("mode") || "spectator"; 
       
-      // Handle the connection
       this.handleSession(server, ip, mode);
 
       return new Response(null, { status: 101, webSocket: client });
     }
 
-    // --- Admin HTTP API ---
     if (url.pathname.startsWith("/admin/")) {
         return this.handleAdmin(request, url);
     }
     
-    // Legacy /winner Endpoint for Prize Claim (Now Secured)
+    // --- Invite Reward API ---
+    if (url.pathname === "/invite-reward" && request.method === "POST") {
+        try {
+            const body: any = await request.json();
+            const { from, to } = body; 
+            
+            if (!from || !to || from === to) {
+                return new Response(JSON.stringify({ success: false, error: "Invalid Request (Self or Empty)" }), { status: 400 });
+            }
+
+            // Memory Rate Limit (Optional)
+            // const lastReq = this.inviteCooldowns.get(from);
+            // if (lastReq && Date.now() - lastReq < 5000) { ... }
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            const { results } = await this.env.DB.prepare(
+                "SELECT (SELECT COUNT(*) FROM invites WHERE from_user = ? AND date = ?) as daily_count, (SELECT COUNT(*) FROM invites WHERE from_user = ? AND to_user = ?) as pair_exists"
+            ).bind(from, today, from, to).all();
+            
+            const stats = results[0];
+            
+            if (stats.pair_exists > 0) {
+                return new Response(JSON.stringify({ success: false, error: "Already invited this friend" }), { status: 400 });
+            }
+            if (stats.daily_count >= 5) {
+                return new Response(JSON.stringify({ success: false, error: "Daily limit exceeded" }), { status: 400 });
+            }
+            
+            try {
+                await this.env.DB.prepare(
+                    "INSERT INTO invites (from_user, to_user, date) VALUES (?, ?, ?)"
+                ).bind(from, to, today).run();
+            } catch (dbErr) {
+                return new Response(JSON.stringify({ success: false, error: "Duplicate or DB Error" }), { status: 400 });
+            }
+            
+            const reward = 800;
+            let sent = false;
+            
+            for (const session of this.sessions.values()) {
+                if (session.clientId === from) {
+                    if (session.ws.readyState === WebSocket.OPEN) {
+                        session.ws.send(JSON.stringify({
+                            type: 'invite_reward',
+                            amount: reward,
+                            msg: "Friend joined! +800P" // [Sync] Updated text
+                        }));
+                        sent = true;
+                    }
+                    break;
+                }
+            }
+            
+            if (!sent) {
+                const currentPending = this.pendingRewards.get(from) || 0;
+                this.pendingRewards.set(from, currentPending + reward);
+                await this.state.storage.put("pendingRewards", this.pendingRewards);
+            }
+            
+            return new Response(JSON.stringify({ success: true, sent }), { status: 200 });
+
+        } catch (e) {
+            console.error("Invite Error:", e);
+            return new Response(JSON.stringify({ error: "Internal Error" }), { status: 500 });
+        }
+    }
+    
     if (url.pathname === "/winner" && request.method === "POST") {
       const body: any = await request.json();
       
-      // Security Check: Must be WINNER_CHECK and Token must match
       if (this.gameState.status !== 'WINNER_CHECK') {
           return new Response(JSON.stringify({ error: "Game not in winner check mode" }), { status: 400 });
       }
@@ -165,15 +238,12 @@ export class GameDO extends DurableObject {
           await this.env.DB.prepare(
             "INSERT INTO winners (round, email, country, prize) VALUES (?, ?, ?, ?)"
           ).bind(this.gameState.round, body.email, body.country, this.gameState.prize).run();
-      } catch (e) {
-          // Ignore DB error
-      }
+      } catch (e) {}
       
       const maskedEmail = body.email.replace(/(^.{3}).+(@.+)/, "$1***$2");
       this.gameState.winnerInfo = { country: body.country, email: maskedEmail };
-      this.gameState.status = 'FINISHED'; // Game ends, waits for admin reset
+      this.gameState.status = 'FINISHED'; 
       
-      // Clear sensitive info
       this.gameState.winningClientId = undefined;
       this.gameState.winningToken = undefined;
 
@@ -184,7 +254,6 @@ export class GameDO extends DurableObject {
       });
       if (this.gameState.recentWinners.length > 5) this.gameState.recentWinners.pop();
 
-      // NOW we kick everyone
       this.kickAllPlayers();
 
       this.gameState.lastUpdatedAt = Date.now();
@@ -194,7 +263,6 @@ export class GameDO extends DurableObject {
       return new Response(JSON.stringify({ success: true }));
     }
     
-    // Simple state getter (for fallback/polling)
     if (url.pathname === "/state") {
         return new Response(JSON.stringify({
             ...this.gameState,
@@ -209,28 +277,16 @@ export class GameDO extends DurableObject {
 
   handleSession(ws: WebSocket, ip: string, requestedMode: string) {
     this.state.acceptWebSocket(ws);
-    
-    // Temporary session, wait for 'join' message to finalize
-    // But we need to store it to handle 'join' message
-    // actually, we can just wait for the first message? 
-    // No, standard `webSocketMessage` handler will be called.
-    // We attach metadata to the socket object or use a Map.
-    // We use `sessions` Map.
-    
-    // We don't know clientId yet.
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
     try {
       const msg = JSON.parse(typeof message === 'string' ? message : new TextDecoder().decode(message));
       
-      // 1. JOIN
       if (msg.type === 'join') {
         const clientId = msg.clientId || crypto.randomUUID();
         const country = msg.country || "UN";
         
-        // Gatekeeper: Only allow joining queue/game if status is PLAYING
-        // (Except for admin or special cases, but here strictly for users)
         if (this.gameState.status !== 'PLAYING') {
              ws.send(JSON.stringify({ type: 'error', code: 'ROUND_NOT_STARTED', message: 'Round not started yet.' }));
              ws.close(1008, "Round not started");
@@ -241,12 +297,10 @@ export class GameDO extends DurableObject {
         let queuePos: number | null = null;
         let queueToken: string | undefined;
 
-        // Cleanup old session if same socket (unlikely)
         if (this.sessions.has(ws)) {
             this.cleanupSession(ws); 
         }
 
-        // Logic: Try to join as player first
         if (this.players.size < this.MAX_PLAYERS) {
             role = 'player';
             this.players.set(clientId, {
@@ -254,15 +308,13 @@ export class GameDO extends DurableObject {
                 lastSeen: Date.now(), lastDeltaTime: 0, role: 'player'
             });
         } else {
-            // Player slots full, try queue
             if (this.queue.length < this.MAX_QUEUE) {
                 role = 'spectator';
                 queueToken = crypto.randomUUID();
                 this.queue.push({ token: queueToken, clientId, joinedAt: Date.now(), ws });
                 queuePos = this.queue.length;
             } else {
-                // Queue full! Reject connection
-                ws.send(JSON.stringify({ type: 'error', code: 'FULL', message: 'Server is full (Queue Max Reached)' }));
+                ws.send(JSON.stringify({ type: 'error', code: "FULL", message: 'Server is full (Queue Max Reached)' }));
                 ws.close(1008, "Server Full");
                 return;
             }
@@ -281,110 +333,89 @@ export class GameDO extends DurableObject {
             serverTs: Date.now(),
             buildId: "v1.0.0"
         }));
+        
+        const pending = this.pendingRewards.get(clientId);
+        if (pending && pending > 0) {
+            ws.send(JSON.stringify({
+                type: 'invite_reward',
+                amount: pending,
+                msg: `Welcome back! You earned ${pending}P from invites.`
+            }));
+            this.pendingRewards.delete(clientId);
+            this.state.storage.put("pendingRewards", this.pendingRewards);
+        }
 
-        // Send initial state immediately
         this.sendStateTo(ws);
         return;
       }
 
-      // Check session
       const session = this.sessions.get(ws);
-      if (!session) return; // Ignore if not joined
+      if (!session) return; 
       session.lastSeen = Date.now();
 
-      // 2. CLICK_DELTA
       if (msg.type === 'click_delta') {
           if (session.role !== 'player') {
               ws.send(JSON.stringify({ type: 'error', code: 'NOT_PLAYER', message: 'You are a spectator' }));
               return;
           }
 
-          // Rate Limit (Strict)
           const now = Date.now();
           const timeSinceLast = now - session.lastDeltaTime;
           
-          if (timeSinceLast < 4500) { // 4.5s (allowing 0.5s drift for 5s interval)
-              // Too fast!
+          if (timeSinceLast < 4500) { 
               session.warnings = (session.warnings || 0) + 1;
-              
               if (session.warnings > 3) {
-                  // Abuser detected: Disconnect immediately
                   try {
                       ws.send(JSON.stringify({ type: 'error', code: 'RATE_LIMIT_EXCEEDED', message: 'Kicked due to rate limit abuse.' }));
                       ws.close(1008, "Rate Limit Exceeded");
                   } catch(e) {}
                   return;
               }
-              
-              // Just warn for now
-              ws.send(JSON.stringify({ type: 'error', code: 'TOO_FAST', message: `Too fast! Wait ${Math.ceil((4500 - timeSinceLast)/1000)}s` }));
+              ws.send(JSON.stringify({ type: 'error', code: 'TOO_FAST', message: `Too fast! Wait ${Math.ceil((4500 - timeSinceLast) / 1000)}s` }));
               return; 
           }
           
-          // Reset warnings on successful valid click
           session.warnings = 0;
           session.lastDeltaTime = now;
 
           const delta = Number(msg.delta);
-          if (isNaN(delta) || delta <= 0 || delta > 500) { // Max 500 clicks per 5s (100 CPS limit)
+          const userAtk = Number(msg.atk || 1); // [Sync]
+
+          if (isNaN(delta) || delta <= 0 || delta > 1000) { 
               ws.send(JSON.stringify({ type: 'error', code: 'BAD_DELTA', message: 'Invalid delta' }));
               return;
           }
           
-          session.lastDeltaTime = now;
-
-          // Apply Damage
           if (this.gameState.status === 'PLAYING' && this.gameState.hp > 0) {
               this.gameState.hp = Math.max(0, this.gameState.hp - delta);
               this.gameState.clicksByCountry[session.country] = (this.gameState.clicksByCountry[session.country] || 0) + delta;
+              
+              // [Sync] Max Atk Logic
+              if (userAtk > this.gameState.maxAtk) {
+                  this.gameState.maxAtk = userAtk;
+                  this.gameState.maxAtkCountry = session.country;
+              }
+
               this.gameState.lastUpdatedAt = now;
-              // Rev is not incremented on every click to save bandwidth in checks, 
-              // but purely timestamp based.
-              // However, prompt says "rev++ or lastUpdatedAt".
               
               if (this.gameState.hp === 0) {
                   this.gameState.status = 'WINNER_CHECK';
                   this.gameState.winnerCheckStartTime = now;
-                  
-                  // 1. Identify Winner
                   this.gameState.winningClientId = session.clientId;
                   this.gameState.winningToken = crypto.randomUUID();
 
-                  // Notify Winner Privately
                   session.ws.send(JSON.stringify({
                       type: 'you_won',
                       token: this.gameState.winningToken,
                       round: this.gameState.round
                   }));
                   
-                  // 2. KICK ALL PLAYERS (They become spectators/poller)
-                  // Winner is also kicked? No, winner needs to stay connected to submit email?
-                  // Wait, if we kick winner, they lose connection.
-                  // BUT winner needs to submit email via HTTP POST /winner. 
-                  // So we CAN kick them, as long as UI handles it.
-                  // HOWEVER, the prompt says "Winner inputs email... THEN kicked".
-                  // So we should NOT kick yet. We wait for FINISHED state.
-                  
-                  // Actually, prompt: "Winner inputs email... 5 mins... THEN kicked."
-                  // Losers: "7s wait... THEN kicked."
-                  
-                  // So here (WINNER_CHECK start), we DO NOT kick yet.
-                  // We kick when transitioning to FINISHED.
-
-                  this.saveState(); // Critical
-                  this.broadcastState(); // Notify immediately
+                  this.saveState(); 
+                  this.broadcastState(); 
               }
           }
       }
-
-      // 3. PING
-      if (msg.type === 'ping') {
-          // just updates lastSeen
-      }
-
-    } catch (e) {
-      // console.error(e);
-    }
+    } catch (e) {}
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean) {
@@ -400,70 +431,58 @@ export class GameDO extends DurableObject {
       if (session) {
           if (session.role === 'player') {
               this.players.delete(session.clientId);
-              this.promoteFromQueue(); // Slot opened!
+              this.promoteFromQueue(); 
           } else if (session.queueToken) {
-              // Remove from queue
               this.queue = this.queue.filter(q => q.token !== session.queueToken);
-              // Notify others in queue? No, too expensive. Just update them on broadcast/ping?
-              // Actually queue positions change. Ideally notify.
-              // But for cost, maybe lazily or only when they ask? 
-              // Let's rely on periodic Queue Update? 
           }
           this.sessions.delete(ws);
       }
   }
 
+  // [Fix] Removed Recursion
   promoteFromQueue() {
-      if (this.queue.length === 0) return;
-      
-      const next = this.queue.shift();
-      if (!next) return;
-
-      const session = this.sessions.get(next.ws);
-      if (session) {
-          session.role = 'player';
-          session.queueToken = undefined;
-          this.players.set(session.clientId, session);
+      while (this.queue.length > 0) {
+          const next = this.queue.shift();
+          if (!next) continue;
           
-          // Notify
-          next.ws.send(JSON.stringify({
-              type: 'join_ok',
-              role: 'player',
-              queuePos: null,
-              serverTs: Date.now()
-          }));
-          
-          // Notify remaining queue?
-          this.broadcastQueueUpdate();
-      } else {
-          // Session dead, try next
-          this.promoteFromQueue();
+          const session = this.sessions.get(next.ws);
+          if (session) {
+              session.role = 'player';
+              session.queueToken = undefined;
+              this.players.set(session.clientId, session);
+              
+              if (next.ws.readyState === WebSocket.OPEN) {
+                next.ws.send(JSON.stringify({
+                    type: 'join_ok',
+                    role: 'player',
+                    queuePos: null,
+                    serverTs: Date.now()
+                }));
+              }
+              this.broadcastQueueUpdate();
+              return; // Success, stop loop
+          }
+          // If session is gone, loop continues to next
       }
   }
 
   kickAllPlayers() {
-      // Kick all active players (Winner + Losers)
-      // We do NOT kick the queue (waiting list). They stay for next round.
-      
       for (const p of this.players.values()) {
           try {
-              p.ws.send(JSON.stringify({ type: 'error', code: 'GAME_OVER', message: 'Round finished. Thanks for playing!' }));
+              p.ws.send(JSON.stringify({ type: 'error', code: 'GAME_OVER', message: 'Round finished. Thanks for playing!' })); // [Sync] Message
               p.ws.close(1000, "Round Finished");
           } catch(e) {}
-          // Session cleanup will happen in close handler
       }
       this.players.clear();
-      // Note: sessions map will be cleared via webSocketClose handlers
   }
 
   broadcastQueueUpdate() {
-      // Send queue update to those with tokens
       this.queue.forEach((item, idx) => {
           if (item.ws.readyState === WebSocket.OPEN) {
               item.ws.send(JSON.stringify({
                   type: 'queue_update',
                   queuePos: idx + 1,
-                  etaSec: (idx + 1) * 30 // Rough guess
+                  etaSec: (idx + 1) * 30 
               }));
           }
       });
@@ -472,6 +491,20 @@ export class GameDO extends DurableObject {
   broadcastState() {
       if (this.sessions.size === 0) return;
 
+      const now = Date.now();
+      const hpChanged = this.gameState.hp !== this.lastBroadcastHp;
+      const playersChanged = this.players.size !== this.lastBroadcastPlayers;
+      const timeElapsed = now - this.lastBroadcastTime > 10000;
+      const statusChanged = this.gameState.status !== 'PLAYING';
+
+      if (!hpChanged && !playersChanged && !timeElapsed && !statusChanged) {
+          return;
+      }
+
+      this.lastBroadcastHp = this.gameState.hp;
+      this.lastBroadcastPlayers = this.players.size;
+      this.lastBroadcastTime = now;
+
       const payload = JSON.stringify({
           type: 'state',
           hp: this.gameState.hp,
@@ -479,26 +512,22 @@ export class GameDO extends DurableObject {
           round: this.gameState.round,
           status: this.gameState.status,
           winnerInfo: this.gameState.winnerInfo,
-          winningClientId: this.gameState.winningClientId, // Send winner ID
+          winningClientId: this.gameState.winningClientId,
           onlinePlayers: this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
+          queueLength: this.queue.length, // [Sync]
+          maxAtk: this.gameState.maxAtk, // [Sync]
+          maxAtkCountry: this.gameState.maxAtkCountry, // [Sync]
           announcement: this.gameState.announcement,
           prize: this.gameState.prize,
           prizeUrl: this.gameState.prizeUrl,
           adUrl: this.gameState.adUrl,
-          recentWinners: this.gameState.recentWinners, // Added this field
+          recentWinners: this.gameState.recentWinners, 
           rev: this.gameState.rev,
           lastUpdatedAt: this.gameState.lastUpdatedAt
       });
-
-      // Simple broadcast to all
       for (const ws of this.sessions.keys()) {
-          try {
-            ws.send(payload);
-          } catch(e) {
-             // likely closed
-             this.cleanupSession(ws);
-          }
+          try { ws.send(payload); } catch(e) { this.cleanupSession(ws); }
       }
   }
 
@@ -506,7 +535,6 @@ export class GameDO extends DurableObject {
       await this.state.storage.put("fullState", this.gameState);
   }
 
-  // --- Admin Logic ---
   async handleAdmin(request: Request, url: URL) {
       const authKey = request.headers.get("x-admin-key");
       if (authKey !== "egg1234") return new Response("Unauthorized", { status: 401 });
@@ -519,18 +547,21 @@ export class GameDO extends DurableObject {
           this.gameState.hp = 1000000;
           this.gameState.round += 1;
           this.gameState.clicksByCountry = {};
+          this.gameState.maxAtk = 1; // [Sync]
+          this.gameState.maxAtkCountry = "UN"; // [Sync]
           this.gameState.status = 'PLAYING';
           this.gameState.winnerInfo = null;
           this.gameState.lastUpdatedAt = Date.now();
           
-          // Promote Queue to Players
+          // Promote all possible players
           while (this.players.size < this.MAX_PLAYERS && this.queue.length > 0) {
               this.promoteFromQueue();
           }
-
+          
           details = `Reset Round to ${this.gameState.round}`;
           await this.saveState();
           this.broadcastState();
+
       } else if (action === "set-round" && request.method === "POST") {
           const body: any = await request.json();
           this.gameState.round = body.round;
@@ -538,6 +569,7 @@ export class GameDO extends DurableObject {
           details = `Set Round to ${body.round}`;
           await this.saveState();
           this.broadcastState();
+
       } else if (action === "set-hp" && request.method === "POST") {
           const body: any = await request.json();
           this.gameState.hp = body.hp;
@@ -547,6 +579,7 @@ export class GameDO extends DurableObject {
           details = `Set HP to ${body.hp}`;
           await this.saveState();
           this.broadcastState();
+
       } else if (action === "config" && request.method === "POST") {
           const body: any = await request.json();
           if (body.announcement !== undefined) this.gameState.announcement = body.announcement;
@@ -557,56 +590,42 @@ export class GameDO extends DurableObject {
           details = `Config Updated`;
           await this.saveState();
           this.broadcastState();
+
       } else if (action === "winners" && request.method === "GET") {
-          // Fetch winners list
           try {
-             const { results } = await this.env.DB.prepare("SELECT * FROM winners ORDER BY id DESC LIMIT 50").all();
-             return new Response(JSON.stringify(results));
+              const { results } = await this.env.DB.prepare("SELECT * FROM winners ORDER BY id DESC LIMIT 50").all();
+              return new Response(JSON.stringify(results));
           } catch(e) {
-             return new Response(JSON.stringify([]));
+              return new Response(JSON.stringify([]));
           }
+
       } else if (action.startsWith("winners/") && request.method === "DELETE") {
           const id = action.split("/")[1];
           if (!id) return new Response("Missing ID", { status: 400 });
-
           try {
-             await this.env.DB.prepare("DELETE FROM winners WHERE id = ?").bind(id).run();
-             details = `Deleted winner ID ${id}`;
-
-             // Reload recent winners to reflect deletion
-             const { results } = await this.env.DB.prepare(
-                "SELECT round, prize, created_at as date FROM winners ORDER BY id DESC LIMIT 5"
-             ).all();
-             if (results) this.gameState.recentWinners = results;
-             this.broadcastState();
-
+              await this.env.DB.prepare("DELETE FROM winners WHERE id = ?").bind(id).run();
+              details = `Deleted winner ID ${id}`;
+              // Refresh recent winners cache
+              const { results } = await this.env.DB.prepare(
+                  "SELECT round, prize, created_at as date FROM winners ORDER BY id DESC LIMIT 5"
+              ).all();
+              if (results) this.gameState.recentWinners = results;
+              this.broadcastState();
           } catch(e) {
-             return new Response("DB Error: " + e, { status: 500 });
+              return new Response("DB Error: " + e, { status: 500 });
           }
-      } else if (action === "winner" && request.method === "POST") {
-           // Manual winner selection or verification?
-           // Original had /winner in public API, but it should be protected or part of game logic
-           // The previous code had public /winner. 
-           // In new architecture, we should keep /winner logic but maybe secure it?
-           // Actually, the prompt says "Admin: ... + audit log".
-           // Client claims prize via /winner usually? 
-           // In this design, client doesn't call /winner to WIN, client calls click_delta -> hp=0 -> WINNER_CHECK.
-           // Then 'someone' sends the email?
-           // Usually the person who clicked 0 sends a claim request.
-           // Let's keep a separate handler for Prize Claiming, which is NOT admin.
       }
-
-      // Audit Log
+      
+      // [Sync] Audit Log
       if (details) {
           try {
-             await this.env.DB.prepare("INSERT INTO audit_logs (action, details, ip) VALUES (?, ?, ?)")
-             .bind(action, details, ip).run();
+              await this.env.DB.prepare("INSERT INTO audit_logs (action, details, ip) VALUES (?, ?, ?)").bind(action, details, ip).run();
           } catch(e) {}
       }
 
       return new Response(JSON.stringify({ success: true }));
   }
-
+  
   sendStateTo(ws: WebSocket) {
       ws.send(JSON.stringify({
           type: 'state',
@@ -618,11 +637,14 @@ export class GameDO extends DurableObject {
           winningClientId: this.gameState.winningClientId,
           onlinePlayers: this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
+          queueLength: this.queue.length,
+          maxAtk: this.gameState.maxAtk,
+          maxAtkCountry: this.gameState.maxAtkCountry,
           announcement: this.gameState.announcement,
           prize: this.gameState.prize,
           prizeUrl: this.gameState.prizeUrl,
           adUrl: this.gameState.adUrl,
-          recentWinners: this.gameState.recentWinners, // Added this field
+          recentWinners: this.gameState.recentWinners,
           rev: this.gameState.rev,
           lastUpdatedAt: this.gameState.lastUpdatedAt
       }));

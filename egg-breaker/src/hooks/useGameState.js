@@ -36,6 +36,7 @@ export function useGameState() {
   const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
   const [winningToken, setWinningToken] = useState(null);
+  const [rewardEvent, setRewardEvent] = useState(null);
 
   const wsRef = useRef(null);
   const clickAccumulator = useRef(0);
@@ -47,11 +48,11 @@ export function useGameState() {
   // --- 1. Polling Logic (Default) ---
   const fetchState = async () => {
       try {
-          console.log(`[Polling] Fetching ${API_URL}/state`); // Log attempt
-          const res = await fetch(`${API_URL}/state`);
+          // console.log(`[Polling] Fetching ${API_URL}/api/state`); // Log attempt
+          const res = await fetch(`${API_URL}/api/state`);
           if (res.ok) {
               const data = await res.json();
-              console.log("[Polling] Success:", data); // Log success
+              // console.log("[Polling] Success:", data); // Log success
               setServerState(prev => {
                   if (data.lastUpdatedAt < prev.lastUpdatedAt && data.round === prev.round) return prev;
                   return data;
@@ -69,7 +70,7 @@ export function useGameState() {
       // Start polling if NOT connected
       if (!connected) {
           fetchState(); // Initial fetch
-          pollingIntervalRef.current = setInterval(fetchState, 1000);
+          pollingIntervalRef.current = setInterval(fetchState, 10000);
       } else {
           if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
       }
@@ -123,6 +124,10 @@ export function useGameState() {
             case 'you_won':
                 console.log("🎉 I WON!", msg.token);
                 setWinningToken(msg.token);
+                break;
+            case 'invite_reward':
+                console.log("🎁 Invite Reward!", msg.amount);
+                setRewardEvent({ amount: msg.amount, msg: msg.msg, id: Date.now() });
                 break;
             case 'error':
                 console.error("[WS] Error:", msg.message);
@@ -193,6 +198,7 @@ export function useGameState() {
       connect, // Expose connect function
       disconnect,
       clientId: clientIdRef.current,
-      winningToken
+      winningToken,
+      rewardEvent
   };
 }

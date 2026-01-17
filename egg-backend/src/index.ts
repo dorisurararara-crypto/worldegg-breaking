@@ -40,7 +40,7 @@ export default {
     }
 
     // HTTP API Routing
-    if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/admin/")) {
+    if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/admin/") || url.pathname.startsWith("/invite-reward")) {
       const doPath = url.pathname.replace("/api", "");
       
       const newReq = new Request(url.origin + doPath, request);
