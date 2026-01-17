@@ -166,7 +166,7 @@ const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '�
 
 const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
-    setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, showGuide,
+    setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, adWatchCount, showGuide,
     winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry,
     clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected
 }) => {
@@ -927,10 +927,12 @@ const GameArea = ({
                 <div className="hp-text">{hp.toLocaleString()} HP</div>
             </div>
 
-            <button className="power-btn" onClick={handleAdWatch}>
-                <span className="btn-title">{lang.adWatchBtn}</span>
-                <span className="btn-sub">{lang.adReward}</span>
-            </button>
+            {adWatchCount < 1 && (
+                <button className="power-btn" onClick={handleAdWatch}>
+                    <span className="btn-title">{lang.adWatchBtn}</span>
+                    <span className="btn-sub">{lang.adReward}</span>
+                </button>
+            )}
 
             <div style={{
                 fontSize: '8px', 

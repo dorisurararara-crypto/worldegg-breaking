@@ -371,18 +371,24 @@ function App() {
   // Sync Local HP with Server HP (Correction with Pending Damage)
   useEffect(() => {
       if (serverState.hp !== undefined) {
-          // [DEBUG] 증거 확보용 로그
-          if (serverState.rev) {
-             console.log(`[SYNC] Rev:${serverState.rev} TS:${serverState.lastUpdatedAt} ServerHP:${serverState.hp}`);
-          }
-
-          // 타임스탬프 체크: 더 오래된 데이터가 최신 데이터를 덮어쓰는 것 방지 (Race Condition 해결)
           const ts = serverState.lastUpdatedAt || 0;
           
           if (ts >= lastServerTs.current) {
               lastServerTs.current = ts;
               
-              setHp(serverState.hp);
+              // [Sticky HP Logic] 
+              // 서버의 HP가 내 로컬 HP보다 낮을 때만 업데이트 (타인의 공격 반영)
+              // 서버 HP가 더 높으면 내 공격이 아직 서버에 도달 안 한 것이므로 내 값 유지
+              setHp(prevHp => {
+                  if (serverState.hp < prevHp || isFirstLoad.current) {
+                      return serverState.hp;
+                  }
+                  // 라운드가 바뀌었을 때는 무조건 서버 값을 따름
+                  if (prevRound.current && serverState.round !== prevRound.current) {
+                      return serverState.hp;
+                  }
+                  return prevHp;
+              });
 
               // Latecomer Detection
               if (isFirstLoad.current) {
@@ -770,6 +776,7 @@ function App() {
               buyItem={buyItem}
               notification={notification}
               handleAdWatch={handleAdWatch}
+              adWatchCount={adWatchCount}
               showGuide={showGuide}
               winnerCountdown={winnerCountdown}
               exitCountdown={exitCountdown}
