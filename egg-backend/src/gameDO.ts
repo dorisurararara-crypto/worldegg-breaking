@@ -556,23 +556,19 @@ export class GameDO extends DurableObject {
           // Clear invites table for the new round
           let clearMsg = "";
           try {
-              // Ensure table exists first (in case migration failed)
-              await this.env.DB.prepare(`
-                CREATE TABLE IF NOT EXISTS invites (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    from_user TEXT,
-                    to_user TEXT,
-                    date TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-              `).run();
-              
-              // Then clear it
+              // Simply try to delete. If table missing, it will throw, which is fine (we catch it).
               const { meta } = await this.env.DB.prepare("DELETE FROM invites").run();
               clearMsg = ` (Invites cleared: ${meta.changes || 0} rows)`;
           } catch (e) {
               console.error("Failed to clear invites:", e);
-              clearMsg = ` (Invites clear FAILED: ${e.message})`;
+              // If delete fails, try creating table ONLY if needed, with simple schema
+              try {
+                  await this.env.DB.prepare("CREATE TABLE IF NOT EXISTS invites (id INTEGER PRIMARY KEY, from_user TEXT, to_user TEXT, date TEXT)").run();
+                  const { meta } = await this.env.DB.prepare("DELETE FROM invites").run();
+                  clearMsg = ` (Invites table created & cleared: ${meta.changes || 0} rows)`;
+              } catch (e2) {
+                  clearMsg = ` (Invites clear FAILED: ${e.message})`;
+              }
           }
           
           // Promote all possible players
@@ -621,6 +617,14 @@ export class GameDO extends DurableObject {
               details = `Current Invite Count: ${count}`;
           } catch (e) {
               details = `Failed to count invites: ${e.message}`;
+          }
+
+      } else if (action === "clear-invites" && request.method === "POST") {
+          try {
+              const { meta } = await this.env.DB.prepare("DELETE FROM invites").run();
+              details = `Invites Cleared: ${meta.changes || 0} rows`;
+          } catch (e) {
+              details = `Failed to clear invites: ${e.message}`;
           }
 
       } else if (action === "winners" && request.method === "GET") {
