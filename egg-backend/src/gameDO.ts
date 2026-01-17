@@ -555,6 +555,18 @@ export class GameDO extends DurableObject {
           
           // Clear invites table for the new round
           try {
+              // Ensure table exists first (in case migration failed)
+              await this.env.DB.prepare(`
+                CREATE TABLE IF NOT EXISTS invites (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    from_user TEXT,
+                    to_user TEXT,
+                    date TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+              `).run();
+              
+              // Then clear it
               await this.env.DB.prepare("DELETE FROM invites").run();
           } catch (e) {
               console.error("Failed to clear invites:", e);
