@@ -613,6 +613,16 @@ export class GameDO extends DurableObject {
           await this.saveState();
           this.broadcastState();
 
+      } else if (action === "check-invites" && request.method === "POST") {
+          let count = 0;
+          try {
+              const { results } = await this.env.DB.prepare("SELECT COUNT(*) as c FROM invites").all();
+              count = results[0].c;
+              details = `Current Invite Count: ${count}`;
+          } catch (e) {
+              details = `Failed to count invites: ${e.message}`;
+          }
+
       } else if (action === "winners" && request.method === "GET") {
           try {
               const { results } = await this.env.DB.prepare("SELECT * FROM winners ORDER BY id DESC LIMIT 50").all();
