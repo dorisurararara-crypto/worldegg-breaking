@@ -26,6 +26,10 @@ export function useGameState() {
     clicksByCountry: {},
     onlinePlayers: 0,
     onlineSpectatorsApprox: 0,
+    maxAtk: 0,
+    maxAtkCountry: "UN",
+    maxPoints: 0,
+    maxClicks: 0,
     announcement: "",
     prize: "",
     prizeUrl: "",
@@ -45,6 +49,9 @@ export function useGameState() {
 
   const wsRef = useRef(null);
   const clickAccumulator = useRef(0);
+  const maxPowerInBatch = useRef(0);
+  const latestPoints = useRef(0);
+  const latestTotalClicks = useRef(0);
   const lastDeltaSentTime = useRef(0);
   
   // Persist Client ID across reloads/tabs
@@ -192,10 +199,14 @@ export function useGameState() {
                 type: 'click_delta',
                 clientId: clientIdRef.current,
                 delta: clickAccumulator.current,
+                atk: maxPowerInBatch.current,
+                points: latestPoints.current,
+                totalClicks: latestTotalClicks.current,
                 country: countryRef.current,
                 ts: now
             }));
             clickAccumulator.current = 0;
+            maxPowerInBatch.current = 0;
             lastDeltaSentTime.current = now;
         }
     }, 5000); // 5s Buffer
@@ -203,8 +214,13 @@ export function useGameState() {
     return () => clearInterval(interval);
   }, []);
 
-  const addClick = (power, country) => {
+  const addClick = (power, country, currentPoints, totalClicks) => {
       clickAccumulator.current += power;
+      if (power > maxPowerInBatch.current) {
+          maxPowerInBatch.current = power;
+      }
+      latestPoints.current = currentPoints;
+      latestTotalClicks.current = totalClicks;
       if (country) countryRef.current = country;
   };
 

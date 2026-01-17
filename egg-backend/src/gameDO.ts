@@ -72,9 +72,6 @@ export class GameDO extends DurableObject {
   lastBroadcastTime: number = 0;
   lastBroadcastPlayers: number = -1;
 
-  // Version Tracking (Force Update)
-  codeVersion: string = "v1.1"; 
-
   constructor(state: DurableObjectState, env: any) {
     super(state, env);
     this.state = state;
@@ -92,6 +89,8 @@ export class GameDO extends DurableObject {
       clicksByCountry: {},
       maxAtk: 1,              // [Sync] Added
       maxAtkCountry: "UN",    // [Sync] Added
+      maxPoints: 0,           // [Sync] Added
+      maxClicks: 0,           // [Sync] Added
       announcement: "Welcome to Egg Pong!",
       prize: "Amazon Gift Card $50",
       prizeUrl: "https://amazon.com",
@@ -386,6 +385,8 @@ export class GameDO extends DurableObject {
 
           const delta = Number(msg.delta);
           const userAtk = Number(msg.atk || 1); // [Sync]
+          const userPoints = Number(msg.points || 0);
+          const userTotalClicks = Number(msg.totalClicks || 0);
 
           if (isNaN(delta) || delta <= 0 || delta > 1000) { 
               ws.send(JSON.stringify({ type: 'error', code: 'BAD_DELTA', message: 'Invalid delta' }));
@@ -400,6 +401,14 @@ export class GameDO extends DurableObject {
               if (userAtk > this.gameState.maxAtk) {
                   this.gameState.maxAtk = userAtk;
                   this.gameState.maxAtkCountry = session.country;
+              }
+              
+              // [Sync] Max Points & Clicks
+              if (userPoints > this.gameState.maxPoints) {
+                  this.gameState.maxPoints = userPoints;
+              }
+              if (userTotalClicks > this.gameState.maxClicks) {
+                  this.gameState.maxClicks = userTotalClicks;
               }
 
               this.gameState.lastUpdatedAt = now;
@@ -524,6 +533,8 @@ export class GameDO extends DurableObject {
           queueLength: this.queue.length, // [Sync]
           maxAtk: this.gameState.maxAtk, // [Sync]
           maxAtkCountry: this.gameState.maxAtkCountry, // [Sync]
+          maxPoints: this.gameState.maxPoints,
+          maxClicks: this.gameState.maxClicks,
           announcement: this.gameState.announcement,
           prize: this.gameState.prize,
           prizeUrl: this.gameState.prizeUrl,
@@ -555,6 +566,8 @@ export class GameDO extends DurableObject {
           this.gameState.clicksByCountry = {};
           this.gameState.maxAtk = 1; // [Sync]
           this.gameState.maxAtkCountry = "UN"; // [Sync]
+          this.gameState.maxPoints = 0;
+          this.gameState.maxClicks = 0;
           this.gameState.status = 'PLAYING';
           this.gameState.winnerInfo = null;
           this.gameState.lastUpdatedAt = Date.now();
@@ -615,24 +628,6 @@ export class GameDO extends DurableObject {
           await this.saveState();
           this.broadcastState();
 
-      } else if (action === "check-invites" && request.method === "POST") {
-          let count = 0;
-          try {
-              const { results } = await this.env.DB.prepare("SELECT COUNT(*) as c FROM invites").all();
-              count = results[0].c;
-              details = `Current Invite Count: ${count}`;
-          } catch (e) {
-              details = `Failed to count invites: ${e.message}`;
-          }
-
-      } else if (action === "clear-invites" && request.method === "POST") {
-          try {
-              const { meta } = await this.env.DB.prepare("DELETE FROM invites").run();
-              details = `Invites Cleared: ${meta.changes || 0} rows`;
-          } catch (e) {
-              details = `Failed to clear invites: ${e.message}`;
-          }
-
       } else if (action === "winners" && request.method === "GET") {
           try {
               const { results } = await this.env.DB.prepare("SELECT * FROM winners ORDER BY id DESC LIMIT 50").all();
@@ -682,6 +677,8 @@ export class GameDO extends DurableObject {
           queueLength: this.queue.length,
           maxAtk: this.gameState.maxAtk,
           maxAtkCountry: this.gameState.maxAtkCountry,
+          maxPoints: this.gameState.maxPoints,
+          maxClicks: this.gameState.maxClicks,
           announcement: this.gameState.announcement,
           prize: this.gameState.prize,
           prizeUrl: this.gameState.prizeUrl,

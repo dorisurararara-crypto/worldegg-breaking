@@ -73,14 +73,25 @@ const LeftPanel = ({ lang, serverState, countryStats, onlineUsersCount, recentWi
           <div style={{ fontSize: '2.5rem', marginBottom: '5px' }}>
               {hasRecord ? getFlagEmoji(maxAtkCountry) : '🏳️'}
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#5d4037' }}>
-              {hasRecord ? maxAtkCountry : "UN"}
-          </div>
+          {/* Country Name removed as requested */}
           <div style={{ fontSize: '2rem', fontWeight: '900', color: '#ff9a9e', margin: '5px 0' }}>
               {hasRecord ? maxAtk.toLocaleString() : "1"}
           </div>
-          <div style={{ fontSize: '0.9rem', color: '#a1887f' }}>
-              {hasRecord ? "" : "기록 없음"}
+          
+          {/* Max Points & Clicks */}
+          <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '15px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '10px' }}>
+             <div>
+                <div style={{ fontSize: '0.8rem', color: '#a1887f', fontWeight: 'bold' }}>{lang.maxPointTitle || "Max Points"}</div>
+                <div style={{ fontSize: '1.1rem', color: '#ffb74d', fontWeight: '900' }}>
+                    {serverState?.maxPoints ? serverState.maxPoints.toLocaleString() : "0"}
+                </div>
+             </div>
+             <div>
+                <div style={{ fontSize: '0.8rem', color: '#a1887f', fontWeight: 'bold' }}>{lang.maxClickTitle || "Max Clicks"}</div>
+                <div style={{ fontSize: '1.1rem', color: '#8d6e63', fontWeight: '900' }}>
+                    {serverState?.maxClicks ? serverState.maxClicks.toLocaleString() : "0"}
+                </div>
+             </div>
           </div>
       </div>
 
@@ -137,9 +148,7 @@ const LeftPanel = ({ lang, serverState, countryStats, onlineUsersCount, recentWi
         <h4 style={{ margin: '0 0 8px 0', color: '#ff6f61' }}>⚠️ {lang.noticeTitle}</h4>
         <ul style={{ paddingLeft: '20px', margin: 0, color: '#d32f2f', fontSize: '0.8rem', fontWeight: 'bold' }}>
           <li style={{ marginBottom: '5px' }}>{lang.notice1}</li>
-          <li>
-            <span style={{ background: '#ffebee', padding: '4px 8px', borderRadius: '5px', display: 'inline-block' }}>{lang.notice2}</span>
-          </li>
+          <li>{lang.notice2}</li>
         </ul>
       </div>
 
