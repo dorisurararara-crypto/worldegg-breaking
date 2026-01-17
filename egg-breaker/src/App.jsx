@@ -275,22 +275,20 @@ function App() {
           const params = new URLSearchParams(new URL(url).search);
           const referrer = params.get('referrer');
           
+          // Remove client-side check to allow round resets to work
           if (referrer && referrer !== clientId) {
-              const alreadySent = localStorage.getItem(`sent_invite_${referrer}`);
-              if (!alreadySent) {
-                  try {
-                      const res = await fetch(`${API_URL}/api/invite-reward`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ from: referrer, to: clientId })
-                      });
-                      if (res.ok) {
-                          console.log("Invite verified!");
-                          localStorage.setItem(`sent_invite_${referrer}`, 'true');
-                      }
-                  } catch (e) {
-                      console.error("Invite check failed", e);
+              try {
+                  const res = await fetch(`${API_URL}/api/invite-reward`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ from: referrer, to: clientId })
+                  });
+                  if (res.ok) {
+                      console.log("Invite verified by server!");
+                      // Optional: mark locally if needed for UI, but rely on server for logic
                   }
+              } catch (e) {
+                  console.error("Invite check failed", e);
               }
           }
       };
