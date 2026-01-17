@@ -554,6 +554,7 @@ export class GameDO extends DurableObject {
           this.gameState.lastUpdatedAt = Date.now();
           
           // Clear invites table for the new round
+          let clearMsg = "";
           try {
               // Ensure table exists first (in case migration failed)
               await this.env.DB.prepare(`
@@ -567,9 +568,11 @@ export class GameDO extends DurableObject {
               `).run();
               
               // Then clear it
-              await this.env.DB.prepare("DELETE FROM invites").run();
+              const { meta } = await this.env.DB.prepare("DELETE FROM invites").run();
+              clearMsg = ` (Invites cleared: ${meta.changes || 0} rows)`;
           } catch (e) {
               console.error("Failed to clear invites:", e);
+              clearMsg = ` (Invites clear FAILED: ${e.message})`;
           }
           
           // Promote all possible players
@@ -577,7 +580,7 @@ export class GameDO extends DurableObject {
               this.promoteFromQueue();
           }
           
-          details = `Reset Round to ${this.gameState.round} (Invites Cleared)`;
+          details = `Reset Round to ${this.gameState.round}${clearMsg}`;
           await this.saveState();
           this.broadcastState();
 
@@ -642,7 +645,7 @@ export class GameDO extends DurableObject {
           } catch(e) {}
       }
 
-      return new Response(JSON.stringify({ success: true }));
+      return new Response(JSON.stringify({ success: true, details })); // details 추가
   }
   
   sendStateTo(ws: WebSocket) {
