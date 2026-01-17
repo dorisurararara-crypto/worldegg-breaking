@@ -89,30 +89,51 @@ function Admin() {
   };
 
   const callAdminApi = async (endpoint, body = {}) => {
+    // ... (This function remains for general use, but we won't use it directly for the reset button anymore)
     if (!confirm(`정말로 '${endpoint}' 명령을 실행하시겠습니까?`)) return;
-
+    // ... (implementation same as before)
     try {
       const res = await fetch(`${API_URL}/api/admin/${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': password // 비밀번호를 인증 키로 전송
-        },
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': password },
         body: JSON.stringify(body)
       });
-      
       const json = await res.json();
-      
       if (res.ok) {
-        // 디버깅: 서버 응답 전체를 보여줌
-        alert(JSON.stringify(json, null, 2)); 
-        fetchState(); // UI 갱신
+        alert(JSON.stringify(json, null, 2));
+        fetchState();
       } else {
         alert(`오류 발생: ${json.error || res.status}`);
       }
     } catch (e) {
       alert("네트워크 오류가 발생했습니다.");
     }
+  };
+
+  // New handler for Force Reset
+  const handleForceReset = async () => {
+      if (!confirm("정말로 강제 리셋하시겠습니까? (라운드 초기화 + 초대 기록 삭제)")) return;
+
+      try {
+          // 1. Reset Round
+          const res1 = await fetch(`${API_URL}/api/admin/reset-round`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-key': password }
+          });
+          const json1 = await res1.json();
+          
+          // 2. Clear Invites
+          const res2 = await fetch(`${API_URL}/api/admin/clear-invites`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-key': password }
+          });
+          const json2 = await res2.json();
+
+          alert(`Round Reset: ${json1.success}\nInvites Clear: ${json2.success}\n\nDetails:\n${JSON.stringify(json1, null, 2)}\n${JSON.stringify(json2, null, 2)}`);
+          fetchState();
+      } catch (e) {
+          alert("리셋 중 오류 발생: " + e.message);
+      }
   };
 
   if (!isAuthenticated) {
@@ -190,7 +211,7 @@ function Admin() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <button onClick={() => callAdminApi('reset-round')} style={{ background: '#dc3545', color: 'white', border: 'none', padding: '15px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
+            <button onClick={handleForceReset} style={{ background: '#dc3545', color: 'white', border: 'none', padding: '15px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
                 🚨 강제 리셋<br/><span style={{fontSize:'0.8rem', fontWeight:'normal'}}>(다음 라운드)</span>
             </button>
             <button onClick={() => callAdminApi('reset-users')} style={{ background: '#ffc107', color: 'black', border: 'none', padding: '15px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
