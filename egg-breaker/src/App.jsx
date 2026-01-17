@@ -137,6 +137,41 @@ function App() {
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [hideAnnouncement, setHideAnnouncement] = useState(false);
 
+  // --- Global Swipe Logic ---
+  const touchStart = useRef({ x: 0, y: 0 });
+  const [showSwipeGuides, setShowSwipeGuides] = useState(true);
+
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    };
+
+    const handleTouchEnd = (e) => {
+      const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+      const dx = touchEnd.x - touchStart.current.x;
+      const dy = touchEnd.y - touchStart.current.y;
+
+      // Ensure it's mostly a horizontal swipe
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 70) {
+        if (dx > 0) {
+          // Swipe Right -> Open Left Panel (Users)
+          toggleMobilePanel('left');
+        } else {
+          // Swipe Left -> Open Right Panel (Shop)
+          toggleMobilePanel('right');
+        }
+        setShowSwipeGuides(false); // Hide guides once used
+      }
+    };
+
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [mobilePanel]);
+
   // Timestamp for synchronization
   const lastServerTs = useRef(0);
   const buyAudioRef = useRef(null); // Singleton for buy sound
@@ -679,6 +714,20 @@ function App() {
                 cursor: 'pointer'
             }}
         />
+      )}
+
+      {/* Swipe Guides (Mobile Only) */}
+      {showSwipeGuides && mobilePanel === 'none' && (
+        <>
+          <div className="swipe-guide left">
+            <span>→</span>
+            <span className="swipe-label">{lang.users}</span>
+          </div>
+          <div className="swipe-guide right">
+            <span>←</span>
+            <span className="swipe-label">{lang.shop}</span>
+          </div>
+        </>
       )}
 
       <div className="main-layout">

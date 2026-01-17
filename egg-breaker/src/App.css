@@ -920,4 +920,58 @@ html.dark-theme .game-area, body.dark-theme .game-area {
       background: linear-gradient(to right, rgba(255,255,255,0.8), rgba(255,240,245,0.8)) !important;
       box-shadow: 0 4px 15px rgba(255,182,193,0.2);
   }
+
+  /* --- Swipe Guide Styles --- */
+  .swipe-guide {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+    border-radius: 20px;
+    color: #ff6f61;
+    font-size: 1.5rem;
+    animation: swipePulse 2s infinite;
+  }
+
+  .swipe-guide.left {
+    left: 10px;
+    border-radius: 0 20px 20px 0;
+  }
+
+  .swipe-guide.right {
+    right: 10px;
+    border-radius: 20px 0 0 20px;
+  }
+
+  .swipe-label {
+    font-size: 0.6rem;
+    font-weight: bold;
+    writing-mode: vertical-lr;
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  @keyframes swipePulse {
+    0%, 100% { opacity: 0.3; transform: translateY(-50%) translateX(0); }
+    50% { opacity: 0.8; transform: translateY(-50%) translateX(5px); }
+  }
+
+  .swipe-guide.right {
+    animation: swipePulseRight 2s infinite;
+  }
+
+  @keyframes swipePulseRight {
+    0%, 100% { opacity: 0.3; transform: translateY(-50%) translateX(0); }
+    50% { opacity: 0.8; transform: translateY(-50%) translateX(-5px); }
+  }
 }
