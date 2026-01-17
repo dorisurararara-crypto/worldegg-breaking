@@ -89,19 +89,23 @@ function Admin() {
   };
 
   const callAdminApi = async (endpoint, body = {}) => {
-    // ... (This function remains for general use, but we won't use it directly for the reset button anymore)
     if (!confirm(`정말로 '${endpoint}' 명령을 실행하시겠습니까?`)) return;
-    // ... (implementation same as before)
+
     try {
       const res = await fetch(`${API_URL}/api/admin/${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': password },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': password // 비밀번호를 인증 키로 전송
+        },
         body: JSON.stringify(body)
       });
+      
       const json = await res.json();
+      
       if (res.ok) {
-        alert(JSON.stringify(json, null, 2));
-        fetchState();
+        alert(json.details || "성공적으로 처리되었습니다!");
+        fetchState(); // UI 갱신
       } else {
         alert(`오류 발생: ${json.error || res.status}`);
       }
@@ -110,30 +114,11 @@ function Admin() {
     }
   };
 
-  // New handler for Force Reset
+  // Force Reset Handler
   const handleForceReset = async () => {
       if (!confirm("정말로 강제 리셋하시겠습니까? (라운드 초기화 + 초대 기록 삭제)")) return;
-
-      try {
-          // 1. Reset Round
-          const res1 = await fetch(`${API_URL}/api/admin/reset-round`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-admin-key': password }
-          });
-          const json1 = await res1.json();
-          
-          // 2. Clear Invites
-          const res2 = await fetch(`${API_URL}/api/admin/clear-invites`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-admin-key': password }
-          });
-          const json2 = await res2.json();
-
-          alert(`Round Reset: ${json1.success}\nInvites Clear: ${json2.success}\n\nDetails:\n${JSON.stringify(json1, null, 2)}\n${JSON.stringify(json2, null, 2)}`);
-          fetchState();
-      } catch (e) {
-          alert("리셋 중 오류 발생: " + e.message);
-      }
+      // Now reset-round handles everything
+      callAdminApi('reset-round'); 
   };
 
   if (!isAuthenticated) {

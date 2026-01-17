@@ -136,16 +136,10 @@ function App() {
   const [showGuide, setShowGuide] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [hideAnnouncement, setHideAnnouncement] = useState(false);
-  const [debugLogs, setDebugLogs] = useState([]); // 디버그 로그 상태
 
   // Timestamp for synchronization
   const lastServerTs = useRef(0);
   const buyAudioRef = useRef(null); // Singleton for buy sound
-  
-  // Debug Helper
-  const addDebugLog = (msg) => {
-      setDebugLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 5));
-  };
 
   // Timers
   const [winnerCountdown, setWinnerCountdown] = useState(300); // 5 minutes
@@ -780,16 +774,6 @@ function App() {
           isOpen={mobilePanel === 'right'}
           toggleMobilePanel={toggleMobilePanel}
         />
-      </div>
-
-      {/* Debug Logs Overlay */}
-      <div style={{
-          position: 'fixed', bottom: 0, left: 0, width: '100%', 
-          background: 'rgba(0,0,0,0.7)', color: '#0f0', fontSize: '10px', 
-          padding: '5px', pointerEvents: 'none', zIndex: 9999,
-          maxHeight: '100px', overflow: 'hidden'
-      }}>
-          {debugLogs.map((log, i) => <div key={i}>{log}</div>)}
       </div>
     </div>
   );
