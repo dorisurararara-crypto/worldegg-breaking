@@ -152,10 +152,6 @@ function App() {
   const [isSpectating, setIsSpectating] = useState(false);
   const isFirstLoad = useRef(true); // Track first load to detect latecomers
 
-  const addDebugLog = (msg) => {
-    console.log(`[App] ${msg}`);
-  };
-  
   // Data from Server State
   const announcement = serverState.announcement || "";
   const prize = serverState.prize || "";
@@ -274,23 +270,23 @@ function App() {
   // Handle Invite Link Check
   useEffect(() => {
       const checkInvite = async (url) => {
-          addDebugLog(`URL: ${url}`);
+          console.log(`[App] URL: ${url}`);
           if (!url) return;
           const params = new URLSearchParams(new URL(url).search);
           const referrer = params.get('referrer');
-          addDebugLog(`Ref: ${referrer}, Me: ${clientId}`);
+          console.log(`[App] Ref: ${referrer}, Me: ${clientId}`);
           
           // Remove client-side check to allow round resets to work
           if (referrer && referrer !== clientId) {
               try {
-                  addDebugLog("Sending invite req...");
+                  console.log("[App] Sending invite req...");
                   const res = await fetch(`${API_URL}/api/invite-reward`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ from: referrer, to: clientId })
                   });
                   const json = await res.json();
-                  addDebugLog(`Resp: ${res.status} ${JSON.stringify(json)}`);
+                  console.log(`[App] Resp: ${res.status} ${JSON.stringify(json)}`);
                   
                   if (res.ok) {
                       console.log("Invite verified by server!");
@@ -298,10 +294,10 @@ function App() {
                   }
               } catch (e) {
                   console.error("Invite check failed", e);
-                  addDebugLog(`Err: ${e.message}`);
+                  console.log(`[App] Err: ${e.message}`);
               }
           } else {
-              addDebugLog("No valid referrer");
+              console.log("[App] No valid referrer");
           }
       };
       
@@ -329,7 +325,7 @@ function App() {
             ? (lang.inviteSuccess || "Friend joined! +800P") 
             : rewardEvent.msg;
         alert(msg);
-        addDebugLog(`Reward: ${msg}`);
+        console.log(`[App] Reward: ${msg}`);
     }
   }, [rewardEvent, lang]);
 
@@ -440,6 +436,11 @@ function App() {
     setMyPoints(prev => prev + clickPower);
     setHp(newHp);
     
+    // 로컬 통계 갱신
+    const newTotalClicks = myTotalClicks + 1;
+    setMyTotalClicks(newTotalClicks);
+    localStorage.setItem('egg_breaker_clicks', newTotalClicks.toString());
+
     // Use Hook to Add Click
     addClick(clickPower, myCountry, myPoints + clickPower, newTotalClicks);
     
@@ -447,11 +448,6 @@ function App() {
     if (newHp === 0) {
        setIsWinner(true); // Tentative
     }
-    
-    // 로컬 통계 갱신
-    const newTotalClicks = myTotalClicks + 1;
-    setMyTotalClicks(newTotalClicks);
-    localStorage.setItem('egg_breaker_clicks', newTotalClicks.toString());
   };
 
   const buyItem = async (cost, powerAdd, toolName) => {
