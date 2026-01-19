@@ -681,7 +681,9 @@ function App() {
     
     // Construct Share URL with Referrer
     const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('referrer', clientId);
+    if (clientId) {
+        currentUrl.searchParams.set('referrer', clientId);
+    }
     const shareUrl = currentUrl.toString();
 
     try {
@@ -692,10 +694,11 @@ function App() {
           content: {
             title: lang.title,
             description: lang.subtitle,
-            imageUrl: 'https://worldegg-breaking.pages.dev/vite.svg', // Updated to current domain
+            imageUrl: 'https://worldegg-breaking.pages.dev/vite.svg',
             link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
           },
           buttons: [{ title: 'Play Now', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+          installTalk: true, 
         });
 
         // Artificial delay to mimic process
