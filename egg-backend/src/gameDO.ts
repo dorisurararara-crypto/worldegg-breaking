@@ -322,12 +322,18 @@ export class GameDO extends DurableObject {
     }
     
     if (url.pathname === "/state") {
+        const totalUsers = this.sessions.size;
         return new Response(JSON.stringify({
             ...this.gameState,
             onlinePlayers: this.players.size,
             onlineSpectatorsApprox: this.sessions.size - this.players.size,
             serverTs: Date.now()
-        }), { headers: { "Content-Type": "application/json" }});
+        }), { 
+            headers: { 
+                "Content-Type": "application/json",
+                "X-Online-Users": totalUsers.toString() // [New] For caching logic
+            }
+        });
     }
 
     return new Response("Not Found", { status: 404 });

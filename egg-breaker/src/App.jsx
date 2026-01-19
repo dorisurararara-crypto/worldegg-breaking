@@ -29,7 +29,8 @@ const TRANSLATIONS = {
     retryTitle: "Ready to try again?", retryBtn: "🔄 Re-enter Game",
     tapToClose: "(Tap to close)",
     maxAtkTitle: "Highest Attack", maxPointTitle: "Highest Points", maxClickTitle: "Highest Clicks", serverStatusTitle: "Server Status", participants: "Active", queueLabel: "Queue", spectators: "Spectators", totalOnline: "Total Online",
-    soundOn: "SFX", bgmOn: "BGM", vibrationOn: "Vibrate", touchGuide: "Touch the egg in the middle! 👈"
+    soundOn: "SFX", bgmOn: "BGM", vibrationOn: "Vibrate", touchGuide: "Touch the egg in the middle! 👈",
+    joinGame: "JOIN GAME"
   },
   KR: { 
     label: "한국어", title: "에그퐁 ☁️", subtitle: "다함께 퐁! 전설의 알 깨기", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요(새로고침을 누르지 마세요! 초기화됩니다.):", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 ", logo: "에그퐁 ☁️",
@@ -47,7 +48,8 @@ const TRANSLATIONS = {
     retryTitle: "다시 도전하시겠습니까?", retryBtn: "🔄 재입장하기",
     tapToClose: "(탭하여 없애기)",
     maxAtkTitle: "최고 공격력", maxPointTitle: "최고 포인트", maxClickTitle: "최고 클릭수", serverStatusTitle: "서버 현황", participants: "참여자", queueLabel: "대기자", spectators: "구경꾼", totalOnline: "Total Online",
-    soundOn: "효과음", bgmOn: "배경음", vibrationOn: "진동", touchGuide: "가운데 계란을 👈 터치하세요!"
+    soundOn: "효과음", bgmOn: "배경음", vibrationOn: "진동", touchGuide: "가운데 계란을 👈 터치하세요!",
+    joinGame: "대기열 참가하기"
   },
   JP: { 
     label: "日本語", title: "エッグポン ☁️", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", item4: "ドリル", item5: "ショベルカー", item6: "レーザー銃", item7: "核爆弾", modalTitle: "🎉 おめでとうございます！ 🎉", modalDesc: "最後の一撃で卵を割りました！あなたが伝説の破壊者です。", modalPrize: "賞品を受け取るためにメールアドレスを入力してください：", send: "送信する", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグポン ☁️",
@@ -65,7 +67,8 @@ const TRANSLATIONS = {
     retryTitle: "もう一度挑戦しますか？", retryBtn: "🔄 ゲーム再入場",
     tapToClose: "(タップして閉じる)",
     maxAtkTitle: "最高攻撃力", maxPointTitle: "最高ポイント", maxClickTitle: "最高クリック数", serverStatusTitle: "サーバー状況", participants: "参加者", queueLabel: "待機中", spectators: "観戦者", totalOnline: "Total Online",
-    soundOn: "効果音", bgmOn: "BGM", vibrationOn: "振動", touchGuide: "真ん中の卵を 👈 タッチしてください！"
+    soundOn: "効果音", bgmOn: "BGM", vibrationOn: "振動", touchGuide: "真ん中の卵を 👈 タッチしてください！",
+    joinGame: "待機列に参加"
   },
   CN: { 
     label: "中文", title: "蛋蛋碰 ☁️", subtitle: "全世界一起击碎传说之蛋", users: "在线", total: "总计", shop: "商店", myPoint: "积分", atk: "攻击力", item1: "双锤", item2: "钢镐", item3: "炸药", item4: "钻头", item5: "挖掘机", item6: "激光枪", item7: "核弹", modalTitle: "🎉 恭喜！ 🎉", modalDesc: "您完成了最后一击，击碎了鸡蛋！您就是传说中的破坏者。", modalPrize: "请输入您的电子邮箱以领取奖品：", send: "提交领奖", adText: "广告区域", powerClick: "⚡ 超级点击 (+100) ⚡", watchAd: "看广告强力攻击", logo: "蛋蛋碰 ☁️",
@@ -83,7 +86,8 @@ const TRANSLATIONS = {
     retryTitle: "准备好再次尝试了吗？", retryBtn: "🔄 重新进入游戏",
     tapToClose: "(点击关闭)",
     maxAtkTitle: "最高攻击力", maxPointTitle: "最高积分", maxClickTitle: "最高点击数", serverStatusTitle: "服务器状态", participants: "参与者", queueLabel: "排队中", spectators: "旁观者", totalOnline: "Total Online",
-    soundOn: "音效", bgmOn: "BGM", vibrationOn: "震动", touchGuide: "点击中间的蛋 👈 ！"
+    soundOn: "音效", bgmOn: "BGM", vibrationOn: "震动", touchGuide: "点击中间的蛋 👈 ！",
+    joinGame: "加入排队"
   }
 };
 
