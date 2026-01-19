@@ -4,7 +4,7 @@ import { NativeAudio } from '@capacitor-community/native-audio';
 import { Capacitor } from '@capacitor/core';
 
 // --- 깨지는 알 SVG 컴포넌트 ---
-const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
+const CrackedEgg = React.memo(({ hp, maxHp, isShaking, tool, onEggClick }) => {
     const percentage = (hp / maxHp) * 100;
 
     // 10단계 파괴 로직 (10% 단위)
@@ -105,22 +105,14 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
                         <stop offset="0%" stopColor={isCritical ? "#800000" : "#ffdde1"} />
                         <stop offset="100%" stopColor={isCritical ? "#200000" : "#ff9a9e"} />
                     </radialGradient>
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-                        <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                    </filter>
-                    {isCritical && (
-                         <filter id="redGlow">
-                            <feDropShadow dx="0" dy="0" stdDeviation={10 + (Math.random() * 5)} floodColor="red" />
-                         </filter>
-                    )}
+                    {/* [Opt] Removed Heavy SVG Filters (Glow/Blur) for Mobile Performance */}
                 </defs>
 
                 {/* 알 본체 */}
                 <ellipse 
                     cx="100" cy="125" rx="80" ry="110" 
                     fill="url(#eggGradient)" 
-                    filter={isCritical ? "url(#redGlow)" : "url(#glow)"} 
+                    /* filter removed */
                     onPointerDown={onEggClick}
                     style={{ cursor: 'pointer', touchAction: 'none', transition: 'all 0.3s' }} 
                 />
@@ -155,7 +147,7 @@ const CrackedEgg = ({ hp, maxHp, isShaking, tool, onEggClick }) => {
             </svg>
         </div>
     );
-};
+});
 
 const TOOL_EMOJIS = {
     hammer: '🔨',

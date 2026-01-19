@@ -2,7 +2,7 @@ import { GameDO } from "./gameDO";
 export { GameDO };
 
 export default {
-  async fetch(request: Request, env: any) {
+  async fetch(request: Request, env: any, ctx: any) {
     const url = new URL(request.url);
     
     // CORS configuration
@@ -43,6 +43,37 @@ export default {
     if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/admin/") || url.pathname.startsWith("/invite-reward")) {
       const doPath = url.pathname.replace("/api", "");
       
+      // [Added] Cache Layer for /api/state
+      // 10만명 접속 대비: 5초간 CDN/Worker 캐시를 사용하여 DO 부하를 방지
+      if (doPath === "/state" && request.method === "GET") {
+          const cache = caches.default;
+          const cacheKey = new Request(url.toString(), request);
+          
+          let response = await cache.match(cacheKey);
+          
+          if (!response) {
+              // Cache Miss: Fetch from DO
+              const newReq = new Request(url.origin + doPath, request);
+              response = await stub.fetch(newReq);
+              
+              // Reconstruct response with Cache headers
+              const newHeaders = new Headers(response.headers);
+              Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
+              // s-maxage=5 instructs Cloudflare CDN to cache for 5s
+              newHeaders.set("Cache-Control", "public, max-age=5, s-maxage=5");
+              
+              response = new Response(response.body, {
+                  status: response.status,
+                  headers: newHeaders
+              });
+              
+              // Save to Cache (non-blocking)
+              ctx.waitUntil(cache.put(cacheKey, response.clone()));
+          }
+          
+          return response;
+      }
+
       const newReq = new Request(url.origin + doPath, request);
       const response = await stub.fetch(newReq);
       
@@ -54,9 +85,6 @@ export default {
       const newHeaders = new Headers(response.headers);
       Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
       
-      // [Modified] Fixed 5s caching for all polling requests to minimize DO load
-      newHeaders.set("Cache-Control", "public, max-age=5");
-
       return new Response(response.body, {
         status: response.status,
         headers: newHeaders
