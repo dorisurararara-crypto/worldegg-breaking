@@ -491,12 +491,30 @@ export class GameDO extends DurableObject {
                   this.gameState.winningClientId = session.clientId;
                   this.gameState.winningToken = crypto.randomUUID();
 
+                  // [New] Pre-fetch prize from pool
+                  try {
+                      const prizeData: any = await this.env.DB.prepare(
+                          "SELECT id, name, secret_url FROM prize_pool WHERE is_used = 0 ORDER BY id ASC LIMIT 1"
+                      ).first();
+                      
+                      if (prizeData) {
+                          this.gameState.prize = prizeData.name;
+                          this.gameState.prizeSecretUrl = prizeData.secret_url;
+                          // Note: We don't mark it used yet, only on claim.
+                          // But to prevent race conditions or double allocation if server crashes,
+                          // we might want to mark it "reserved"? 
+                          // For simplicity, we assume single thread DO will handle claim soon.
+                      }
+                  } catch (e) {
+                      console.error("Failed to fetch prize pool", e);
+                  }
+
                   session.ws.send(JSON.stringify({
                       type: 'you_won',
                       token: this.gameState.winningToken,
                       round: this.gameState.round,
-                      prizeSecretUrl: this.gameState.prizeSecretUrl, // Only sent to the winner!
-                      startTime: this.gameState.winnerCheckStartTime // [Sync] Send timestamp
+                      prizeSecretUrl: this.gameState.prizeSecretUrl, // Send the fetched secret!
+                      startTime: this.gameState.winnerCheckStartTime
                   }));
                   
                   this.saveState(); 

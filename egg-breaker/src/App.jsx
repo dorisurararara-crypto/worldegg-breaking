@@ -540,19 +540,21 @@ function App() {
       // Play Buy Sound (Hybrid)
       try {
           if (Capacitor.isNativePlatform()) {
-              // Assuming 'buy' is preloaded in GameArea, but App might be separate.
-              // Safer to load-and-play or assume GameArea loaded it. 
-              // NativeAudio shares state globally per app.
-              await NativeAudio.play({ assetId: 'buy' });
+              await NativeAudio.play({ assetId: 'buy' }).catch(() => {});
           } else {
               if (!buyAudioRef.current) {
                   buyAudioRef.current = new Audio('/sounds/buy.mp3');
                   buyAudioRef.current.volume = 1.0;
               }
               buyAudioRef.current.currentTime = 0;
-              buyAudioRef.current.play().catch(e => console.log("Buy sound fail", e));
+              // Suppress NotSupportedError or other play errors
+              await buyAudioRef.current.play().catch(e => {
+                  if (e.name !== 'NotSupportedError' && e.name !== 'NotAllowedError') {
+                      console.warn("Buy sound play failed:", e);
+                  }
+              });
           }
-      } catch(e) { console.log('Buy sound error', e); }
+      } catch(e) { /* Ignore setup errors */ }
 
       const localizedToolName = lang[TOOL_NAMES[toolName]] || toolName;
       showNotification(`${lang.bought} ${localizedToolName}!`);
