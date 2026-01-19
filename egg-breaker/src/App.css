@@ -400,6 +400,14 @@ html.dark-theme .game-area, body.dark-theme .game-area {
   40%, 60% { transform: translate3d(4px, 0, 0) rotate(2deg); }
 }
 
+/* Prevent scroll/shake on game elements */
+.header-glow, .egg-stage, .hp-wrapper, .status-row, .logo-container, .navbar {
+  touch-action: none;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  user-select: none;
+}
+
 /* Status Row & Power Button */
 .hp-wrapper {
   width: 100%;

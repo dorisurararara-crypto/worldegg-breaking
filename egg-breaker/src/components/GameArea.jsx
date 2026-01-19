@@ -227,7 +227,7 @@ const GameArea = ({
     useEffect(() => {
         const sounds = [
             'fist', 'hammer', 'pickaxe', 'dynamite', 'drill', 'excavator', 'laser', 'nuke', 
-            'buy', 'win', 'egg_cracking'
+            'buy', 'win', 'egg_cracking', 'lose', 'many_hit'
         ];
 
         const loadSounds = async () => {
@@ -566,7 +566,7 @@ const GameArea = ({
             if (localLoserTimer === null) {
                 setLocalLoserTimer(7); // Start 7s countdown
                 stopBgm(); // Ensure BGM stops
-                // playToolSound('lose'); // File missing, skip
+                playToolSound('lose');
             } else if (localLoserTimer > 0) {
                 const timer = setTimeout(() => setLocalLoserTimer(prev => prev - 1), 1000);
                 return () => clearTimeout(timer);
