@@ -270,7 +270,7 @@ function Admin() {
   }
 
   return (
-    <div className="admin-container" style={{ padding: '20px', background: '#222', minHeight: '100vh', color: 'white', fontFamily: "'Pretendard', sans-serif' }}>
+    <div className="admin-container" style={{ padding: '20px', background: '#222', minHeight: '100vh', color: 'white', fontFamily: "'Pretendard', sans-serif'" }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <h1 style={{ fontSize: '1.5rem', margin: 0 }}>🛠️ 관리자 대시보드</h1>
         <button onClick={handleLogout} style={{ background: '#ff4444', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>로그아웃</button>
