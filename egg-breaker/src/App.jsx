@@ -123,6 +123,7 @@ function App() {
   const [currentTool, setCurrentTool] = useState("fist");
   const [showCountrySelect, setShowCountrySelect] = useState(false);
   const [adWatchCount, setAdWatchCount] = useState(0); 
+  const [shareCount, setShareCount] = useState(0); // [New] Share Counter
   const [myTotalClicks, setMyTotalClicks] = useState(() => {
     return parseInt(localStorage.getItem('egg_breaker_clicks') || '0', 10);
   });
@@ -425,6 +426,7 @@ function App() {
         setClickPower(1);
         setCurrentTool('fist');
         setAdWatchCount(0);
+        setShareCount(0); // Reset share count
         setMyTotalClicks(0);
         localStorage.setItem('egg_breaker_clicks', '0');
         localStorage.setItem('saved_points', '0'); // Reset saved points too
@@ -579,6 +581,11 @@ function App() {
         alert("Kakao SDK not initialized.");
         return;
     }
+
+    if (shareCount >= 5) {
+        alert(lang.alreadyShared || "이번 라운드 공유 한도(5회)를 초과했습니다.");
+        return;
+    }
     
     // Construct Share URL with Referrer
     const currentUrl = new URL(window.location.href);
@@ -598,8 +605,17 @@ function App() {
       buttons: [{ title: 'Play Now', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
     });
 
-    // 2. Inform user
-    alert(lang.shareSuccess);
+    // 2. Reward
+    const reward = 800;
+    setMyPoints(prev => prev + reward);
+    setShareCount(prev => prev + 1);
+    
+    // Persist reward
+    const currentStored = parseInt(localStorage.getItem('saved_points') || '0', 10);
+    localStorage.setItem('saved_points', (currentStored + reward).toString());
+
+    // 3. Inform user
+    alert(`${lang.shareSuccess} (${shareCount + 1}/5)`);
   };
 
   const handleAdWatch = () => {
@@ -844,6 +860,7 @@ function App() {
           handleKakaoShare={handleKakaoShare}
           isOpen={mobilePanel === 'right'}
           toggleMobilePanel={toggleMobilePanel}
+          shareCount={shareCount} // [New] Pass share count
         />
       </div>
     </div>

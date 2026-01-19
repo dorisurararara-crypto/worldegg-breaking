@@ -184,8 +184,10 @@ const GameArea = ({
     const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
     const [isSettingsFocused, setIsSettingsFocused] = useState(false); // [New] For fading icons
     
-    // Settings Toggle State (Removed isSettingsOpen)
-    
+    // Combo System
+    const [combo, setCombo] = useState(0);
+    const comboTimerRef = useRef(null);
+
     // --- Sound State (Persisted in localStorage) ---
     const [audioLoaded, setAudioLoaded] = useState(false); 
 
@@ -257,14 +259,25 @@ const GameArea = ({
 
         loadSounds();
 
+        // [Autoplay Fix] Global listener to unlock audio context on any first click
+        const unlockAudio = () => {
+             if (!Capacitor.isNativePlatform() && bgmRef.current && bgmRef.current.paused && isBgmOn) {
+                 bgmRef.current.play().catch(e => console.log("Unlock play failed", e));
+             }
+        };
+        document.addEventListener('click', unlockAudio, { once: true });
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+
         return () => {
             if (Capacitor.isNativePlatform()) {
                 sounds.forEach(sound => NativeAudio.unload({ assetId: sound }).catch(() => {}));
                 ['bgm_peace', 'bgm_tense', 'bgm_danger'].forEach(bgm => NativeAudio.unload({ assetId: bgm }).catch(() => {}));
             }
             if (bgmRef.current) { bgmRef.current.pause(); bgmRef.current = null; }
+            document.removeEventListener('click', unlockAudio);
+            document.removeEventListener('touchstart', unlockAudio);
         };
-    }, []);
+    }, [isBgmOn]);
 
     // --- Visual Theme Logic (Separated from Audio) ---
     useEffect(() => {
@@ -303,7 +316,8 @@ const GameArea = ({
         if (percentage < 20) newPhase = 'danger';
         else if (percentage < 70) newPhase = 'tense';
 
-        if (newPhase !== currentPhaseRef.current) {
+        // Always try to play if state mismatches (e.g. paused by browser)
+        if (newPhase !== currentPhaseRef.current || (bgmRef.current && bgmRef.current.paused)) {
             playBgm(newPhase);
             currentPhaseRef.current = newPhase;
         }
@@ -319,7 +333,7 @@ const GameArea = ({
         } else {
             if (bgmRef.current) {
                 bgmRef.current.pause();
-                bgmRef.current = null;
+                // Don't nullify ref here to allow resume
             }
         }
     };
@@ -329,10 +343,8 @@ const GameArea = ({
         
         // Ensure previous BGM is fully stopped and cleared
         if (!Capacitor.isNativePlatform()) {
-             if (bgmRef.current) {
+             if (bgmRef.current && bgmRef.current.src.indexOf(trackName) === -1) {
                  bgmRef.current.pause();
-                 bgmRef.current.currentTime = 0;
-                 bgmRef.current.src = ""; // Detach
                  bgmRef.current = null;
              }
         } else {
@@ -348,11 +360,18 @@ const GameArea = ({
                 console.log("BGM Play/Loop Error:", e);
             }
         } else {
-            const audio = new Audio(`/sounds/${trackName}.mp3`);
-            audio.loop = true;
-            audio.volume = 0.5;
-            audio.play().catch(e => console.log("Web BGM play failed", e));
-            bgmRef.current = audio;
+            if (!bgmRef.current) {
+                const audio = new Audio(`/sounds/${trackName}.mp3`);
+                audio.loop = true;
+                audio.volume = 0.5;
+                bgmRef.current = audio;
+            }
+            
+            // Try to play
+            bgmRef.current.play().catch(e => {
+                console.log("Web BGM play failed (Autoplay blocked?):", e);
+                // We rely on handlePointerDown or global click listener to resume
+            });
         }
     };
     
@@ -475,9 +494,15 @@ const GameArea = ({
         // 1. Trigger Vibration & Sound & Check Autoplay
         triggerVibration();
         playToolSound(currentTool);
+        checkWebAudioAutoplay(); // Try to resume BGM if paused
 
         // 1. Trigger Game Logic
         handleClick();
+        
+        // --- Combo Logic ---
+        setCombo(prev => prev + 1);
+        if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+        comboTimerRef.current = setTimeout(() => setCombo(0), 1200); // 1.2s reset
 
         // 2. Visuals: Calculate position relative to the stage
         if (!stageRef.current) return;
@@ -508,6 +533,12 @@ const GameArea = ({
 
         // Random Cute Particle
         const randomParticle = CUTE_PARTICLES[Math.floor(Math.random() * CUTE_PARTICLES.length)];
+        
+        // Add Combo Effect if high enough
+        let comboText = null;
+        if (combo > 5 && combo % 10 === 0) {
+            comboText = `Combo x${combo}!`;
+        }
 
         const newEffect = { 
             id: Date.now() + Math.random(), 
@@ -518,7 +549,8 @@ const GameArea = ({
             toolSize,
             dmgColor,
             toolEmoji: TOOL_EMOJIS[currentTool] || '👊',
-            particle: randomParticle
+            particle: randomParticle,
+            comboText
         };
 
         // 3. Add to state (Limit concurrent particles for optimization)
@@ -651,6 +683,17 @@ const GameArea = ({
             <div className="header-glow">
                 {/* 에그퐁 제목 제거 (상단 바와 중복) */}
                 <p className="subtitle">{lang.subtitle}</p>
+                {combo > 5 && (
+                    <div style={{ 
+                        color: '#ff4081', 
+                        fontWeight: '900', 
+                        fontSize: '1.5rem', 
+                        animation: 'bounceIn 0.3s',
+                        marginTop: '5px'
+                    }}>
+                        🔥 {combo} COMBO! 🔥
+                    </div>
+                )}
             </div>
 
             <div 
@@ -742,6 +785,25 @@ const GameArea = ({
                         >
                             {effect.particle}
                         </span>
+                        
+                        {/* Combo Text Pop */}
+                        {effect.comboText && (
+                             <span 
+                                style={{
+                                    position: 'absolute',
+                                    left: effect.x,
+                                    top: effect.y - 100,
+                                    color: '#ff4081',
+                                    fontWeight: '900',
+                                    fontSize: '2rem',
+                                    zIndex: 20,
+                                    animation: 'bounceIn 0.5s forwards',
+                                    textShadow: '0 0 10px #fff'
+                                }}
+                             >
+                                {effect.comboText}
+                             </span>
+                        )}
                     </React.Fragment>
                 ))}
 

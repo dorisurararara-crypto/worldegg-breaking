@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 
-const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handleKakaoShare, isOpen, toggleMobilePanel }) => {
+const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handleKakaoShare, isOpen, toggleMobilePanel, shareCount = 0 }) => {
   const TOOL_ITEMS = [
     { id: 'item1', name: lang.item1, cost: 50, power: 1, icon: '🔨' },
     { id: 'item2', name: lang.item2, cost: 300, power: 5, icon: '⛏️' },
@@ -62,22 +62,23 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
         onClick={handleKakaoShare}
         style={{
             width: '100%',
-            background: '#FEE500',
-            color: '#000000',
+            background: shareCount >= 5 ? '#e0e0e0' : '#FEE500',
+            color: shareCount >= 5 ? '#999' : '#000000',
             border: 'none',
             padding: '12px',
             borderRadius: '8px',
             fontWeight: 'bold',
             marginBottom: '15px',
-            cursor: 'pointer',
+            cursor: shareCount >= 5 ? 'default' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px'
         }}
+        disabled={shareCount >= 5}
       >
         <span style={{fontSize: '1.2rem'}}>💬</span> 
-        {lang.shareReward}
+        {lang.shareReward} {shareCount >= 5 ? '(Max)' : `(${shareCount}/5)`}
       </button>
 
       <div className="shop-list">

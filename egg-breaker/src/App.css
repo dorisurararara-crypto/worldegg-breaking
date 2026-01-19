@@ -110,7 +110,8 @@ html.dark-theme .game-area, body.dark-theme .game-area {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.8);
-  z-index: 100;
+  position: relative; /* Ensure z-index works */
+  z-index: 1501; /* Above backdrop (1500) */
   box-shadow: 0 4px 15px rgba(0,0,0,0.03);
 }
 
