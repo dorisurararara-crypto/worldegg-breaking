@@ -27,7 +27,7 @@ export function useGameState() {
     hp: 1000000,
     maxHp: 1000000,
     round: 1,
-    status: 'LOADING', // Changed from FINISHED to debug
+    status: 'LOADING', 
     clicksByCountry: {},
     onlinePlayers: 0,
     onlineSpectatorsApprox: 0,
@@ -50,7 +50,7 @@ export function useGameState() {
   const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
   const [winningToken, setWinningToken] = useState(null);
-  const [winStartTime, setWinStartTime] = useState(null); // [New]
+  const [winStartTime, setWinStartTime] = useState(null); 
   const [prizeSecretImageUrl, setPrizeSecretImageUrl] = useState(null);
   const [rewardEvent, setRewardEvent] = useState(null);
 
@@ -59,7 +59,6 @@ export function useGameState() {
   const maxPowerInBatch = useRef(0);
   const latestPoints = useRef(0);
   const latestTotalClicks = useRef(0);
-  const lastDeltaSentTime = useRef(0);
   
   // Persist Client ID across reloads/tabs
   const clientIdRef = useRef(() => {
@@ -71,61 +70,106 @@ export function useGameState() {
       return stored;
   });
   
-  // Fix: useRef value initialization needs to be called if function
   const clientId = typeof clientIdRef.current === 'function' ? clientIdRef.current() : clientIdRef.current;
-  clientIdRef.current = clientId; // Ensure ref holds the string value
+  clientIdRef.current = clientId; 
 
   const countryRef = useRef("UN");
-  const pollingIntervalRef = useRef(null);
+  const pollingTimeoutRef = useRef(null);
+  const r2FailCount = useRef(0);
 
-  // --- 1. Polling Logic (Default) ---
-  const fetchState = async () => {
+  // --- 1. Polling Logic (Dynamic with Backoff) ---
+  const fetchState = useCallback(async () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+
+      let nextDelay = 5000; // Default 5s
+      let usedR2 = false;
+
       try {
-          // [Optimization] Use R2 Static JSON if available to save Worker costs
+          // Determine Target URL
           let targetUrl = `${API_URL}/api/state`;
-          if (R2_URL && !R2_URL.includes("CHANGE-ME")) {
-              targetUrl = `${R2_URL}/state.json`;
+          
+          // Use R2 if configured and not failing too much
+          if (R2_URL && r2FailCount.current < 3) {
+              // Cache Busting: 5-second window to balance CDN hit rate vs Freshness
+              // R2 Cache-Control is max-age=2, s-maxage=2. 
+              const ts = Math.floor(Date.now() / 5000); 
+              targetUrl = `${R2_URL}/state.json?t=${ts}`;
+              usedR2 = true;
+          } else if (R2_URL) {
+              // R2 failed 3+ times. Fallback to API but slow down to save cost.
+              // Also try to reset fail count after a successful API hit? 
+              // No, let's try R2 again after some time (handled by nextDelay logic implicitly if we reset)
+              // But here we just stick to API for this turn.
+              // If we want to retry R2 later, we can decrement fail count occasionally or reset it after N success.
+              // For safety, let's keep using API for a while (handled by nextDelay).
+              // Simple Reset: Try R2 again after 1 minute?
+              // Let's implement simple backoff: If API works, we stay on API for safety? 
+              // Guide says: "fallback backoff". 
+              // Let's reset fail count with 10% chance to retry R2?
+              if (Math.random() < 0.1) r2FailCount.current = 0; 
+              
+              targetUrl = `${API_URL}/api/state`;
+              nextDelay = 20000; // Slow polling on API (20s)
+          } else {
+              // No R2 configured. Always API.
+              // If we want to save cost here too, use 20s. But default to 5s for responsiveness if no R2.
+              // Guide says: "R2_URL 없으면 20~30초"
+              nextDelay = 20000; 
           }
 
           const res = await fetch(targetUrl);
+          
           if (res.ok) {
               const data = await res.json();
-              // console.log("[Polling] Success:", data); // Log success
               setServerState(prev => {
                   if (data.lastUpdatedAt < prev.lastUpdatedAt && data.round === prev.round) return prev;
                   return data;
               });
+              
+              if (usedR2) {
+                  r2FailCount.current = 0; // Success!
+                  nextDelay = 5000; // Fast polling on R2 (free/cheap)
+              } else {
+                  // API Success. Keep slow polling.
+                  nextDelay = 20000; 
+              }
           } else {
-             // Fallback to API if R2 fails (e.g. 404)
-             if (targetUrl !== `${API_URL}/api/state`) {
-                 const fallbackRes = await fetch(`${API_URL}/api/state`);
-                 if (fallbackRes.ok) {
-                     const data = await fallbackRes.json();
-                     setServerState(prev => (data.lastUpdatedAt < prev.lastUpdatedAt && data.round === prev.round) ? prev : data);
-                     return;
-                 }
-             }
-             console.error(`[Polling] Failed: ${res.status}`);
+              console.warn(`[Polling] Failed: ${res.status} (${usedR2 ? 'R2' : 'API'})`);
+              if (usedR2) {
+                  r2FailCount.current++;
+                  nextDelay = 1000; // Retry quickly (will likely fall to API next time)
+              } else {
+                  nextDelay = 30000; // API failed? Wait longer.
+              }
           }
       } catch (e) {
-          console.error("[Polling] Error:", e); // Log specific error
-          setServerState(prev => ({ ...prev, status: 'ERROR', announcement: e.message }));
+          console.error("[Polling] Error:", e);
+          if (usedR2) {
+              r2FailCount.current++;
+              nextDelay = 1000;
+          } else {
+              nextDelay = 30000;
+          }
       }
-  };
+
+      // Schedule Next Poll
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+          pollingTimeoutRef.current = setTimeout(fetchState, nextDelay);
+      }
+  }, [API_URL]);
 
   useEffect(() => {
       // Start polling if NOT connected
       if (!connected) {
-          fetchState(); // Initial fetch
-          pollingIntervalRef.current = setInterval(fetchState, 5000);
+          fetchState(); 
       } else {
-          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+          if (pollingTimeoutRef.current) clearTimeout(pollingTimeoutRef.current);
       }
 
       return () => {
-          if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+          if (pollingTimeoutRef.current) clearTimeout(pollingTimeoutRef.current);
       };
-  }, [connected]);
+  }, [connected, fetchState]);
 
 
   // --- 2. WebSocket Logic (On-Demand) ---
@@ -155,6 +199,8 @@ export function useGameState() {
       console.log("[WS] Connected");
       setConnected(true);
       setError(null);
+      // Stop polling immediately
+      if (pollingTimeoutRef.current) clearTimeout(pollingTimeoutRef.current);
       
       ws.send(JSON.stringify({
           type: "join",
@@ -217,14 +263,15 @@ export function useGameState() {
         setConnected(false);
         setRole(null);
         setQueuePos(null);
-        // Do NOT auto-reconnect. Fallback to polling.
+        // Fallback to polling
+        fetchState();
     };
 
     ws.onerror = (err) => {
         console.error("[WS] Error", err);
         ws.close();
     };
-  }, []);
+  }, [fetchState]);
 
   const disconnect = useCallback(() => {
       if (wsRef.current) {
@@ -249,7 +296,7 @@ export function useGameState() {
             }));
             clickAccumulator.current = 0;
             maxPowerInBatch.current = 0;
-            lastDeltaSentTime.current = now;
+            // lastDeltaSentTime.current = now;
         }
     }, 5000); // 5s Buffer
 
