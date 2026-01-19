@@ -172,8 +172,30 @@ export class GameDO extends DurableObject {
   async uploadStateToR2() {
       if (!this.env.STATE_BUCKET) return; // Skip if no bucket binding
 
+      // [Security Fix] Whitelist safe fields. Do NOT spread entire gameState.
       const publicState = {
-          ...this.gameState,
+          hp: this.gameState.hp,
+          maxHp: this.gameState.maxHp,
+          round: this.gameState.round,
+          status: this.gameState.status,
+          winnerInfo: this.gameState.winnerInfo,
+          // winningClientId: EXCLUDED
+          // winningToken: EXCLUDED
+          clicksByCountry: this.gameState.clicksByCountry,
+          maxAtk: this.gameState.maxAtk,
+          maxAtkCountry: this.gameState.maxAtkCountry,
+          maxPoints: this.gameState.maxPoints,
+          maxClicks: this.gameState.maxClicks,
+          announcement: this.gameState.announcement,
+          nextPrizeName: this.gameState.nextPrizeName,
+          prize: this.gameState.prize,
+          prizeUrl: this.gameState.prizeUrl,
+          prizeImageUrl: this.gameState.prizeImageUrl,
+          // prizeSecretUrl: EXCLUDED
+          adUrl: this.gameState.adUrl,
+          recentWinners: this.gameState.recentWinners,
+          lastUpdatedAt: this.gameState.lastUpdatedAt,
+
           onlinePlayers: this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
           queueLength: this.queue.length,

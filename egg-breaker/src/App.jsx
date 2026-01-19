@@ -54,12 +54,10 @@ function App() {
   }, []);
 
   // [Performance] Persist Data Loop (1s throttle) - using Refs to avoid interval recreation
-  const myPointsRef = useRef(myPoints);
-  const myTotalClicksRef = useRef(myTotalClicks);
+  const myPointsRef = useRef(0);
+  const myTotalClicksRef = useRef(0);
   
-  // Sync refs with state on every render (cheap)
-  myPointsRef.current = myPoints;
-  myTotalClicksRef.current = myTotalClicks;
+  // Sync refs with state on every render (moved down below state declarations)
 
   useEffect(() => {
       const saveTimer = setInterval(() => {
@@ -86,6 +84,10 @@ function App() {
   const [myTotalClicks, setMyTotalClicks] = useState(() => {
     return parseInt(localStorage.getItem('egg_breaker_clicks') || '0', 10);
   });
+  
+  // Sync refs with state on every render (cheap)
+  myPointsRef.current = myPoints;
+  myTotalClicksRef.current = myTotalClicks;
   
   // Track previous round to detect changes
   const prevRound = useRef(null);
