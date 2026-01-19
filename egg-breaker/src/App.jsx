@@ -179,16 +179,21 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // [Performance] Persist Data Loop (1s throttle)
+  // [Performance] Persist Data Loop (1s throttle) - using Refs to avoid interval recreation
+  const myPointsRef = useRef(myPoints);
+  const myTotalClicksRef = useRef(myTotalClicks);
+  
+  // Sync refs with state on every render (cheap)
+  myPointsRef.current = myPoints;
+  myTotalClicksRef.current = myTotalClicks;
+
   useEffect(() => {
       const saveTimer = setInterval(() => {
-          // Only write if changed? localStorage writes are cheap if value is same but still sync I/O.
-          // React state is source of truth.
-          localStorage.setItem('egg_breaker_clicks', myTotalClicks.toString());
-          localStorage.setItem('saved_points', myPoints.toString());
+          localStorage.setItem('egg_breaker_clicks', myTotalClicksRef.current.toString());
+          localStorage.setItem('saved_points', myPointsRef.current.toString());
       }, 1000);
       return () => clearInterval(saveTimer);
-  }, [myTotalClicks, myPoints]);
+  }, []); // Run once!
 
   // const [isShaking, setIsShaking] = useState(false); // Removed for performance
   const [myPoints, setMyPoints] = useState(() => {
@@ -215,7 +220,7 @@ function App() {
   const [mobilePanel, setMobilePanel] = useState('none');
   const [notification, setNotification] = useState('');
   const [showGuide, setShowGuide] = useState(true);
-  const [lastActivity, setLastActivity] = useState(Date.now());
+  const lastActivityRef = useRef(Date.now()); // [Performance] Ref instead of State
   const [hideAnnouncement, setHideAnnouncement] = useState(false);
 
   // --- Global Swipe Logic REMOVED ---
@@ -560,19 +565,19 @@ function App() {
   // Inactivity Timer for Guide
   useEffect(() => {
     const timer = setInterval(() => {
-      if (Date.now() - lastActivity > 10000 && !showGuide) {
+      if (Date.now() - lastActivityRef.current > 10000 && !showGuide) {
         setShowGuide(true);
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [lastActivity, showGuide]);
+  }, [showGuide]); // Only recreate if showGuide changes (rarely)
 
   const handleClick = async () => {
     if (hp <= 0 || serverState.status === 'FINISHED' || role === 'spectator') return;
     
-    // Reset activity timer
-    setLastActivity(Date.now());
-    setShowGuide(false);
+    // Reset activity timer (Ref)
+    lastActivityRef.current = Date.now();
+    if (showGuide) setShowGuide(false);
     
     // 1. [Performance] Accumulate Changes (UI update is batched in useEffect)
     accumulatedDamage.current += clickPower;

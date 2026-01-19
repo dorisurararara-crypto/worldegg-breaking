@@ -466,7 +466,8 @@ export class GameDO extends DurableObject {
           
           // console.log(`[DEBUG] Delta:${delta} Atk:${userAtk} Pts:${userPoints} Clicks:${userTotalClicks}`);
 
-          if (isNaN(delta) || delta <= 0 || delta > 1000) { 
+          // [Fix] Increased limit to prevent false positives for high-level players
+          if (isNaN(delta) || delta <= 0 || delta > 100000) { 
               ws.send(JSON.stringify({ type: 'error', code: 'BAD_DELTA', message: 'Invalid delta' }));
               return;
           }
