@@ -90,10 +90,7 @@ export function useGameState() {
           
           // Use R2 if configured and not failing too much
           if (R2_URL && r2FailCount.current < 3) {
-              // Cache Busting: 5-second window to balance CDN hit rate vs Freshness
-              // R2 Cache-Control is max-age=2, s-maxage=2. 
-              const ts = Math.floor(Date.now() / 5000); 
-              targetUrl = `${R2_URL}/state.json?t=${ts}`;
+              targetUrl = `${R2_URL}/state.json`;
               usedR2 = true;
           } else if (R2_URL) {
               // R2 failed 3+ times. Fallback to API but slow down to save cost.
