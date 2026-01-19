@@ -450,8 +450,17 @@ const GameArea = ({
     
     // --- Helper to resume Audio Context on Web ---
     const checkWebAudioAutoplay = () => {
-        if (!Capacitor.isNativePlatform() && isBgmOn && bgmRef.current && bgmRef.current.paused) {
-            bgmRef.current.play().catch(e => console.log("Still blocked", e));
+        if (!Capacitor.isNativePlatform()) {
+            // 1. Resume Web Audio Context (For SFX)
+            const ctx = audioContextRef.current;
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume().catch(e => console.log("AudioContext resume failed", e));
+            }
+            
+            // 2. Resume BGM (HTML5 Audio)
+            if (isBgmOn && bgmRef.current && bgmRef.current.paused) {
+                bgmRef.current.play().catch(e => console.log("Still blocked", e));
+            }
         }
     };
 
