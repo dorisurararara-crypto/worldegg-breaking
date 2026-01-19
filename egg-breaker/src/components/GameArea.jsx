@@ -208,6 +208,15 @@ const GameArea = ({
         return saved !== null ? JSON.parse(saved) : true;
     });
 
+    // --- Rolling Egg Facts ---
+    const [currentFactIndex, setCurrentFactIndex] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentFactIndex(prev => (prev + 1) % (lang.eggFacts?.length || 1));
+        }, 6000);
+        return () => clearInterval(timer);
+    }, [lang.eggFacts]);
+
     // BGM & SFX Refs
     const webAudioRefs = useRef({}); // Stores AudioBuffers for Web
     const html5AudioRefs = useRef({}); // Fallback for Web Audio failures
@@ -1088,22 +1097,30 @@ const GameArea = ({
             <div>{lang.atk}: <span>x{clickPower}</span></div>
           </div>
 
-          <p style={{
+          <div style={{
             marginTop: '20px',
-            fontSize: '1.1rem',
-            color: '#ff4444',
-            fontWeight: '900',
+            width: '100%',
             textAlign: 'center',
-            background: 'rgba(255, 255, 255, 0.8)',
-            padding: '10px 20px',
-            borderRadius: '20px',
-            border: '2px solid #ffcccc',
-            boxShadow: '0 4px 10px rgba(255, 0, 0, 0.1)',
-            cursor: 'pointer',
-            animation: 'pulse 1.5s infinite'
-          }} onClick={() => document.querySelector('.mobile-toggle-btn[aria-label="Shop"]')?.click()}>
-            🚨 {lang.shopGuide} 🚨
-          </p>
+            height: '50px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+              <p key={currentFactIndex} style={{ // Key to trigger animation on change
+                fontSize: '0.9rem',
+                color: '#8d6e63',
+                fontWeight: 'bold',
+                background: 'rgba(255, 255, 255, 0.6)',
+                padding: '8px 20px',
+                borderRadius: '20px',
+                border: '1px dashed #d7ccc8',
+                animation: 'fadeIn 0.5s',
+                maxWidth: '90%',
+                wordBreak: 'keep-all'
+              }}>
+                🥚 {lang.eggFacts ? lang.eggFacts[currentFactIndex] : "Loading..."}
+              </p>
+          </div>
         </main>
     );
 };

@@ -18,7 +18,15 @@ const TRANSLATIONS = {
     tapToClose: "(Tap to close)",
     maxAtkTitle: "Highest Attack", maxPointTitle: "Highest Points", maxClickTitle: "Highest Clicks", serverStatusTitle: "Server Status", participants: "Active", queueLabel: "Queue", spectators: "Spectators", totalOnline: "Total Online",
     soundOn: "SFX", bgmOn: "BGM", vibrationOn: "Vibrate",
-    gameStarted: "The game has already started!", tryNextRound: "Please try again in the next round.", reloading: "Reloading..."
+    gameStarted: "The game has already started!", tryNextRound: "Please try again in the next round.", reloading: "Reloading...",
+    eggFacts: [
+      "Eggs are a complete food!",
+      "Ostrich eggs are the largest in the world.",
+      "Eggshells can breathe.",
+      "Fresh eggs sink in water.",
+      "Yolk color depends on the hen's diet.",
+      "A hen lays about 300 eggs a year."
+    ]
   },
   KR: { 
     label: "한국어", title: "에그퐁 ☁️", subtitle: "다함께 퐁! 전설의 알 깨기", users: "접속자", total: "총", shop: "상점", myPoint: "보유 포인트", atk: "공격력", item1: "쌍망치", item2: "곡괭이", item3: "TNT 폭약", item4: "드릴", item5: "포크레인", item6: "레이저 총", item7: "핵폭탄", modalTitle: "🎉 축하합니다! 🎉", modalDesc: "마지막 일격을 가해 알을 깨트리셨습니다! 당신이 바로 전설의 파괴자입니다.", modalPrize: "상품 수령을 위해 이메일 주소를 입력해주세요(새로고침을 누르지 마세요! 초기화됩니다.):", send: "상품 신청하기", adText: "광고 영역", powerClick: "⚡ 파워 클릭 (+100) ⚡", watchAd: "광고 보고 ", logo: "에그퐁 ☁️",
@@ -39,7 +47,15 @@ const TRANSLATIONS = {
     tapToClose: "(탭하여 없애기)",
     maxAtkTitle: "최고 공격력", maxPointTitle: "최고 포인트", maxClickTitle: "최고 클릭수", serverStatusTitle: "서버 현황", participants: "참여자", queueLabel: "대기자", spectators: "구경꾼", totalOnline: "Total Online",
     soundOn: "효과음", bgmOn: "배경음", vibrationOn: "진동",
-    gameStarted: "게임이 이미 시작되었습니다!", tryNextRound: "다음 라운드에 다시 도전해주세요.", reloading: "새로고침 중..."
+    gameStarted: "게임이 이미 시작되었습니다!", tryNextRound: "다음 라운드에 다시 도전해주세요.", reloading: "새로고침 중...",
+    eggFacts: [
+      "계란은 완전식품입니다!",
+      "세상에서 가장 큰 알은 타조알입니다.",
+      "계란 껍질은 숨을 쉴 수 있습니다.",
+      "신선한 계란은 물에 가라앉습니다.",
+      "계란 노른자의 색깔은 닭이 먹는 사료에 따라 달라집니다.",
+      "닭은 1년에 약 300개의 알을 낳습니다."
+    ]
   },
   JP: { 
     label: "日本語", title: "エッグポン ☁️", subtitle: "世界中で伝説の卵を割ろう", users: "接続中", total: "計", shop: "商店", myPoint: "ポイント", atk: "攻撃力", item1: "ハンマー", item2: "つるはし", item3: "ダイナマイト", item4: "ドリル", item5: "ショベルカー", item6: "レーザー銃", item7: "核爆弾", modalTitle: "🎉 おめでとうございます！ 🎉", modalDesc: "最後の一撃で卵を割りました！あなたが伝説の破壊者です。", modalPrize: "賞品を受け取るためにメールアドレスを入力してください：", send: "送信する", adText: "広告エリア", powerClick: "⚡ パワークリック (+100) ⚡", watchAd: "広告を見て攻撃", logo: "エッグポン ☁️",
@@ -60,7 +76,15 @@ const TRANSLATIONS = {
     tapToClose: "(タップして閉じる)",
     maxAtkTitle: "最高攻撃力", maxPointTitle: "最高ポイント", maxClickTitle: "最高クリック数", serverStatusTitle: "サーバー状況", participants: "参加者", queueLabel: "待機中", spectators: "観戦者", totalOnline: "Total Online",
     soundOn: "効果音", bgmOn: "BGM", vibrationOn: "振動",
-    gameStarted: "ゲームは既に始まっています！", tryNextRound: "次のラウンドで再挑戦してください。", reloading: "リロード中..."
+    gameStarted: "ゲームは既に始まっています！", tryNextRound: "次のラウンドで再挑戦してください。", reloading: "リロード中...",
+    eggFacts: [
+      "卵は完全栄養食です！",
+      "世界で一番大きな卵はダチョウの卵です。",
+      "卵の殻は呼吸しています。",
+      "新鮮な卵は水に沈みます。",
+      "黄身の色は鶏が食べる餌によって変わります。",
+      "鶏は1年に約300個の卵を産みます。"
+    ]
   },
   CN: { 
     label: "中文", title: "蛋蛋碰 ☁️", subtitle: "全世界一起击碎传说之蛋", users: "在线", total: "总计", shop: "商店", myPoint: "积分", atk: "攻击力", item1: "双锤", item2: "钢镐", item3: "炸药", item4: "钻头", item5: "挖掘机", item6: "激光枪", item7: "核弹", modalTitle: "🎉 恭喜！ 🎉", modalDesc: "您完成了最后一击，击碎了鸡蛋！您就是传说中的破坏者。", modalPrize: "请输入您的电子邮箱以领取奖品：", send: "提交领奖", adText: "广告区域", powerClick: "⚡ 超级点击 (+100) ⚡", watchAd: "看广告强力攻击", logo: "蛋蛋碰 ☁️",
@@ -81,7 +105,15 @@ const TRANSLATIONS = {
     tapToClose: "(点击关闭)",
     maxAtkTitle: "最高攻击力", maxPointTitle: "最高积分", maxClickTitle: "最高点击数", serverStatusTitle: "服务器状态", participants: "参与者", queueLabel: "排队中", spectators: "旁观者", totalOnline: "Total Online",
     soundOn: "音效", bgmOn: "BGM", vibrationOn: "震动",
-    gameStarted: "游戏已经开始！", tryNextRound: "请在下一轮重试。", reloading: "正在重新加载..."
+    gameStarted: "游戏已经开始！", tryNextRound: "请在下一轮重试。", reloading: "正在重新加载...",
+    eggFacts: [
+      "鸡蛋是全营养食品！",
+      "世界上最大的蛋是鸵鸟蛋。",
+      "蛋壳是可以呼吸的。",
+      "新鲜的鸡蛋会沉入水中。",
+      "蛋黄的颜色取决于母鸡的饮食。",
+      "母鸡一年大约产300个蛋。"
+    ]
   }
 };
 

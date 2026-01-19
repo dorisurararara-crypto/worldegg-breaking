@@ -17,7 +17,8 @@ body {
   font-family: 'Fredoka', sans-serif;
   overflow-y: auto; /* Allow vertical scrolling */
   overflow-x: hidden;
-  touch-action: pan-y; /* Allow vertical scroll gestures */
+  touch-action: manipulation; /* Prevent zoom/pan delays */
+  user-select: none; /* Prevent text selection */
   position: relative;
 }
 
