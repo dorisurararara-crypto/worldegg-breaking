@@ -164,7 +164,7 @@ export function useGameState() {
                 console.error("[WS] Error:", msg.message);
                 if (msg.code === 'FULL' || msg.code === 'ROUND_NOT_STARTED') {
                     setError(msg.code);
-                    ws.close(); // Close immediately if rejected
+                    // Do not close immediately, let the server or retry logic handle it
                 }
                 break;
             default: break;

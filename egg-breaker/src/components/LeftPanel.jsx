@@ -10,48 +10,16 @@ const LeftPanel = ({ lang, serverState, countryStats, onlineUsersCount, recentWi
   const waitingCount = serverState?.queueLength || 0;
   const spectators = serverState?.onlineSpectatorsApprox || 0;
 
-  // --- Swipe Logic ---
-  const [translateY, setTranslateY] = useState(0);
-  const touchStartY = useRef(0);
-  const isDragging = useRef(false);
-
-  const handleTouchStart = (e) => {
-    touchStartY.current = e.touches[0].clientY;
-    isDragging.current = true;
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDragging.current) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - touchStartY.current;
-    if (diff > 0) { // Only allow dragging down
-        setTranslateY(diff);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    isDragging.current = false;
-    if (translateY > 100) { // Threshold to close
-        toggleMobilePanel('none');
-    }
-    setTranslateY(0); // Reset position (if closed, CSS transition handles it)
-  };
-
   return (
     <aside 
         className={`panel left-panel glass ${isOpen ? 'active' : ''}`} 
         style={{ 
             overflowY: 'auto',
-            transform: isOpen ? `translateY(${translateY}px)` : undefined, 
-            transition: isDragging.current ? 'none' : 'transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)' 
+            transition: 'transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)' 
         }}
     >
       <div 
         className="panel-header"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ cursor: 'grab', touchAction: 'none' }}
       >
         <h3 style={{ color: '#ff6f61' }}>{lang.users}</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>

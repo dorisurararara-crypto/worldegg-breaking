@@ -138,40 +138,9 @@ function App() {
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [hideAnnouncement, setHideAnnouncement] = useState(false);
 
-  // --- Global Swipe Logic ---
-  const touchStart = useRef({ x: 0, y: 0 });
-  const [hasSwiped, setHasSwiped] = useState(false); // [New] Track if used
-
-  useEffect(() => {
-    const handleTouchStart = (e) => {
-      touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    };
-
-    const handleTouchEnd = (e) => {
-      const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-      const dx = touchEnd.x - touchStart.current.x;
-      const dy = touchEnd.y - touchStart.current.y;
-
-      // Ensure it's mostly a horizontal swipe
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 70) {
-        if (dx > 0) {
-          // Swipe Right -> Open Left Panel (Users)
-          toggleMobilePanel('left');
-        } else {
-          // Swipe Left -> Open Right Panel (Shop)
-          toggleMobilePanel('right');
-        }
-        setHasSwiped(true); // Keep it visible but faint
-      }
-    };
-
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [mobilePanel]);
+  // --- Global Swipe Logic REMOVED ---
+  // const touchStart = useRef({ x: 0, y: 0 });
+  // const [hasSwiped, setHasSwiped] = useState(false);
 
   // Timestamp for synchronization
   const lastServerTs = useRef(0);
@@ -187,6 +156,36 @@ function App() {
   const [showRetry, setShowRetry] = useState(false);
   const [isSpectating, setIsSpectating] = useState(false);
   const isFirstLoad = useRef(true); // Track first load to detect latecomers
+  
+  // Auto-Retry Logic for Queue
+  useEffect(() => {
+      let retryTimer;
+      if (serverError === 'FULL') {
+          retryTimer = setInterval(() => {
+              console.log("Retrying connection due to FULL...");
+              connect();
+          }, 3000);
+      }
+      return () => clearInterval(retryTimer);
+  }, [serverError, connect]);
+
+  // HP Threshold Announcements
+  const lastHpThreshold = useRef(100); // %
+  useEffect(() => {
+      const percentage = (hp / 1000000) * 100;
+      let msg = "";
+      
+      if (percentage <= 70 && lastHpThreshold.current > 70) {
+          msg = "🥚 알이 금이 가기 시작했습니다! 조금만 더 힘내세요!";
+      } else if (percentage <= 20 && lastHpThreshold.current > 20) {
+          msg = "🔥 거의 다 깨졌습니다! 마지막 스퍼트!";
+      }
+      
+      if (msg) {
+           showNotification(msg); // Re-use notification toast
+           lastHpThreshold.current = percentage;
+      }
+  }, [hp]);
 
   // Data from Server State
   const announcement = serverState.nextPrizeName 
@@ -545,6 +544,8 @@ function App() {
             body: JSON.stringify({ email: targetEmail, country: myCountry, token: winningToken })
         });
         setEmailSubmitted(true);
+        // Alert success
+        alert("이메일이 정상적으로 접수되었습니다! (Sent successfully!)");
         // Start exit timer
         setExitCountdown(5); 
     } catch(e) {
@@ -649,15 +650,17 @@ function App() {
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               height: '100vh', background: '#fff0f5', color: '#5d4037', textAlign: 'center', padding: '20px'
           }}>
-              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🚫</div>
-              <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>대기열 만원</h1>
+              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
+              <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>대기열 대기 중...</h1>
               <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
                   현재 참여 가능한 인원이 모두 찼습니다.<br/>
-                  잠시 후 다시 시도해주세요.
+                  잠시만 기다리시면 자동으로 입장됩니다.<br/>
+                  (재접속 시도 중...)
               </p>
-              <button onClick={() => window.location.reload()} style={{
-                  marginTop: '20px', padding: '10px 20px', background: '#ff6f61', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer'
-              }}>새로고침</button>
+              <div className="spinner" style={{
+                    width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
+                    borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '20px auto'
+              }}></div>
           </div>
       );
   }

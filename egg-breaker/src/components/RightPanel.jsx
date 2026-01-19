@@ -11,48 +11,16 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
     { id: 'item7', name: lang.item7, cost: 50000, power: 600, icon: '☢️' },
   ];
 
-  // --- Swipe Logic ---
-  const [translateY, setTranslateY] = useState(0);
-  const touchStartY = useRef(0);
-  const isDragging = useRef(false);
-
-  const handleTouchStart = (e) => {
-    touchStartY.current = e.touches[0].clientY;
-    isDragging.current = true;
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDragging.current) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - touchStartY.current;
-    if (diff > 0) {
-        setTranslateY(diff);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    isDragging.current = false;
-    if (translateY > 100) {
-        toggleMobilePanel('none');
-    }
-    setTranslateY(0);
-  };
-
   return (
     <aside 
         className={`panel right-panel glass ${isOpen ? 'active' : ''}`} 
         style={{ 
             overflowY: 'auto',
-            transform: isOpen ? `translateY(${translateY}px)` : undefined,
-            transition: isDragging.current ? 'none' : 'transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)'
+            transition: 'transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)'
         }}
     >
       <div 
         className="panel-header"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ cursor: 'grab', touchAction: 'none' }}
       >
         <h3>{lang.shop}</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
