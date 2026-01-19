@@ -54,13 +54,8 @@ export default {
       const newHeaders = new Headers(response.headers);
       Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
       
-      // [Modified] Dynamic Caching Strategy
-      let maxAge = 3;
-      const onlineUsers = parseInt(response.headers.get("X-Online-Users") || "0", 10);
-      if (onlineUsers >= 100000) {
-          maxAge = 5;
-      }
-      newHeaders.set("Cache-Control", `public, max-age=${maxAge}`);
+      // [Modified] Fixed 5s caching for all polling requests to minimize DO load
+      newHeaders.set("Cache-Control", "public, max-age=5");
 
       return new Response(response.body, {
         status: response.status,

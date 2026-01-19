@@ -98,7 +98,7 @@ export function useGameState() {
       // Start polling if NOT connected
       if (!connected) {
           fetchState(); // Initial fetch
-          pollingIntervalRef.current = setInterval(fetchState, 10000);
+          pollingIntervalRef.current = setInterval(fetchState, 5000);
       } else {
           if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
       }
