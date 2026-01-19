@@ -748,6 +748,28 @@ function App() {
         />
       )}
 
+      {/* Side Toggle Buttons (Mobile Only) - Clickable indicators on screen edges */}
+      {mobilePanel === 'none' && (
+        <>
+          <div 
+            className="side-toggle left"
+            onClick={() => toggleMobilePanel('left')}
+            style={{ cursor: 'pointer' }}
+          >
+            <span>👉</span>
+            <span className="side-label">{lang.users}</span>
+          </div>
+          <div 
+            className="side-toggle right"
+            onClick={() => toggleMobilePanel('right')}
+            style={{ cursor: 'pointer' }}
+          >
+            <span>👈</span>
+            <span className="side-label">{lang.shop}</span>
+          </div>
+        </>
+      )}
+
       <div className="main-layout">
         <LeftPanel 
           lang={lang} 

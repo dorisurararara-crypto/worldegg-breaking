@@ -209,7 +209,7 @@ const GameArea = ({
     useEffect(() => {
         const sounds = [
             'fist', 'hammer', 'pickaxe', 'dynamite', 'drill', 'excavator', 'laser', 'nuke', 
-            'buy', 'win'
+            'buy', 'win', 'many_hit', 'egg_craking', 'lose'
         ];
 
         const loadSounds = async () => {
@@ -278,6 +278,18 @@ const GameArea = ({
             document.removeEventListener('touchstart', unlockAudio);
         };
     }, [isBgmOn]);
+
+    // --- Audio Logic (SFX & Stage Detection) ---
+    const prevStageRef = useRef(0);
+    useEffect(() => {
+        const currentStage = Math.ceil(10 - ((hp / 1000000) * 100 / 10));
+        if (currentStage > prevStageRef.current && hp > 0) {
+            playToolSound('egg_craking');
+            prevStageRef.current = currentStage;
+        } else if (hp >= 1000000) {
+            prevStageRef.current = 0; // Reset for new round
+        }
+    }, [hp]);
 
     // --- Visual Theme Logic (Separated from Audio) ---
     useEffect(() => {
@@ -464,6 +476,7 @@ const GameArea = ({
         if (serverState?.status === 'WINNER_CHECK' && serverState?.winningClientId !== clientId && wasActivePlayer.current) {
             if (localLoserTimer === null) {
                 setLocalLoserTimer(7); // Start 7s countdown
+                playToolSound('lose'); // Play loser sound
             } else if (localLoserTimer > 0) {
                 const timer = setTimeout(() => setLocalLoserTimer(prev => prev - 1), 1000);
                 return () => clearTimeout(timer);
@@ -493,7 +506,19 @@ const GameArea = ({
 
         // 1. Trigger Vibration & Sound & Check Autoplay
         triggerVibration();
-        playToolSound(currentTool);
+        
+        // --- Combo Logic & Sound ---
+        const newCombo = combo + 1;
+        setCombo(newCombo);
+        if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+        comboTimerRef.current = setTimeout(() => setCombo(0), 1200); // 1.2s reset
+
+        if (newCombo > 5 && newCombo % 10 === 0) {
+            playToolSound('many_hit');
+        } else {
+            playToolSound(currentTool);
+        }
+
         checkWebAudioAutoplay(); // Try to resume BGM if paused
 
         // 1. Trigger Game Logic
