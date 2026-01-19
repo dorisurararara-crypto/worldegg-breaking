@@ -203,6 +203,7 @@ const GameArea = ({
 
     // BGM & SFX Refs
     const webAudioRefs = useRef({}); // Stores AudioBuffers for Web
+    const html5AudioRefs = useRef({}); // Fallback for Web Audio failures
     const audioContextRef = useRef(null); // Web Audio Context
     const bgmRef = useRef(null); // For Web Audio BGM (HTML5 Audio is fine for BGM usually, or use Context)
     const currentPhaseRef = useRef('none');
@@ -439,18 +440,36 @@ const GameArea = ({
                 // console.error("Native play error", e);
             }
         } else {
-            // Web Audio API
+            // Web Audio API with Fallback
             const ctx = audioContextRef.current;
             const buffer = webAudioRefs.current[soundName];
-            if (ctx && buffer) {
+            let played = false;
+
+            if (ctx && buffer && ctx.state !== 'closed') {
                 if (ctx.state === 'suspended') ctx.resume().catch(() => {});
                 try {
                     const source = ctx.createBufferSource();
                     source.buffer = buffer;
                     source.connect(ctx.destination);
                     source.start(0);
+                    played = true;
                 } catch(e) {
                     console.warn("Web Audio Play Error", e);
+                }
+            }
+            
+            if (!played) {
+                // Fallback to HTML5 Audio
+                try {
+                    let audio = html5AudioRefs.current[soundName];
+                    if (!audio) {
+                        audio = new Audio(`/sounds/${soundName}.mp3`);
+                        html5AudioRefs.current[soundName] = audio;
+                    }
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.log("Fallback play failed", e));
+                } catch (e) {
+                    console.error("Audio Fallback Error", e);
                 }
             }
         }

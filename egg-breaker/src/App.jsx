@@ -118,8 +118,8 @@ function App() {
   const [isWinner, setIsWinner] = useState(false);
   const [winnerEmail, setWinnerEmail] = useState("");
   const [emailSubmitted, setEmailSubmitted] = useState(false);
-  const [myCountry, setMyCountry] = useState("US");
-  const [lang, setLang] = useState(TRANSLATIONS.US);
+  const [myCountry, setMyCountry] = useState("KR"); // Default KR
+  const [lang, setLang] = useState(TRANSLATIONS.KR); // Default KR
   const [currentTool, setCurrentTool] = useState("fist");
   const [showCountrySelect, setShowCountrySelect] = useState(false);
   const [adWatchCount, setAdWatchCount] = useState(0); 
@@ -305,7 +305,7 @@ function App() {
             }
             throw new Error("ipwho.is failed");
         } catch (e) {
-            changeCountry("US");
+            changeCountry("KR"); // Fallback to KR
         }
     };
     detectCountry();
