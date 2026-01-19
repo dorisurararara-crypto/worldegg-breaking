@@ -17,6 +17,11 @@ const getWsUrl = (apiUrl) => {
 
 const WS_URL = getWsUrl(API_URL);
 
+// [Config] Replace this with your actual R2 Public Bucket URL
+// e.g. "https://pub-xxxxxxxx.r2.dev" or "https://state.your-domain.com"
+// If not set, it falls back to the Worker API (Costly for high traffic).
+const R2_URL = import.meta.env.VITE_R2_URL || "https://CHANGE-ME.r2.dev";
+
 export function useGameState() {
   const [serverState, setServerState] = useState({
     hp: 1000000,
@@ -76,8 +81,13 @@ export function useGameState() {
   // --- 1. Polling Logic (Default) ---
   const fetchState = async () => {
       try {
-          // console.log(`[Polling] Fetching ${API_URL}/api/state`); // Log attempt
-          const res = await fetch(`${API_URL}/api/state`);
+          // [Optimization] Use R2 Static JSON if available to save Worker costs
+          let targetUrl = `${API_URL}/api/state`;
+          if (R2_URL && !R2_URL.includes("CHANGE-ME")) {
+              targetUrl = `${R2_URL}/state.json`;
+          }
+
+          const res = await fetch(targetUrl);
           if (res.ok) {
               const data = await res.json();
               // console.log("[Polling] Success:", data); // Log success
@@ -86,6 +96,15 @@ export function useGameState() {
                   return data;
               });
           } else {
+             // Fallback to API if R2 fails (e.g. 404)
+             if (targetUrl !== `${API_URL}/api/state`) {
+                 const fallbackRes = await fetch(`${API_URL}/api/state`);
+                 if (fallbackRes.ok) {
+                     const data = await fallbackRes.json();
+                     setServerState(prev => (data.lastUpdatedAt < prev.lastUpdatedAt && data.round === prev.round) ? prev : data);
+                     return;
+                 }
+             }
              console.error(`[Polling] Failed: ${res.status}`);
           }
       } catch (e) {

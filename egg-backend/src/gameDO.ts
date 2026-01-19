@@ -71,6 +71,7 @@ export class GameDO extends DurableObject {
   // Loop Handles
   broadcastInterval: any = null;
   saveInterval: any = null;
+  saveToR2Interval: any = null; // [New] R2 Upload Loop
   
   // Optimization
   lastBroadcastHp: number = -1;
@@ -158,6 +159,38 @@ export class GameDO extends DurableObject {
       }
       if (!this.saveInterval) {
           this.saveInterval = setInterval(() => this.saveState(), this.SAVE_INTERVAL_MS);
+      }
+      // [New] R2 Upload Loop (3s throttle)
+      if (!this.saveToR2Interval) {
+          // Upload immediately on start
+          this.uploadStateToR2().catch(() => {});
+          this.saveToR2Interval = setInterval(() => this.uploadStateToR2(), 3000);
+      }
+  }
+
+  // [New] Upload Public State Snapshot to R2
+  async uploadStateToR2() {
+      if (!this.env.STATE_BUCKET) return; // Skip if no bucket binding
+
+      const publicState = {
+          ...this.gameState,
+          onlinePlayers: this.players.size,
+          onlineSpectatorsApprox: this.sessions.size - this.players.size,
+          queueLength: this.queue.length,
+          serverTs: Date.now()
+      };
+      
+      try {
+          // Upload 'state.json'
+          await this.env.STATE_BUCKET.put("state.json", JSON.stringify(publicState), {
+              httpMetadata: {
+                  contentType: "application/json",
+                  // Cache: Edge 2s, Browser 2s, Stale 5s
+                  cacheControl: "public, max-age=2, s-maxage=2, stale-while-revalidate=5",
+              }
+          });
+      } catch (e) {
+          console.error("R2 Upload Failed:", e);
       }
   }
 
