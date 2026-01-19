@@ -110,8 +110,20 @@ export function useGameState() {
 
   // --- 2. WebSocket Logic (On-Demand) ---
   const connect = useCallback(() => {
-    // Prevent duplicate connection if already connected or connecting
-    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+    // If connecting, wait.
+    if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
+        return;
+    }
+
+    // If already connected, just resend join (retry logic)
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        console.log("[WS] Resending join...");
+        wsRef.current.send(JSON.stringify({
+            type: "join",
+            mode: "player",
+            clientId: clientIdRef.current,
+            country: countryRef.current
+        }));
         return;
     }
 
@@ -139,6 +151,8 @@ export function useGameState() {
             case 'join_ok':
                 setRole(msg.role);
                 setQueuePos(msg.queuePos);
+                // Clear error if we successfully joined (even if it was FULL before)
+                setError(null); 
                 console.log(`[WS] Joined as ${msg.role}`);
                 break;
             case 'state':
@@ -164,7 +178,8 @@ export function useGameState() {
                 console.error("[WS] Error:", msg.message);
                 if (msg.code === 'FULL' || msg.code === 'ROUND_NOT_STARTED') {
                     setError(msg.code);
-                    // Do not close immediately, let the server or retry logic handle it
+                    // Close socket to force fresh reconnection on next retry
+                    ws.close(); 
                 }
                 break;
             default: break;
