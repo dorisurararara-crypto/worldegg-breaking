@@ -35,16 +35,41 @@ function Admin() {
   const [newPrizeImg, setNewPrizeImg] = useState("");
   const [newPrizeSecret, setNewPrizeSecret] = useState("");
 
+  // Checkbox State for Winners
+  const [selectedWinners, setSelectedWinners] = useState(new Set());
+
+  // [New] Session Persist
+  useEffect(() => {
+      const savedKey = sessionStorage.getItem('admin_key');
+      if (savedKey === "egg1234") {
+          setPassword(savedKey);
+          setIsAuthenticated(true);
+      }
+  }, []);
+
+  // [New] Fetch Data on Auth
+  useEffect(() => {
+      if (isAuthenticated) {
+          fetchState();
+          fetchWinners();
+          fetchPrizePool();
+      }
+  }, [isAuthenticated]);
+
   const handleLogin = (e) => {
     e.preventDefault();
-    if (password === "egg1234") { // 클라이언트 측 간단 확인 (서버에서도 체크함)
+    if (password === "egg1234") { 
       setIsAuthenticated(true);
-      fetchState();
-      fetchWinners();
-      fetchPrizePool();
+      sessionStorage.setItem('admin_key', password);
     } else {
       alert("비밀번호가 틀렸습니다.");
     }
+  };
+
+  const handleLogout = () => {
+      setIsAuthenticated(false);
+      setPassword("");
+      sessionStorage.removeItem('admin_key');
   };
 
   const fetchPrizePool = async () => {
@@ -88,6 +113,7 @@ function Admin() {
           if (res.ok) {
               setNewPrizeName(""); setNewPrizeImg(""); setNewPrizeSecret("");
               fetchPrizePool();
+              alert("상품이 창고에 추가되었습니다.");
           }
       } catch (e) {}
   };
@@ -130,9 +156,48 @@ function Admin() {
           if (res.ok) {
               const data = await res.json();
               setWinners(data);
+              setSelectedWinners(new Set()); // Reset selection
           }
       } catch (e) {
           console.error("우승자 목록 실패", e);
+      }
+  };
+
+  // [New] Checkbox Handler
+  const toggleWinnerSelect = (id) => {
+      const newSet = new Set(selectedWinners);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      setSelectedWinners(newSet);
+  };
+
+  const toggleAllWinners = () => {
+      if (selectedWinners.size === winners.length) {
+          setSelectedWinners(new Set());
+      } else {
+          setSelectedWinners(new Set(winners.map(w => w.id)));
+      }
+  };
+
+  // [New] Bulk Delete
+  const deleteSelectedWinners = async () => {
+      if (selectedWinners.size === 0) return alert("선택된 항목이 없습니다.");
+      if (!confirm(`선택한 ${selectedWinners.size}개의 기록을 삭제하시겠습니까?`)) return;
+
+      try {
+          const promises = Array.from(selectedWinners).map(id => 
+              fetch(`${API_URL}/api/admin/winners/${id}`, {
+                  method: 'DELETE',
+                  headers: { 'x-admin-key': password }
+              })
+          );
+          
+          await Promise.all(promises);
+          alert("선택한 항목이 삭제되었습니다.");
+          fetchWinners();
+      } catch (e) {
+          alert("일부 삭제 중 오류가 발생했습니다.");
+          fetchWinners();
       }
   };
 
@@ -145,7 +210,6 @@ function Admin() {
               headers: { 'x-admin-key': password }
           });
           if (res.ok) {
-              alert("삭제되었습니다.");
               fetchWinners(); // 목록 갱신
           } else {
               alert("삭제 실패");
@@ -172,7 +236,7 @@ function Admin() {
         
         if (res.ok) {
           alert(json.details || "성공적으로 처리되었습니다!");
-          fetchState(); // UI 갱신
+          fetchState(); // UI 갱신 (새로고침 X)
         } else {
           alert(`오류 발생: ${json.error || res.status}`);
         }
@@ -206,10 +270,10 @@ function Admin() {
   }
 
   return (
-    <div className="admin-container" style={{ padding: '20px', background: '#222', minHeight: '100vh', color: 'white', fontFamily: "'Pretendard', sans-serif" }}>
+    <div className="admin-container" style={{ padding: '20px', background: '#222', minHeight: '100vh', color: 'white', fontFamily: "'Pretendard', sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <h1 style={{ fontSize: '1.5rem', margin: 0 }}>🛠️ 관리자 대시보드</h1>
-        <button onClick={() => setIsAuthenticated(false)} style={{ background: '#ff4444', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>로그아웃</button>
+        <button onClick={handleLogout} style={{ background: '#ff4444', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>로그아웃</button>
       </div>
 
       <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -349,7 +413,7 @@ function Admin() {
             onClick={() => callAdminApi('config', { announcement, prize, prizeUrl, prizeImageUrl, prizeSecretUrl, adUrl })} 
             style={{ marginTop: '25px', width: '100%', background: '#28a745', color: 'white', border: 'none', padding: '15px', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}
           >
-            💾 설정 저장하기
+            💾 설정 저장하기 (즉시 반영)
           </button>
         </div>
 
@@ -420,7 +484,14 @@ function Admin() {
         {/* 4. 우승자 목록 */}
         <div className="glass" style={{ padding: '20px', borderRadius: '15px', background: 'rgba(255,255,255,0.1)', gridColumn: '1 / -1' }}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom:'10px'}}>
-             <h3>🏆 명예의 전당 (당첨자 관리)</h3>
+             <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                <h3>🏆 명예의 전당 (당첨자 관리)</h3>
+                {selectedWinners.size > 0 && (
+                    <button onClick={deleteSelectedWinners} style={{background:'#ff4444', color:'white', border:'none', padding:'5px 15px', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>
+                        선택 삭제 ({selectedWinners.size})
+                    </button>
+                )}
+             </div>
              <button onClick={fetchWinners} style={{background:'transparent', border:'1px solid #aaa', color:'#fff', borderRadius:'5px', padding:'5px 10px', cursor:'pointer'}}>새로고침</button>
           </div>
           
@@ -428,6 +499,9 @@ function Admin() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                 <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.1)' }}>
+                        <th style={{ padding: '10px', width: '40px', textAlign: 'center' }}>
+                            <input type="checkbox" onChange={toggleAllWinners} checked={winners.length > 0 && selectedWinners.size === winners.length} />
+                        </th>
                         <th style={{ padding: '10px', textAlign: 'left' }}>Round</th>
                         <th style={{ padding: '10px', textAlign: 'left' }}>국가</th>
                         <th style={{ padding: '10px', textAlign: 'left' }}>이메일</th>
@@ -438,7 +512,10 @@ function Admin() {
                 </thead>
                 <tbody>
                     {winners.length > 0 ? winners.map((w) => (
-                        <tr key={w.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <tr key={w.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: selectedWinners.has(w.id) ? 'rgba(255, 68, 68, 0.1)' : 'transparent' }}>
+                            <td style={{ padding: '10px', textAlign: 'center' }}>
+                                <input type="checkbox" checked={selectedWinners.has(w.id)} onChange={() => toggleWinnerSelect(w.id)} />
+                            </td>
                             <td style={{ padding: '10px' }}>{w.round}</td>
                             <td style={{ padding: '10px' }}>{w.country}</td>
                             <td style={{ padding: '10px', fontWeight: 'bold', color: '#ffb6c1' }}>
@@ -449,12 +526,12 @@ function Admin() {
                             <td style={{ padding: '10px' }}>{w.prize || '-'}</td>
                             <td style={{ padding: '10px', color: '#aaa' }}>{new Date(w.created_at).toLocaleString()}</td>
                             <td style={{ padding: '10px', textAlign: 'center' }}>
-                                <button onClick={() => deleteWinner(w.id)} style={{ background: '#ff4444', border: 'none', borderRadius: '5px', padding: '5px 10px', color: 'white', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
+                                <button onClick={() => deleteWinner(w.id)} style={{ background: '#555', border: 'none', borderRadius: '5px', padding: '5px 10px', color: 'white', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
                             </td>
                         </tr>
                     )) : (
                         <tr>
-                            <td colSpan="6" style={{ padding: '20px', textAlign: 'center', color: '#888' }}>아직 우승자가 없습니다.</td>
+                            <td colSpan="7" style={{ padding: '20px', textAlign: 'center', color: '#888' }}>아직 우승자가 없습니다.</td>
                         </tr>
                     )}
                 </tbody>

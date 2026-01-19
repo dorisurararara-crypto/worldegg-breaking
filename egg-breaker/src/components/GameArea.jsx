@@ -177,6 +177,21 @@ const GameArea = ({
     const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
     const [isSettingsFocused, setIsSettingsFocused] = useState(false); // [New] For fading icons
     
+    // [New] Submission Loading State
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Wrapper for submit to handle loading state
+    const handleSubmit = async (customEmail = null) => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            await submitWinnerEmail(customEmail);
+        } finally {
+            // Success case might reload page, but if error, we reset
+            setIsSubmitting(false);
+        }
+    };
+    
     // --- Render Conditions (Moved to top) ---
     const isMyWin = serverState?.winningClientId === clientId;
     const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
@@ -987,11 +1002,12 @@ const GameArea = ({
                                                         </a>
                                                         {isPrizeSaved && (
                                                             <button 
-                                                                onClick={() => submitWinnerEmail("IMAGE_CLAIMED")} 
+                                                                onClick={() => handleSubmit("IMAGE_CLAIMED")} 
                                                                 className="send-btn" 
-                                                                style={{ background: '#2e7d32', width: '100%' }}
+                                                                disabled={isSubmitting}
+                                                                style={{ background: isSubmitting ? '#999' : '#2e7d32', width: '100%' }}
                                                             >
-                                                                상품 수령 완료
+                                                                {isSubmitting ? "처리 중..." : "상품 수령 완료"}
                                                             </button>
                                                         )}
                                                     </div>
@@ -1014,8 +1030,13 @@ const GameArea = ({
                                                                 style={{ width: '90%', padding: '12px', borderRadius: '10px', border: '2px solid #ffe4e1', background: '#fff', color: '#5d4037', textAlign: 'center', fontSize: '1rem' }}
                                                             />
                                                         </div>
-                                                        <button className="send-btn" onClick={() => submitWinnerEmail()} style={{ fontSize: '1.1rem', padding: '12px 40px' }}>
-                                                            {lang.send}
+                                                        <button 
+                                                            className="send-btn" 
+                                                            onClick={() => handleSubmit()} 
+                                                            disabled={isSubmitting}
+                                                            style={{ fontSize: '1.1rem', padding: '12px 40px', background: isSubmitting ? '#999' : '' }}
+                                                        >
+                                                            {isSubmitting ? "처리 중..." : lang.send}
                                                         </button>
                                                     </>
                                                 ) : (
