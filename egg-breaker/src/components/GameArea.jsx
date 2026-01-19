@@ -336,7 +336,16 @@ const GameArea = ({
 
     // --- Audio Logic (BGM) ---
     useEffect(() => {
-        if (!audioLoaded) return; // Wait for load
+        if (!audioLoaded) return;
+
+        // [New] Stop BGM if game over
+        if (serverState?.status === 'WINNER_CHECK' || serverState?.status === 'FINISHED') {
+            if (currentPhaseRef.current !== 'none') {
+                stopBgm();
+                currentPhaseRef.current = 'none';
+            }
+            return;
+        }
 
         if (!isBgmOn || hp <= 0) {
             // 소리 끄기 또는 사망 시
@@ -357,7 +366,7 @@ const GameArea = ({
             playBgm(newPhase);
             currentPhaseRef.current = newPhase;
         }
-    }, [hp, isBgmOn, audioLoaded]);
+    }, [hp, isBgmOn, audioLoaded, serverState?.status]);
 
     const stopBgm = async () => {
         if (Capacitor.isNativePlatform()) {
@@ -508,6 +517,14 @@ const GameArea = ({
         }
     };
 
+    // Play Win Sound
+    useEffect(() => {
+        if (isMyWin) {
+            stopBgm();
+            playToolSound('win');
+        }
+    }, [isMyWin]);
+
     // Track if I was a player in this round
     useEffect(() => {
         // If HP is full (New Round), reset
@@ -527,7 +544,8 @@ const GameArea = ({
         if (serverState?.status === 'WINNER_CHECK' && serverState?.winningClientId !== clientId && wasActivePlayer.current) {
             if (localLoserTimer === null) {
                 setLocalLoserTimer(7); // Start 7s countdown
-                playToolSound('lose'); // Play loser sound
+                stopBgm(); // Ensure BGM stops
+                // playToolSound('lose'); // File missing, skip
             } else if (localLoserTimer > 0) {
                 const timer = setTimeout(() => setLocalLoserTimer(prev => prev - 1), 1000);
                 return () => clearTimeout(timer);
