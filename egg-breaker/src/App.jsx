@@ -162,25 +162,15 @@ function App() {
   const isFirstLoad = useRef(true); // Track first load to detect latecomers
   
   // Queue Status for Full Server
-  const [queueStatus, setQueueStatus] = useState('WAITING'); // WAITING, RELOADING, GAME_STARTED
+  const [queueStatus, setQueueStatus] = useState('WAITING'); 
 
-  // Auto-Retry Logic for Queue
+  // [Modified] Handle Full Server -> Spectator Mode
   useEffect(() => {
-      let retryTimer;
       if (serverError === 'FULL') {
-          // Wait 3 seconds then decide
-          retryTimer = setTimeout(() => {
-               const totalOnline = (serverState.onlinePlayers || 0) + (serverState.onlineSpectatorsApprox || 0);
-               if (totalOnline >= 1000) {
-                   setQueueStatus('GAME_STARTED');
-               } else {
-                   setQueueStatus('RELOADING');
-                   window.location.reload();
-               }
-          }, 3000);
+          showNotification("대기열이 꽉 차서 관전 모드로 입장합니다.");
+          // No auto-reload, just stay as spectator
       }
-      return () => clearTimeout(retryTimer);
-  }, [serverError, serverState.onlinePlayers, serverState.onlineSpectatorsApprox]);
+  }, [serverError]);
 
   // HP Threshold Announcements
   const lastStage = useRef(0);
@@ -583,7 +573,7 @@ function App() {
         });
         setEmailSubmitted(true);
         // Alert success
-        showNotification("이메일이 정상적으로 접수되었습니다! (Sent successfully!)");
+        showNotification("이메일이 정상적으로 접수되었습니다!");
         // Start exit timer
         setExitCountdown(5); 
     } catch(e) {
@@ -689,47 +679,8 @@ function App() {
 
   if (route === '#admin') return <Admin />;
 
-  // 1. Server Full / Queue Full Error
-  if (serverError === 'FULL') {
-      return (
-          <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              height: '100vh', background: '#fff0f5', color: '#5d4037', textAlign: 'center', padding: '20px'
-          }}>
-              {queueStatus === 'GAME_STARTED' ? (
-                  <>
-                    <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🏟️</div>
-                    <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>{lang.gameStarted}</h1>
-                    <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-                        {lang.tryNextRound}<br/>
-                        (현재 접속자: {(serverState.onlinePlayers || 0) + (serverState.onlineSpectatorsApprox || 0)}명)
-                    </p>
-                  </>
-              ) : queueStatus === 'RELOADING' ? (
-                  <>
-                    <div className="spinner" style={{
-                        width: '40px', height: '40px', border: '5px solid #ffe4e1', borderTop: '5px solid #ff6f61', 
-                        borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '20px auto'
-                    }}></div>
-                    <h2>{lang.reloading}</h2>
-                  </>
-              ) : (
-                  <>
-                    <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
-                    <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>{lang.queueLabel}...</h1>
-                    <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-                        현재 참여 가능한 인원이 모두 찼습니다.<br/>
-                        잠시 후 자동으로 재접속합니다.<br/>
-                    </p>
-                    <div className="spinner" style={{
-                            width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
-                            borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '20px auto'
-                    }}></div>
-                  </>
-              )}
-          </div>
-      );
-  }
+  // [Modified] Server Full Error is handled by notification now, not blocking UI
+  // if (serverError === 'FULL') { ... } removed
 
   // Debug: Loading State
   if (serverState.status === 'LOADING') {

@@ -53,7 +53,8 @@ export default {
 
       const newHeaders = new Headers(response.headers);
       Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
-      newHeaders.set("Cache-Control", "no-store");
+      // [Modified] Cache for 3 seconds for polling optimization
+      newHeaders.set("Cache-Control", "public, max-age=3");
 
       return new Response(response.body, {
         status: response.status,
