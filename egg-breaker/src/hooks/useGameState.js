@@ -177,11 +177,15 @@ export function useGameState() {
                 setRewardEvent({ amount: msg.amount, msg: msg.msg, id: Date.now() });
                 break;
             case 'error':
-                console.error("[WS] Error:", msg.message);
-                if (msg.code === 'FULL' || msg.code === 'ROUND_NOT_STARTED') {
-                    setError(msg.code);
-                    // Close socket to force fresh reconnection on next retry
-                    ws.close(); 
+                if (msg.code === 'GAME_OVER') {
+                    console.log("[WS] Round Ended:", msg.message);
+                    // Do not close connection here, wait for server close or manual handling
+                } else {
+                    console.error("[WS] Error:", msg.message);
+                    if (msg.code === 'FULL' || msg.code === 'ROUND_NOT_STARTED') {
+                        setError(msg.code);
+                        ws.close(); 
+                    }
                 }
                 break;
             default: break;
