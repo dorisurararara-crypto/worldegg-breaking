@@ -909,7 +909,6 @@ function App() {
             <GameArea 
               lang={lang}
               hp={hp}
-              isShaking={isShaking}
               clickPower={clickPower}
               myPoints={myPoints}
               isWinner={isWinner}
