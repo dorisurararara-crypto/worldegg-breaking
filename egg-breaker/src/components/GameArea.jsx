@@ -3,6 +3,20 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { NativeAudio } from '@capacitor-community/native-audio';
 import { Capacitor } from '@capacitor/core';
 
+// --- Constants (Moved to top to prevent TDZ errors) ---
+const TOOL_EMOJIS = {
+    hammer: '🔨',
+    pickaxe: '⛏️',
+    dynamite: '🧨',
+    drill: '🔩',
+    excavator: '🚜',
+    laser: '🔫',
+    nuke: '☢️',
+    fist: '👊'
+};
+
+const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '🎀', '🎵', '🐇'];
+
 // --- 깨지는 알 SVG 컴포넌트 ---
 const CrackedEgg = React.memo(React.forwardRef(({ hp, maxHp, tool, onEggClick }, ref) => {
     const percentage = (hp / maxHp) * 100;
@@ -115,19 +129,6 @@ const CrackedEgg = React.memo(React.forwardRef(({ hp, maxHp, tool, onEggClick },
         </div>
     );
 }));
-
-const TOOL_EMOJIS = {
-    hammer: '🔨',
-    pickaxe: '⛏️',
-    dynamite: '🧨',
-    drill: '🔩',
-    excavator: '🚜',
-    laser: '🔫',
-    nuke: '☢️',
-    fist: '👊'
-};
-
-const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '🎀', '🎵', '🐇'];
 
 const GameArea = ({
     lang, hp, isShaking: _ignoredIsShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
