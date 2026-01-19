@@ -596,6 +596,22 @@ export class GameDO extends DurableObject {
   }
 
   broadcastState() {
+      // [New] Auto-disqualify if timeout (5 min)
+      if (this.gameState.status === 'WINNER_CHECK') {
+          const WIN_TIMEOUT = 5 * 60 * 1000;
+          if (Date.now() - this.gameState.winnerCheckStartTime > WIN_TIMEOUT) {
+              console.log("[Auto] Winner timeout. Ending round.");
+              this.gameState.status = 'FINISHED';
+              this.gameState.winnerInfo = { country: "UN", email: "TIMEOUT", prize: "None (Time Expired)" };
+              this.gameState.winningClientId = undefined;
+              this.gameState.winningToken = undefined;
+              this.gameState.lastUpdatedAt = Date.now();
+              this.saveState();
+              this.kickAllPlayers();
+              // Continue to broadcast the FINISHED state to anyone remaining (though kicked)
+          }
+      }
+
       if (this.sessions.size === 0) return;
 
       const now = Date.now();

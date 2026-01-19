@@ -237,8 +237,8 @@ function App() {
                 const remaining = Math.max(0, 300 - elapsed);
                 setWinnerCountdown(remaining);
                 if (remaining <= 0) {
-                    showNotification("Time expired! You failed to enter your email in time.");
-                    handleGameEnd(adUrl);
+                    alert("시간이 초과되어 우승 자격이 박탈되었습니다.");
+                    window.location.reload();
                 }
             };
             
@@ -252,8 +252,8 @@ function App() {
         }
     } else if (winnerCountdown === 0 && isWinner && !emailSubmitted && !showRetry) {
        // Time expired for winner (Legacy path)
-       showNotification("Time expired! You failed to enter your email in time.");
-       handleGameEnd(adUrl);
+       alert("시간이 초과되어 우승 자격이 박탈되었습니다.");
+       window.location.reload();
     }
     return () => clearInterval(timer);
   }, [isWinner, emailSubmitted, winnerCountdown, adUrl, showRetry, winStartTime]);
