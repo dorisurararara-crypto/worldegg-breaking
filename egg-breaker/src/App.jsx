@@ -369,6 +369,15 @@ function App() {
           
           // Remove client-side check to allow round resets to work
           if (referrer && referrer !== clientId) {
+              // [New] Local duplication check to prevent 400 errors on refresh
+              const checkKey = `egg_invite_checked_${referrer}`;
+              const lastChecked = localStorage.getItem(checkKey);
+              // If checked within last 24 hours, skip
+              if (lastChecked && (Date.now() - parseInt(lastChecked, 10) < 24 * 60 * 60 * 1000)) {
+                  console.log("[App] Invite already checked locally (skipping).");
+                  return;
+              }
+
               try {
                   console.log("[App] Sending invite req...");
                   const res = await fetch(`${API_URL}/api/invite-reward`, {
@@ -379,6 +388,11 @@ function App() {
                   const json = await res.json();
                   console.log(`[App] Resp: ${res.status} ${JSON.stringify(json)}`);
                   
+                  // If success or duplicate/invalid (400), mark as checked to avoid retry
+                  if (res.ok || res.status === 400) {
+                      localStorage.setItem(checkKey, Date.now().toString());
+                  }
+
                   if (res.ok) {
                       console.log("Invite verified by server!");
                       // Optional: mark locally if needed for UI, but rely on server for logic
