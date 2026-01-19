@@ -211,7 +211,7 @@ const GameArea = ({
     useEffect(() => {
         const sounds = [
             'fist', 'hammer', 'pickaxe', 'dynamite', 'drill', 'excavator', 'laser', 'nuke', 
-            'buy', 'win', 'many_hit', 'egg_craking', 'lose'
+            'buy', 'win'
         ];
 
         const loadSounds = async () => {
@@ -256,10 +256,15 @@ const GameArea = ({
                     audioContextRef.current = ctx;
 
                     const loadBuffer = async (name) => {
-                        const res = await fetch(`/sounds/${name}.mp3`);
-                        const arrayBuffer = await res.arrayBuffer();
-                        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-                        webAudioRefs.current[name] = audioBuffer;
+                        try {
+                            const res = await fetch(`/sounds/${name}.mp3`);
+                            if (!res.ok) throw new Error(`Failed to fetch ${name}: ${res.status}`);
+                            const arrayBuffer = await res.arrayBuffer();
+                            const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                            webAudioRefs.current[name] = audioBuffer;
+                        } catch (err) {
+                            console.warn(`Skipping sound ${name}:`, err);
+                        }
                     };
 
                     await Promise.all(sounds.map(s => loadBuffer(s)));

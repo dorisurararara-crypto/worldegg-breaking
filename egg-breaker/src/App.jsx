@@ -501,9 +501,18 @@ function App() {
     
     // If HP hits 0 locally, we rely on server to confirm.
     if (newHp === 0) {
-       setIsWinner(true); // Tentative
+       // setIsWinner(true); // Removed: Wait for server confirmation
+       setShowLoserMessage(true); // Temporarily show checking status
     }
   };
+
+  // Check for Winning Token from Server
+  useEffect(() => {
+      if (winningToken) {
+          setIsWinner(true);
+          setShowLoserMessage(false); // Clear checking status
+      }
+  }, [winningToken]);
 
   const buyItem = async (cost, powerAdd, toolName) => {
     if (myPoints >= cost) {
