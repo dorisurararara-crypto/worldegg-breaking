@@ -108,7 +108,7 @@ function App() {
   const [route, setRoute] = useState(window.location.hash);
   
   // Custom Hook for API State
-  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken, prizeSecretImageUrl, connect, rewardEvent } = useGameState(); 
+  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken, winStartTime, prizeSecretImageUrl, connect, rewardEvent } = useGameState(); 
   
   // Custom Hook for Push Notifications
   usePushNotifications(API_URL, clientId);
@@ -229,17 +229,34 @@ function App() {
   // Winner Timer (5 min limit)
   useEffect(() => {
     let timer;
-    if (isWinner && !emailSubmitted && winnerCountdown > 0 && !showRetry) {
-      timer = setInterval(() => {
-        setWinnerCountdown(prev => prev - 1);
-      }, 1000);
+    if (isWinner && !emailSubmitted && !showRetry) {
+        if (winStartTime) {
+            // [New] Sync with Server Time
+            const updateTimer = () => {
+                const elapsed = Math.floor((Date.now() - winStartTime) / 1000);
+                const remaining = Math.max(0, 300 - elapsed);
+                setWinnerCountdown(remaining);
+                if (remaining <= 0) {
+                    showNotification("Time expired! You failed to enter your email in time.");
+                    handleGameEnd(adUrl);
+                }
+            };
+            
+            updateTimer(); // Initial call
+            timer = setInterval(updateTimer, 1000);
+        } else if (winnerCountdown > 0) {
+            // Fallback
+            timer = setInterval(() => {
+                setWinnerCountdown(prev => prev - 1);
+            }, 1000);
+        }
     } else if (winnerCountdown === 0 && isWinner && !emailSubmitted && !showRetry) {
-       // Time expired for winner
+       // Time expired for winner (Legacy path)
        showNotification("Time expired! You failed to enter your email in time.");
        handleGameEnd(adUrl);
     }
     return () => clearInterval(timer);
-  }, [isWinner, emailSubmitted, winnerCountdown, adUrl, showRetry]);
+  }, [isWinner, emailSubmitted, winnerCountdown, adUrl, showRetry, winStartTime]);
 
   // Winner Exit Timer (after submission)
   useEffect(() => {

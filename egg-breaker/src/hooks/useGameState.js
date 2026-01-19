@@ -45,6 +45,7 @@ export function useGameState() {
   const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
   const [winningToken, setWinningToken] = useState(null);
+  const [winStartTime, setWinStartTime] = useState(null); // [New]
   const [prizeSecretImageUrl, setPrizeSecretImageUrl] = useState(null);
   const [rewardEvent, setRewardEvent] = useState(null);
 
@@ -168,6 +169,7 @@ export function useGameState() {
             case 'you_won':
                 console.log("🎉 I WON!", msg.token);
                 setWinningToken(msg.token);
+                if (msg.startTime) setWinStartTime(msg.startTime); // [Sync]
                 if (msg.prizeSecretUrl) setPrizeSecretImageUrl(msg.prizeSecretUrl);
                 break;
             case 'invite_reward':
@@ -254,6 +256,7 @@ export function useGameState() {
       disconnect,
       clientId: clientIdRef.current,
       winningToken,
+      winStartTime, // [New]
       prizeSecretImageUrl,
       rewardEvent
   };

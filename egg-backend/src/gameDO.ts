@@ -259,6 +259,13 @@ export class GameDO extends DurableObject {
       if (this.gameState.status !== 'WINNER_CHECK') {
           return new Response(JSON.stringify({ error: "Game not in winner check mode" }), { status: 400 });
       }
+      
+      // [New] Check 5-minute time limit
+      const WIN_TIMEOUT = 5 * 60 * 1000;
+      if (Date.now() - this.gameState.winnerCheckStartTime > WIN_TIMEOUT) {
+           return new Response(JSON.stringify({ error: "Time expired" }), { status: 403 });
+      }
+
       if (!this.gameState.winningToken || body.token !== this.gameState.winningToken) {
           return new Response(JSON.stringify({ error: "Invalid winning token" }), { status: 403 });
       }
@@ -338,10 +345,16 @@ export class GameDO extends DurableObject {
         const clientId = msg.clientId || crypto.randomUUID();
         const country = msg.country || "UN";
         
+        // [Modified] Allow Winner to Reconnect
         if (this.gameState.status !== 'PLAYING') {
-             ws.send(JSON.stringify({ type: 'error', code: 'ROUND_NOT_STARTED', message: 'Round not started yet.' }));
-             ws.close(1008, "Round not started");
-             return;
+             // If we are checking winner, and this IS the winner, let them in.
+             if (this.gameState.status === 'WINNER_CHECK' && clientId === this.gameState.winningClientId) {
+                 // Proceed to join logic below...
+             } else {
+                 ws.send(JSON.stringify({ type: 'error', code: 'ROUND_NOT_STARTED', message: 'Round not started yet.' }));
+                 ws.close(1008, "Round not started");
+                 return;
+             }
         }
 
         let role: 'player' | 'spectator' = 'spectator';
@@ -384,6 +397,17 @@ export class GameDO extends DurableObject {
             serverTs: Date.now(),
             buildId: "v1.0.0"
         }));
+
+        // [New] If this is the winner reconnecting, resend the win message
+        if (this.gameState.status === 'WINNER_CHECK' && clientId === this.gameState.winningClientId) {
+             ws.send(JSON.stringify({
+                  type: 'you_won',
+                  token: this.gameState.winningToken,
+                  round: this.gameState.round,
+                  prizeSecretUrl: this.gameState.prizeSecretUrl,
+                  startTime: this.gameState.winnerCheckStartTime // [Sync] Send timestamp
+             }));
+        }
         
         const pending = this.pendingRewards.get(clientId);
         if (pending && pending > 0) {
@@ -471,7 +495,8 @@ export class GameDO extends DurableObject {
                       type: 'you_won',
                       token: this.gameState.winningToken,
                       round: this.gameState.round,
-                      prizeSecretUrl: this.gameState.prizeSecretUrl // Only sent to the winner!
+                      prizeSecretUrl: this.gameState.prizeSecretUrl, // Only sent to the winner!
+                      startTime: this.gameState.winnerCheckStartTime // [Sync] Send timestamp
                   }));
                   
                   this.saveState(); 
