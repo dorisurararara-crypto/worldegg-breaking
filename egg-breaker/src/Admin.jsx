@@ -65,8 +65,9 @@ function Admin() {
       const file = e.target.files[0];
       if (!file) return;
       
-      if (file.size > 1024 * 1024) { // 1MB Limit
-          return alert("이미지 용량이 너무 큽니다 (1MB 이하 권장). 서버 부하를 줄이기 위해 작게 줄여주세요.");
+      // [Changed] 500KB Limit to ensure Base64 < 1MB (WebSocket Limit)
+      if (file.size > 500 * 1024) { 
+          return alert("이미지 용량이 너무 큽니다 (500KB 이하 권장). 웹소켓 전송 한도 초과 방지를 위해 용량을 줄여주세요.");
       }
 
       const reader = new FileReader();
