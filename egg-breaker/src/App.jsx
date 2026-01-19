@@ -591,6 +591,15 @@ function App() {
       setTimeout(() => setNotification(''), 2000);
   };
 
+  const handleComboReward = (points, msg) => {
+      setMyPoints(prev => prev + points);
+      showNotification(msg);
+      
+      // Persist reward
+      const currentStored = parseInt(localStorage.getItem('saved_points') || '0', 10);
+      localStorage.setItem('saved_points', (currentStored + points).toString());
+  };
+
   const toggleMobilePanel = (panel) => {
     if (mobilePanel === panel) {
         setMobilePanel('none');
@@ -633,14 +642,14 @@ function App() {
           content: {
             title: lang.title,
             description: lang.subtitle,
-            imageUrl: 'https://egg-break-412ae.web.app/vite.svg', // TODO: Replace with actual game image URL
+            imageUrl: 'https://worldegg-breaking.pages.dev/vite.svg', // Updated to current domain
             link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
           },
           buttons: [{ title: 'Play Now', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
         });
 
         // Artificial delay to mimic process
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         // 2. Reward
         const reward = 800;
@@ -655,7 +664,11 @@ function App() {
         showNotification(`${lang.shareSuccess} (${shareCount + 1}/5)`);
     } catch (e) {
         console.error("Kakao Share Error:", e);
-        showNotification("공유하기 도중 오류가 발생했습니다. (브라우저 설정을 확인해주세요)");
+        if (e.name === 'NotAllowedError' || e.message?.includes('intent')) {
+            showNotification("카카오톡 앱 실행에 실패했습니다. (모바일 기기에서 시도해주세요)");
+        } else {
+            showNotification("공유하기 도중 오류가 발생했습니다. (브라우저 설정을 확인해주세요)");
+        }
     }
   };
 
@@ -732,6 +745,31 @@ function App() {
 
   return (
     <div className="app-container">
+      {notification && (
+        <div style={{
+            position: 'fixed',
+            top: '10%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(255, 255, 255, 0.95)',
+            color: '#ff6f61',
+            border: '3px solid #ffb6c1',
+            padding: '12px 30px',
+            borderRadius: '50px',
+            fontWeight: '800',
+            fontSize: '1.2rem',
+            zIndex: 10000,
+            pointerEvents: 'none',
+            animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+            boxShadow: '0 8px 20px rgba(255, 105, 180, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            whiteSpace: 'nowrap'
+        }}>
+            <span style={{fontSize: '1.5rem'}}>🛍️</span> {notification}
+        </div>
+      )}
       <Header 
         lang={lang} 
         myCountry={myCountry} 
@@ -847,6 +885,7 @@ function App() {
               winningToken={winningToken}
               prizeSecretImageUrl={prizeSecretImageUrl}
               connected={connected}
+              onComboReward={handleComboReward}
             />
 
             {/* JOIN BUTTON OVERLAY (When NOT connected and PLAYING) */}

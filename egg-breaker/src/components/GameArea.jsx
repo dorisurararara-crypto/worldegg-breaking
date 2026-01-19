@@ -174,7 +174,8 @@ const GameArea = ({
     lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, adWatchCount, showGuide,
     winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry,
-    clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected
+    clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected,
+    onComboReward
 }) => {
     const [clickEffects, setClickEffects] = useState([]);
     const [isPrizeSaved, setIsPrizeSaved] = useState(false); // [New] Track if prize image is saved
@@ -648,9 +649,11 @@ const GameArea = ({
         } else if (nextCombo === 100) {
             comboText = "100 COMBO!!";
             comboColor = '#00e676'; // Green
+            if (onComboReward) onComboReward(50, "100 COMBO!! +50P");
         } else if (nextCombo === 1000) {
             comboText = "1000 COMBO!!!";
             comboColor = '#ffea00'; // Gold
+            if (onComboReward) onComboReward(700, "1000 COMBO!!! +700P");
         }
 
         const newEffect = { 
@@ -696,31 +699,7 @@ const GameArea = ({
                     </div>
                 </div>
             )}
-            {notification && (
-                <div style={{
-                    position: 'absolute',
-                    top: '10%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    color: '#ff6f61',
-                    border: '3px solid #ffb6c1',
-                    padding: '12px 30px',
-                    borderRadius: '50px',
-                    fontWeight: '800',
-                    fontSize: '1.2rem',
-                    zIndex: 200,
-                    pointerEvents: 'none',
-                    animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                    boxShadow: '0 8px 20px rgba(255, 105, 180, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    whiteSpace: 'nowrap'
-                }}>
-                    <span style={{fontSize: '1.5rem'}}>🛍️</span> {notification}
-                </div>
-            )}
+            {/* Notification removed (moved to App.jsx) */}
 
             {/* Minimal Settings Toggles (Text + Pill Switches) */}
             <div 
