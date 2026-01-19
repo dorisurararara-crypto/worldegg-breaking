@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, memo, forwardRef } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { NativeAudio } from '@capacitor-community/native-audio';
 import { Capacitor } from '@capacitor/core';
@@ -18,7 +18,9 @@ const TOOL_EMOJIS = {
 const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '🎀', '🎵', '🐇'];
 
 // --- 깨지는 알 SVG 컴포넌트 ---
-const CrackedEgg = memo(forwardRef(({ hp, maxHp, tool, onEggClick }, ref) => {
+// React 19: forwardRef is not needed. ref is passed as a prop.
+// Using memo for performance is still good.
+const CrackedEgg = memo(({ hp, maxHp, tool, onEggClick, ref }) => {
     const percentage = (hp / maxHp) * 100;
 
     // 10단계 파괴 로직 (10% 단위)
