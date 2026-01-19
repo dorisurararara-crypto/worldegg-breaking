@@ -184,6 +184,12 @@ const GameArea = ({
     const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
     const [isSettingsFocused, setIsSettingsFocused] = useState(false); // [New] For fading icons
     
+    // --- Render Conditions (Moved to top) ---
+    const isMyWin = serverState?.winningClientId === clientId;
+    const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
+    const isFinished = serverState?.status === 'FINISHED';
+    const isInQueue = connected && isSpectating && !isWinnerCheck && !isFinished;
+    
     // Combo System
     const [combo, setCombo] = useState(0);
     const comboTimerRef = useRef(null);
@@ -668,14 +674,6 @@ const GameArea = ({
             setClickEffects(prev => prev.filter(item => item.id !== newEffect.id));
         }, 800);
     };
-    
-    // --- Render Conditions ---
-    const isMyWin = serverState?.winningClientId === clientId;
-    const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
-    const isFinished = serverState?.status === 'FINISHED';
-    
-    // Queue Display (If connected but spectating due to full room)
-    const isInQueue = connected && isSpectating && !isWinnerCheck && !isFinished;
 
     return (
         <main className="game-area">
