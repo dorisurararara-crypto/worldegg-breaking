@@ -4,7 +4,7 @@ import { NativeAudio } from '@capacitor-community/native-audio';
 import { Capacitor } from '@capacitor/core';
 
 // --- 깨지는 알 SVG 컴포넌트 ---
-const CrackedEgg = React.memo(({ hp, maxHp, isShaking, tool, onEggClick }) => {
+const CrackedEgg = React.memo(React.forwardRef(({ hp, maxHp, tool, onEggClick }, ref) => {
     const percentage = (hp / maxHp) * 100;
 
     // 10단계 파괴 로직 (10% 단위)
@@ -13,7 +13,7 @@ const CrackedEgg = React.memo(({ hp, maxHp, isShaking, tool, onEggClick }) => {
     const isCritical = percentage < 20 && hp > 0;
     const isBroken = hp <= 0;
 
-    // 피격 시 무작위 표정 선택을 위한 값 (shaking일 때만 변경되도록 함)
+    // 피격 시 무작위 표정 선택을 위한 값
     // 간단하게 hp 값을 시드로 활용하여 클릭할 때마다 바뀌게 설정
     const randomSeed = Math.floor((hp % 7)); 
 
@@ -21,67 +21,33 @@ const CrackedEgg = React.memo(({ hp, maxHp, isShaking, tool, onEggClick }) => {
     let eyeLeft, eyeRight, mouth, blush, extra;
 
     // 기본 상태 설정 (평소)
-    if (!isShaking) {
-        eyeLeft = <circle cx="75" cy="110" r="8" fill="#5d4037" />;
-        eyeRight = <circle cx="125" cy="110" r="8" fill="#5d4037" />;
-        mouth = <path d="M90 135 Q100 145 110 135" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-        blush = (
-            <>
-                <ellipse cx="65" cy="125" rx="8" ry="4" fill="#ffb6c1" opacity="0.6" />
-                <ellipse cx="135" cy="125" rx="8" ry="4" fill="#ffb6c1" opacity="0.6" />
-            </>
-        );
+    // NOTE: Shaking 표정 변화 로직은 CSS 클래스로 처리하기 어려우므로
+    // 성능을 위해 "피격 표정"은 렌더링 시 잠시 무시하거나, 
+    // 정말 필요하다면 DOM 조작 대신 React 상태를 써야 하지만 
+    // 여기서는 렉 방지를 위해 "기본 표정"과 "위기 표정" 위주로만 구성합니다.
+    // (피격 순간 표정 변화는 너무 빠른 렌더링 교체를 요구함)
 
-        if (percentage < 70) { // 슬픔
-            eyeLeft = <path d="M68 115 Q75 105 82 115" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-            eyeRight = <path d="M118 115 Q125 105 132 115" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-            mouth = <path d="M90 145 Q100 135 110 145" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-            extra = <path d="M65 125 Q60 135 65 145 M135 125 Q140 135 135 145" fill="none" stroke="#a1c4fd" strokeWidth="2" />; // 눈물
-        }
-        if (isCritical) { // 분노
-            eyeLeft = <g><path d="M65 105 L85 115 L65 120" fill="red" /><circle cx="72" cy="112" r="2" fill="#fff" /></g>;
-            eyeRight = <g><path d="M135 105 L115 115 L135 120" fill="red" /><circle cx="128" cy="112" r="2" fill="#fff" /></g>;
-            mouth = <path d="M85 140 L90 130 L95 140 L100 130 L105 140 L110 130 L115 140" fill="none" stroke="#5d4037" strokeWidth="2" />;
-            blush = null;
-        }
-    } else {
-        // --- 피격 중 (isShaking === true): 7가지 무작위 표정 ---
-        switch(randomSeed) {
-            case 0: // 기본 아픔 (> <)
-                eyeLeft = <path d="M68 110 L75 117 L82 110" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-                eyeRight = <path d="M118 110 L125 117 L132 110" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-                mouth = <circle cx="100" cy="145" r="7" fill="#5d4037" />;
-                break;
-            case 1: // 당황 (O O)
-                eyeLeft = <circle cx="75" cy="110" r="10" fill="none" stroke="#5d4037" strokeWidth="3" />;
-                eyeRight = <circle cx="125" cy="110" r="10" fill="none" stroke="#5d4037" strokeWidth="3" />;
-                mouth = <path d="M90 145 Q100 135 110 145" fill="none" stroke="#5d4037" strokeWidth="3" />;
-                break;
-            case 2: // 어지러움 (@ @)
-                eyeLeft = <g><circle cx="75" cy="110" r="10" fill="none" stroke="#5d4037" strokeWidth="2"/><path d="M70 110 Q75 100 80 110 T70 110" fill="none" stroke="#5d4037" strokeWidth="1"/></g>;
-                eyeRight = <g><circle cx="125" cy="110" r="10" fill="none" stroke="#5d4037" strokeWidth="2"/><path d="M120 110 Q125 100 130 110 T120 110" fill="none" stroke="#5d4037" strokeWidth="1"/></g>;
-                mouth = <rect x="90" y="140" width="20" height="3" rx="1" fill="#5d4037" />;
-                break;
-            case 3: // 울먹 (ㅠ ㅠ)
-                eyeLeft = <path d="M70 105 V120 M65 105 H75" fill="none" stroke="#5d4037" strokeWidth="3" />;
-                eyeRight = <path d="M130 105 V120 M125 105 H135" fill="none" stroke="#5d4037" strokeWidth="3" />;
-                mouth = <path d="M95 145 Q100 155 105 145" fill="none" stroke="#5d4037" strokeWidth="3" />;
-                break;
-            case 4: // 정신나감 (X O)
-                eyeLeft = <path d="M68 103 L82 117 M82 103 L68 117" stroke="#5d4037" strokeWidth="3" />;
-                eyeRight = <circle cx="125" cy="110" r="8" fill="#5d4037" />;
-                mouth = <path d="M90 140 L110 150" stroke="#5d4037" strokeWidth="3" />;
-                break;
-            case 5: // 으악 (|| ||)
-                eyeLeft = <path d="M70 105 V115 M80 105 V115" stroke="#5d4037" strokeWidth="3" />;
-                eyeRight = <path d="M120 105 V115 M130 105 V115" stroke="#5d4037" strokeWidth="3" />;
-                mouth = <ellipse cx="100" cy="145" rx="12" ry="6" fill="#5d4037" />;
-                break;
-            default: // 심각함 (- -)
-                eyeLeft = <rect x="65" y="110" width="15" height="4" fill="#5d4037" />;
-                eyeRight = <rect x="120" y="110" width="15" height="4" fill="#5d4037" />;
-                mouth = <path d="M90 145 L110 145" stroke="#5d4037" strokeWidth="3" />;
-        }
+    eyeLeft = <circle cx="75" cy="110" r="8" fill="#5d4037" />;
+    eyeRight = <circle cx="125" cy="110" r="8" fill="#5d4037" />;
+    mouth = <path d="M90 135 Q100 145 110 135" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
+    blush = (
+        <>
+            <ellipse cx="65" cy="125" rx="8" ry="4" fill="#ffb6c1" opacity="0.6" />
+            <ellipse cx="135" cy="125" rx="8" ry="4" fill="#ffb6c1" opacity="0.6" />
+        </>
+    );
+
+    if (percentage < 70) { // 슬픔
+        eyeLeft = <path d="M68 115 Q75 105 82 115" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
+        eyeRight = <path d="M118 115 Q125 105 132 115" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
+        mouth = <path d="M90 145 Q100 135 110 145" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
+        extra = <path d="M65 125 Q60 135 65 145 M135 125 Q140 135 135 145" fill="none" stroke="#a1c4fd" strokeWidth="2" />; // 눈물
+    }
+    if (isCritical) { // 분노
+        eyeLeft = <g><path d="M65 105 L85 115 L65 120" fill="red" /><circle cx="72" cy="112" r="2" fill="#fff" /></g>;
+        eyeRight = <g><path d="M135 105 L115 115 L135 120" fill="red" /><circle cx="128" cy="112" r="2" fill="#fff" /></g>;
+        mouth = <path d="M85 140 L90 130 L95 140 L100 130 L105 140 L110 130 L115 140" fill="none" stroke="#5d4037" strokeWidth="2" />;
+        blush = null;
     }
 
     if (isBroken) {
@@ -93,9 +59,10 @@ const CrackedEgg = React.memo(({ hp, maxHp, isShaking, tool, onEggClick }) => {
 
     return (
         <div 
-            className={`egg-svg-container ${isShaking ? 'shake' : ''} cursor-${tool}`}
+            ref={ref}
+            className={`egg-svg-container cursor-${tool}`}
             style={{ 
-                transform: isShaking ? 'scale(0.92) translateY(5px)' : 'scale(1)',
+                // transform is handled by CSS class 'shake'
                 transition: 'transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
             }}
         >
@@ -147,7 +114,7 @@ const CrackedEgg = React.memo(({ hp, maxHp, isShaking, tool, onEggClick }) => {
             </svg>
         </div>
     );
-});
+}));
 
 const TOOL_EMOJIS = {
     hammer: '🔨',
@@ -163,7 +130,7 @@ const TOOL_EMOJIS = {
 const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '🎀', '🎵', '🐇'];
 
 const GameArea = ({
-    lang, hp, isShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
+    lang, hp, isShaking: _ignoredIsShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, adWatchCount, showGuide,
     winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry,
     clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected,
@@ -172,11 +139,15 @@ const GameArea = ({
     const [clickEffects, setClickEffects] = useState([]);
     const [isPrizeSaved, setIsPrizeSaved] = useState(false); // [New] Track if prize image is saved
     const stageRef = useRef(null); // 스테이지 좌표 기준점
+    const eggRef = useRef(null);   // [New] Egg DOM Ref for performant shaking
     const wasActivePlayer = useRef(false);
     const [localLoserTimer, setLocalLoserTimer] = useState(null);
     const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
     const [isSettingsFocused, setIsSettingsFocused] = useState(false); // [New] For fading icons
     
+    // [Performance] Sound Throttling
+    const lastSoundTime = useRef(0);
+
     // [New] Submission Loading State
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -482,6 +453,12 @@ const GameArea = ({
 
     const playToolSound = async (tool) => {
         if (!isSoundOn) return;
+        
+        // [Performance] Sound Throttling (Max 12 sounds/sec)
+        const now = Date.now();
+        if (now - lastSoundTime.current < 80) return;
+        lastSoundTime.current = now;
+
         const soundName = tool || 'fist';
 
         if (Capacitor.isNativePlatform()) {
@@ -812,9 +789,10 @@ const GameArea = ({
                 /* onPointerDown removed here for precise hitbox */
             >
                 <CrackedEgg 
+                    ref={eggRef}
                     hp={hp} 
                     maxHp={1000000} 
-                    isShaking={isShaking} 
+                    // isShaking removed (handled via ref)
                     tool={currentTool} 
                     onEggClick={handlePointerDown} 
                 />

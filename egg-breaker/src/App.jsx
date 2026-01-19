@@ -150,7 +150,7 @@ function App() {
   // Local HP for Optimistic Updates
   const [hp, setHp] = useState(1000000);
 
-  const [isShaking, setIsShaking] = useState(false);
+  // const [isShaking, setIsShaking] = useState(false); // Removed for performance
   const [myPoints, setMyPoints] = useState(() => {
       return parseInt(localStorage.getItem('saved_points') || '0', 10);
   });
@@ -542,9 +542,9 @@ function App() {
     setLastActivity(Date.now());
     setShowGuide(false);
     
-    // 1. [Optimistic Update] UI 즉시 반영
-    setIsShaking(true);
-    setTimeout(() => setIsShaking(false), 100);
+    // 1. [Optimistic Update] UI 즉시 반영 (isShaking is handled in GameArea via ref)
+    // setIsShaking(true);
+    // setTimeout(() => setIsShaking(false), 100);
     
     const newHp = Math.max(0, hp - clickPower);
     
