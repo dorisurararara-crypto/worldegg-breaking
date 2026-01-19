@@ -59,8 +59,8 @@ export default {
               // Reconstruct response with Cache headers
               const newHeaders = new Headers(response.headers);
               Object.entries(corsHeaders).forEach(([k, v]) => newHeaders.set(k, v));
-              // s-maxage=5 instructs Cloudflare CDN to cache for 5s
-              newHeaders.set("Cache-Control", "public, max-age=5, s-maxage=5");
+              // s-maxage=1 instructs Cloudflare CDN to cache for 1s, stale-while-revalidate allows serving old content while updating
+              newHeaders.set("Cache-Control", "public, max-age=1, s-maxage=1, stale-while-revalidate=4");
               
               response = new Response(response.body, {
                   status: response.status,
