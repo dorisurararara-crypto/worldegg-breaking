@@ -472,7 +472,7 @@ const GameArea = ({
             try {
                 await NativeAudio.play({ assetId: soundName });
             } catch (e) {
-                // console.error("Native play error", e);
+                // Ignore native play errors
             }
         } else {
             // Web Audio API with Fallback
@@ -489,7 +489,7 @@ const GameArea = ({
                     source.start(0);
                     played = true;
                 } catch(e) {
-                    console.warn("Web Audio Play Error", e);
+                    // Ignore Web Audio errors
                 }
             }
             
@@ -502,9 +502,9 @@ const GameArea = ({
                         html5AudioRefs.current[soundName] = audio;
                     }
                     audio.currentTime = 0;
-                    audio.play().catch(e => console.log("Fallback play failed", e));
+                    audio.play().catch(() => {}); // Suppress NotSupportedError/Interrupted errors
                 } catch (e) {
-                    console.error("Audio Fallback Error", e);
+                    // Ignore instantiation errors
                 }
             }
         }

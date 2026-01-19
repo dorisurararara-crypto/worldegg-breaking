@@ -121,7 +121,9 @@ function App() {
   const [hp, setHp] = useState(1000000);
 
   const [isShaking, setIsShaking] = useState(false);
-  const [myPoints, setMyPoints] = useState(0);
+  const [myPoints, setMyPoints] = useState(() => {
+      return parseInt(localStorage.getItem('saved_points') || '0', 10);
+  });
   const [clickPower, setClickPower] = useState(1);
   const [isWinner, setIsWinner] = useState(false);
   const [winnerEmail, setWinnerEmail] = useState("");
@@ -380,9 +382,13 @@ function App() {
         const currentStored = parseInt(localStorage.getItem('saved_points') || '0', 10);
         localStorage.setItem('saved_points', (currentStored + rewardEvent.amount).toString());
 
-        const msg = rewardEvent.msg === "inviteSuccess" 
-            ? (lang.inviteSuccess || "Friend joined! +800P") 
-            : rewardEvent.msg;
+        let msg = rewardEvent.msg;
+        if (msg === "INVITE_REWARD_MSG") {
+            msg = lang.inviteSuccess || "Friend joined! +800P";
+        } else if (msg === "INVITE_REWARD_WELCOME") {
+            msg = `${lang.welcomeBack || "Welcome back!"} +${rewardEvent.amount}P`;
+        }
+
         showNotification(msg);
         console.log(`[App] Reward: ${msg}`);
     }

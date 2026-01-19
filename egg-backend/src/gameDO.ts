@@ -231,7 +231,7 @@ export class GameDO extends DurableObject {
                         session.ws.send(JSON.stringify({
                             type: 'invite_reward',
                             amount: reward,
-                            msg: "Friend joined! +800P" // [Sync] Updated text
+                            msg: "INVITE_REWARD_MSG" // [Sync] Use code for translation
                         }));
                         sent = true;
                     }
@@ -420,7 +420,7 @@ export class GameDO extends DurableObject {
             ws.send(JSON.stringify({
                 type: 'invite_reward',
                 amount: pending,
-                msg: `Welcome back! You earned ${pending}P from invites.`
+                msg: "INVITE_REWARD_WELCOME" // [Sync] Use code
             }));
             this.pendingRewards.delete(clientId);
             this.state.storage.put("pendingRewards", this.pendingRewards);
