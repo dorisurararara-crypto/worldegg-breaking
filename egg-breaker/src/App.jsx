@@ -170,22 +170,20 @@ function App() {
   }, [serverError, connect]);
 
   // HP Threshold Announcements
-  const lastHpThreshold = useRef(100); // %
+  const lastStage = useRef(0);
   useEffect(() => {
-      const percentage = (hp / 1000000) * 100;
-      let msg = "";
+      // 10단계 (10% 단위)
+      const currentStage = Math.ceil(10 - ((hp / 1000000) * 100 / 10));
       
-      if (percentage <= 70 && lastHpThreshold.current > 70) {
-          msg = "🥚 알이 금이 가기 시작했습니다! 조금만 더 힘내세요!";
-      } else if (percentage <= 20 && lastHpThreshold.current > 20) {
-          msg = "🔥 거의 다 깨졌습니다! 마지막 스퍼트!";
+      if (currentStage > lastStage.current && hp > 0) {
+          if (currentStage > 1) { // 1단계는 시작시 이미 적용될 수 있으므로 제외하거나 필요시 포함
+               showNotification(`${lang.crackWarning} (Stage ${currentStage})`);
+          }
+          lastStage.current = currentStage;
+      } else if (hp >= 1000000) {
+          lastStage.current = 0;
       }
-      
-      if (msg) {
-           showNotification(msg); // Re-use notification toast
-           lastHpThreshold.current = percentage;
-      }
-  }, [hp]);
+  }, [hp, lang]);
 
   // Data from Server State
   const announcement = serverState.nextPrizeName 
@@ -224,7 +222,7 @@ function App() {
       }, 1000);
     } else if (winnerCountdown === 0 && isWinner && !emailSubmitted && !showRetry) {
        // Time expired for winner
-       alert("Time expired! You failed to enter your email in time.");
+       showNotification("Time expired! You failed to enter your email in time.");
        handleGameEnd(adUrl);
     }
     return () => clearInterval(timer);
@@ -361,7 +359,7 @@ function App() {
         const msg = rewardEvent.msg === "inviteSuccess" 
             ? (lang.inviteSuccess || "Friend joined! +800P") 
             : rewardEvent.msg;
-        alert(msg);
+        showNotification(msg);
         console.log(`[App] Reward: ${msg}`);
     }
   }, [rewardEvent, lang]);
@@ -518,10 +516,9 @@ function App() {
       } catch(e) { console.log('Buy sound error', e); }
 
       const localizedToolName = lang[TOOL_NAMES[toolName]] || toolName;
-      alert(`${lang.bought} ${localizedToolName}!`);
       showNotification(`${lang.bought} ${localizedToolName}!`);
     } else {
-      alert(lang.notEnoughPoints);
+      showNotification(lang.notEnoughPoints);
     }
   };
 
@@ -532,7 +529,7 @@ function App() {
     if (!customEmail) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(targetEmail)) {
-            alert("이메일 형식이 올바르지 않습니다.");
+            showNotification("이메일 형식이 올바르지 않습니다.");
             return;
         }
     }
@@ -545,12 +542,12 @@ function App() {
         });
         setEmailSubmitted(true);
         // Alert success
-        alert("이메일이 정상적으로 접수되었습니다! (Sent successfully!)");
+        showNotification("이메일이 정상적으로 접수되었습니다! (Sent successfully!)");
         // Start exit timer
         setExitCountdown(5); 
     } catch(e) {
         console.error("Winner submit failed", e);
-        alert("Failed to send. Please try again.");
+        showNotification("Failed to send. Please try again.");
     }
   };
 
@@ -579,12 +576,12 @@ function App() {
 
   const handleKakaoShare = () => {
     if (!window.Kakao || !window.Kakao.isInitialized()) {
-        alert("Kakao SDK not initialized.");
+        showNotification("Kakao SDK not initialized.");
         return;
     }
 
     if (shareCount >= 5) {
-        alert(lang.alreadyShared || "이번 라운드 공유 한도(5회)를 초과했습니다.");
+        showNotification(lang.alreadyShared || "이번 라운드 공유 한도(5회)를 초과했습니다.");
         return;
     }
     
@@ -616,18 +613,18 @@ function App() {
     localStorage.setItem('saved_points', (currentStored + reward).toString());
 
     // 3. Inform user
-    alert(`${lang.shareSuccess} (${shareCount + 1}/5)`);
+    showNotification(`${lang.shareSuccess} (${shareCount + 1}/5)`);
   };
 
   const handleAdWatch = () => {
     if (adWatchCount >= 1) {
-        alert("이번 라운드 광고 시청(1회)을 이미 완료하셨습니다!");
+        showNotification("이번 라운드 광고 시청(1회)을 이미 완료하셨습니다!");
         return;
     }
     if (adUrl) {
         window.open(adUrl, '_blank');
     } else {
-        alert("현재 연결된 광고가 없습니다.");
+        showNotification("현재 연결된 광고가 없습니다.");
         return;
     }
     const reward = 2000;
@@ -638,7 +635,7 @@ function App() {
     const currentStored = parseInt(localStorage.getItem('saved_points') || '0', 10);
     localStorage.setItem('saved_points', (currentStored + reward).toString());
     
-    alert(`광고 시청 완료! ${reward} 포인트가 지급되었습니다.`);
+    showNotification(`광고 시청 완료! ${reward} 포인트가 지급되었습니다.`);
   };
 
   if (route === '#admin') return <Admin />;

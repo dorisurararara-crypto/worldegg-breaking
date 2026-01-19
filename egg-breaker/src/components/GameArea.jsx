@@ -508,12 +508,16 @@ const GameArea = ({
         triggerVibration();
         
         // --- Combo Logic & Sound ---
-        const newCombo = combo + 1;
-        setCombo(newCombo);
-        if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-        comboTimerRef.current = setTimeout(() => setCombo(0), 1200); // 1.2s reset
+        const nextCombo = combo + 1;
+        setCombo(prev => {
+            const val = prev + 1;
+            if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+            comboTimerRef.current = setTimeout(() => setCombo(0), 1200); 
+            return val;
+        });
 
-        if (newCombo > 5 && newCombo % 10 === 0) {
+        // Sound: Only at 10, 100, 1000
+        if ([10, 100, 1000].includes(nextCombo)) {
             playToolSound('many_hit');
         } else {
             playToolSound(currentTool);
@@ -524,11 +528,6 @@ const GameArea = ({
         // 1. Trigger Game Logic
         handleClick();
         
-        // --- Combo Logic ---
-        setCombo(prev => prev + 1);
-        if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-        comboTimerRef.current = setTimeout(() => setCombo(0), 1200); // 1.2s reset
-
         // 2. Visuals: Calculate position relative to the stage
         if (!stageRef.current) return;
         const rect = stageRef.current.getBoundingClientRect();
@@ -559,10 +558,19 @@ const GameArea = ({
         // Random Cute Particle
         const randomParticle = CUTE_PARTICLES[Math.floor(Math.random() * CUTE_PARTICLES.length)];
         
-        // Add Combo Effect if high enough
+        // Add Combo Effect if high enough (10, 100, 1000)
         let comboText = null;
-        if (combo > 5 && combo % 10 === 0) {
-            comboText = `Combo x${combo}!`;
+        let comboColor = '#ff4081'; // Default
+
+        if (nextCombo === 10) {
+            comboText = "10 COMBO!";
+            comboColor = '#ff4081'; 
+        } else if (nextCombo === 100) {
+            comboText = "100 COMBO!!";
+            comboColor = '#00e676'; // Green
+        } else if (nextCombo === 1000) {
+            comboText = "1000 COMBO!!!";
+            comboColor = '#ffea00'; // Gold
         }
 
         const newEffect = { 
@@ -575,7 +583,8 @@ const GameArea = ({
             dmgColor,
             toolEmoji: TOOL_EMOJIS[currentTool] || '👊',
             particle: randomParticle,
-            comboText
+            comboText,
+            comboColor
         };
 
         // 3. Add to state (Limit concurrent particles for optimization)
@@ -751,7 +760,7 @@ const GameArea = ({
                         animation: 'pulse 1s infinite',
                         border: '2px solid #ffb6c1'
                     }}>
-                        가운데 계란을 👈  터치하세요!
+                        {lang.touchGuide}
                     </div>
                 )}
                 
@@ -818,7 +827,7 @@ const GameArea = ({
                                     position: 'absolute',
                                     left: effect.x,
                                     top: effect.y - 100,
-                                    color: '#ff4081',
+                                    color: effect.comboColor || '#ff4081',
                                     fontWeight: '900',
                                     fontSize: '2rem',
                                     zIndex: 20,
