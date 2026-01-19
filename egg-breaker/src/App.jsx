@@ -171,17 +171,24 @@ function App() {
             setMyPoints(prev => prev + pts);
             
             if (clks > 0) {
-                setMyTotalClicks(prev => {
-                    const nextVal = prev + clks;
-                    localStorage.setItem('egg_breaker_clicks', nextVal.toString());
-                    return nextVal;
-                });
+                setMyTotalClicks(prev => prev + clks);
             }
         }
     }, 100); 
 
     return () => clearInterval(timer);
   }, []);
+
+  // [Performance] Persist Data Loop (1s throttle)
+  useEffect(() => {
+      const saveTimer = setInterval(() => {
+          // Only write if changed? localStorage writes are cheap if value is same but still sync I/O.
+          // React state is source of truth.
+          localStorage.setItem('egg_breaker_clicks', myTotalClicks.toString());
+          localStorage.setItem('saved_points', myPoints.toString());
+      }, 1000);
+      return () => clearInterval(saveTimer);
+  }, [myTotalClicks, myPoints]);
 
   // const [isShaking, setIsShaking] = useState(false); // Removed for performance
   const [myPoints, setMyPoints] = useState(() => {
@@ -267,13 +274,8 @@ function App() {
 
   // Helper for Game End (Open New Window + Show Retry Screen)
   const handleGameEnd = (url) => {
-      try {
-          // Open a new blank window/tab
-          const target = url || 'about:blank';
-          window.open(target, '_blank');
-      } catch (e) {
-          console.error("Popup blocked or failed", e);
-      }
+      // [UX] Removed auto-popup to prevent blocking. 
+      // Just show the retry/spectating UI with a button.
       
       // Show Retry/Spectating UI inside the game instead of a separate screen
       setShowRetry(true);
@@ -375,17 +377,17 @@ function App() {
 
   // 2. useEffects using functions
   useEffect(() => {
-    const detectCountry = async () => {
+    const detectCountry = () => {
         try {
-            const res1 = await fetch('https://ipwho.is/');
-            const data1 = await res1.json();
-            if (data1.success && data1.country_code) {
-                changeCountry(data1.country_code);
-                return;
-            }
-            throw new Error("ipwho.is failed");
+            // [Perf] Removed external API call (ipwho.is)
+            // Use browser language as a heuristic or fallback to KR
+            const lang = navigator.language || navigator.userLanguage || "ko-KR";
+            if (lang.includes("ko")) changeCountry("KR");
+            else if (lang.includes("ja")) changeCountry("JP");
+            else if (lang.includes("zh")) changeCountry("CN");
+            else changeCountry("US");
         } catch (e) {
-            changeCountry("KR"); // Fallback to KR
+            changeCountry("KR");
         }
     };
     detectCountry();
@@ -503,11 +505,8 @@ function App() {
                       setIsSpectating(true);
                   }
                   
-                  // [Opt] Restore saved points on first load (from ads/invites)
-                  const savedPoints = parseInt(localStorage.getItem('saved_points') || '0', 10);
-                  if (savedPoints > 0) {
-                      setMyPoints(prev => prev + savedPoints);
-                  }
+                  // [Fix] Points are already loaded in useState initial value. 
+                  // Adding them again here causes double counting. Removed.
 
                   isFirstLoad.current = false;
               }

@@ -927,137 +927,21 @@ const GameArea = ({
                                 <p style={{ color: '#5d4037', fontSize: '1.1rem', marginBottom: '25px', lineHeight: '1.6' }}>
                                     {lang.roundOverDesc} <br/> (다음 라운드 준비 중)
                                 </p>
+                                <button onClick={handleRetry} style={{ background: '#ff6f61', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '5px', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                                    {lang.retryBtn || "새로고침"}
+                                </button>
                             </>
                         )}
 
-                        {/* 2. WINNER CHECK State */}
-                        {isWinnerCheck && (
+                        {/* 3. Retry / Spectating Mode */}
+                        {showRetry && !isFinished && !isWinnerCheck && (
                             <>
-                                {isMyWin ? (
-                                    // A. I AM THE WINNER
-                                    <>
-                                        <h2 style={{ color: '#ff6f61', fontSize: '2rem', marginBottom: '10px' }}>{lang.modalTitle}</h2>
-                                        <p style={{ fontSize: '1.1rem', lineHeight: '1.5', marginBottom: '20px' }}>{lang.modalDesc}</p>
-                                        
-                                        <div style={{ background: '#fff0f5', padding: '15px', borderRadius: '10px', marginBottom: '20px', border: '2px solid #ffb6c1', width: '100%' }}>
-                                            <p style={{ color: '#d32f2f', fontWeight: 'bold', marginBottom: '5px' }}>
-                                                ⚠️ {prizeSecretImageUrl ? "5분 안에 상품을 수령하세요!" : lang.winnerTimerWarning}
-                                            </p>
-                                            <p style={{ fontSize: '1.5rem', fontWeight: '900', color: '#d32f2f' }}>
-                                                {lang.timeLeft}: {formatTime(winnerCountdown)}
-                                            </p>
-                                        </div>
-
-                                        {/* CASE 1: Prize Image exists */}
-                                        {prizeSecretImageUrl ? (
-                                            <div style={{ 
-                                                background: 'linear-gradient(135deg, #fff9c4 0%, #fbc02d 100%)', 
-                                                padding: '20px', 
-                                                borderRadius: '20px', 
-                                                marginBottom: '20px', 
-                                                width: '100%',
-                                                boxShadow: '0 10px 30px rgba(251, 192, 45, 0.4)',
-                                                border: '3px solid #f9a825'
-                                            }}>
-                                                <h3 style={{ color: '#5d4037', marginBottom: '15px' }}>🎁 {lang.prizeTitle || "우승 상품"}</h3>
-                                                
-                                                <img 
-                                                    src={prizeSecretImageUrl} 
-                                                    alt="Prize" 
-                                                    style={{ width: '100%', borderRadius: '10px', marginBottom: '15px', border: '2px solid #fff' }} 
-                                                />
-                                                
-                                                {isPrizeSaved && <p style={{ color: '#2e7d32', fontWeight: 'bold', marginBottom: '10px' }}>✅ 앨범에 저장되었습니다!</p>}
-
-                                                {!emailSubmitted ? (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                        <a 
-                                                            href={prizeSecretImageUrl} 
-                                                            download={`egg_prize_round_${serverState.round}.png`}
-                                                            onClick={() => setIsPrizeSaved(true)}
-                                                            style={{ 
-                                                                display: 'block',
-                                                                background: '#5d4037', 
-                                                                color: '#fff', 
-                                                                padding: '12px', 
-                                                                borderRadius: '30px', 
-                                                                textDecoration: 'none',
-                                                                fontWeight: 'bold'
-                                                            }}
-                                                        >
-                                                            {isPrizeSaved ? "📥 다시 저장하기" : "📥 이미지 저장하기"}
-                                                        </a>
-                                                        {isPrizeSaved && (
-                                                            <button 
-                                                                onClick={() => handleSubmit("IMAGE_CLAIMED")} 
-                                                                className="send-btn" 
-                                                                disabled={isSubmitting}
-                                                                style={{ background: isSubmitting ? '#999' : '#2e7d32', width: '100%' }}
-                                                            >
-                                                                {isSubmitting ? "처리 중..." : "상품 수령 완료"}
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <h3 style={{ color: '#2e7d32' }}>수령이 완료되었습니다!</h3>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            /* CASE 2: No Image, show Email Input */
-                                            <div style={{ width: '100%' }}>
-                                                {!emailSubmitted ? (
-                                                    <>
-                                                        <div style={{ background: 'rgba(255, 182, 193, 0.2)', padding: '20px', borderRadius: '15px', marginBottom: '20px' }}>
-                                                            <p style={{ margin: '0 0 10px 0', color: '#ff6f61', fontWeight: 'bold' }}>{lang.modalPrize}</p>
-                                                            <input 
-                                                                type="email" 
-                                                                placeholder="example@email.com"
-                                                                value={winnerEmail}
-                                                                onChange={(e) => setWinnerEmail(e.target.value)}
-                                                                style={{ width: '90%', padding: '12px', borderRadius: '10px', border: '2px solid #ffe4e1', background: '#fff', color: '#5d4037', textAlign: 'center', fontSize: '1rem' }}
-                                                            />
-                                                        </div>
-                                                        <button 
-                                                            className="send-btn" 
-                                                            onClick={() => handleSubmit()} 
-                                                            disabled={isSubmitting}
-                                                            style={{ fontSize: '1.1rem', padding: '12px 40px', background: isSubmitting ? '#999' : '' }}
-                                                        >
-                                                            {isSubmitting ? "처리 중..." : lang.send}
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <h2 style={{ color: '#4CAF50', marginTop: '20px' }}>✅ {lang.sent}</h2>
-                                                )}
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    // B. I AM NOT THE WINNER (Loser or Spectator)
-                                    <>
-                                        {(!showWinnerClaiming && localLoserTimer !== null) ? (
-                                            // Loser Timer Phase (7s)
-                                            <>
-                                                <div style={{ fontSize: '4rem', marginBottom: '10px' }}>😢</div>
-                                                <h2 style={{ color: '#5d4037', marginBottom: '15px' }}>
-                                                    {lang.loserMsg?.split('.')[0] || "아쉽게도 실패했습니다."} 
-                                                </h2>
-                                                <p style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#ff6f61'}}>
-                                                    {localLoserTimer}초 후 대기열로 이동합니다.
-                                                </p>
-                                            </>
-                                        ) : (
-                                            // Winner Claiming Phase (Waiting)
-                                            <>
-                                                 <div className="spinner" style={{
-                                                    width: '40px', height: '40px', border: '5px solid #ffe4e1', borderTop: '5px solid #ff6f61', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '20px'
-                                                }}></div>
-                                                <h2>🏆 승자가 상품을 수령하고 있습니다...</h2>
-                                                <p>잠시만 기다려주세요.</p>
-                                            </>
-                                        )}
-                                    </>
-                                )}
+                                <div style={{ fontSize: '4rem', marginBottom: '15px' }}>👀</div>
+                                <h2 style={{ color: '#5d4037', marginBottom: '10px' }}>관전 모드</h2>
+                                <p style={{ marginBottom: '20px' }}>게임이 종료되었거나 이미 참여했습니다.</p>
+                                <button onClick={handleRetry} style={{ background: '#ff6f61', color: '#fff', border: 'none', padding: '12px 30px', borderRadius: '25px', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                                    {lang.retryBtn || "다시 접속하기"}
+                                </button>
                             </>
                         )}
                     </div>
