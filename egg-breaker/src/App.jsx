@@ -157,17 +157,26 @@ function App() {
   const [isSpectating, setIsSpectating] = useState(false);
   const isFirstLoad = useRef(true); // Track first load to detect latecomers
   
+  // Queue Status for Full Server
+  const [queueStatus, setQueueStatus] = useState('WAITING'); // WAITING, RELOADING, GAME_STARTED
+
   // Auto-Retry Logic for Queue
   useEffect(() => {
       let retryTimer;
       if (serverError === 'FULL') {
-          retryTimer = setInterval(() => {
-              console.log("Retrying connection due to FULL...");
-              connect();
+          // Wait 3 seconds then decide
+          retryTimer = setTimeout(() => {
+               const totalOnline = (serverState.onlinePlayers || 0) + (serverState.onlineSpectatorsApprox || 0);
+               if (totalOnline >= 1000) {
+                   setQueueStatus('GAME_STARTED');
+               } else {
+                   setQueueStatus('RELOADING');
+                   window.location.reload();
+               }
           }, 3000);
       }
-      return () => clearInterval(retryTimer);
-  }, [serverError, connect]);
+      return () => clearTimeout(retryTimer);
+  }, [serverError, serverState.onlinePlayers, serverState.onlineSpectatorsApprox]);
 
   // HP Threshold Announcements
   const lastStage = useRef(0);
@@ -574,7 +583,7 @@ function App() {
       }
   };
 
-  const handleKakaoShare = () => {
+  const handleKakaoShare = async () => {
     if (!window.Kakao || !window.Kakao.isInitialized()) {
         showNotification("Kakao SDK not initialized.");
         return;
@@ -590,30 +599,38 @@ function App() {
     currentUrl.searchParams.set('referrer', clientId);
     const shareUrl = currentUrl.toString();
 
-    // 1. Launch Share
-    // NOTE: Error 4019 means domain mismatch. Register domain in Kakao Developers.
-    window.Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title: lang.title,
-        description: lang.subtitle,
-        imageUrl: 'https://egg-break-412ae.web.app/vite.svg', // TODO: Replace with actual game image URL
-        link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
-      },
-      buttons: [{ title: 'Play Now', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
-    });
+    try {
+        // 1. Launch Share
+        // NOTE: Error 4019 means domain mismatch. Register domain in Kakao Developers.
+        window.Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: lang.title,
+            description: lang.subtitle,
+            imageUrl: 'https://egg-break-412ae.web.app/vite.svg', // TODO: Replace with actual game image URL
+            link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+          },
+          buttons: [{ title: 'Play Now', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+        });
 
-    // 2. Reward
-    const reward = 800;
-    setMyPoints(prev => prev + reward);
-    setShareCount(prev => prev + 1);
-    
-    // Persist reward
-    const currentStored = parseInt(localStorage.getItem('saved_points') || '0', 10);
-    localStorage.setItem('saved_points', (currentStored + reward).toString());
+        // Artificial delay to mimic process
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // 3. Inform user
-    showNotification(`${lang.shareSuccess} (${shareCount + 1}/5)`);
+        // 2. Reward
+        const reward = 800;
+        setMyPoints(prev => prev + reward);
+        setShareCount(prev => prev + 1);
+        
+        // Persist reward
+        const currentStored = parseInt(localStorage.getItem('saved_points') || '0', 10);
+        localStorage.setItem('saved_points', (currentStored + reward).toString());
+
+        // 3. Inform user
+        showNotification(`${lang.shareSuccess} (${shareCount + 1}/5)`);
+    } catch (e) {
+        console.error("Kakao Share Error:", e);
+        showNotification("공유하기 도중 오류가 발생했습니다. (브라우저 설정을 확인해주세요)");
+    }
   };
 
   const handleAdWatch = () => {
@@ -647,17 +664,37 @@ function App() {
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               height: '100vh', background: '#fff0f5', color: '#5d4037', textAlign: 'center', padding: '20px'
           }}>
-              <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
-              <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>대기열 대기 중...</h1>
-              <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-                  현재 참여 가능한 인원이 모두 찼습니다.<br/>
-                  잠시만 기다리시면 자동으로 입장됩니다.<br/>
-                  (재접속 시도 중...)
-              </p>
-              <div className="spinner" style={{
-                    width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
-                    borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '20px auto'
-              }}></div>
+              {queueStatus === 'GAME_STARTED' ? (
+                  <>
+                    <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🏟️</div>
+                    <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>{lang.gameStarted}</h1>
+                    <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
+                        {lang.tryNextRound}<br/>
+                        (현재 접속자: {(serverState.onlinePlayers || 0) + (serverState.onlineSpectatorsApprox || 0)}명)
+                    </p>
+                  </>
+              ) : queueStatus === 'RELOADING' ? (
+                  <>
+                    <div className="spinner" style={{
+                        width: '40px', height: '40px', border: '5px solid #ffe4e1', borderTop: '5px solid #ff6f61', 
+                        borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '20px auto'
+                    }}></div>
+                    <h2>{lang.reloading}</h2>
+                  </>
+              ) : (
+                  <>
+                    <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
+                    <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>{lang.queueLabel}...</h1>
+                    <p style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
+                        현재 참여 가능한 인원이 모두 찼습니다.<br/>
+                        잠시 후 자동으로 재접속합니다.<br/>
+                    </p>
+                    <div className="spinner" style={{
+                            width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
+                            borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '20px auto'
+                    }}></div>
+                  </>
+              )}
           </div>
       );
   }

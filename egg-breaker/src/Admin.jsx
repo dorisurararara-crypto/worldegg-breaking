@@ -61,6 +61,21 @@ function Admin() {
       }
   };
 
+  const handleFileUpload = (e, setUrlState) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if (file.size > 1024 * 1024) { // 1MB Limit
+          return alert("이미지 용량이 너무 큽니다 (1MB 이하 권장). 서버 부하를 줄이기 위해 작게 줄여주세요.");
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+          setUrlState(reader.result); // Base64 string
+      };
+      reader.readAsDataURL(file);
+  };
+
   const addPrize = async () => {
       if (!newPrizeName || !newPrizeSecret) return alert("상품명과 실제 주소를 입력하세요.");
       try {
@@ -345,11 +360,28 @@ function Admin() {
              <h4 style={{marginTop: 0}}>➕ 새 상품 등록</h4>
              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                 <input type="text" placeholder="상품명 (예: 신세계 1만원)" value={newPrizeName} onChange={e => setNewPrizeName(e.target.value)} style={{padding:'10px', borderRadius:'5px', border:'none'}} />
-                <input type="text" placeholder="예고 이미지 URL (선택)" value={newPrizeImg} onChange={e => setNewPrizeImg(e.target.value)} style={{padding:'10px', borderRadius:'5px', border:'none'}} />
-                <input type="text" placeholder="실제 상품권 URL (필수)" value={newPrizeSecret} onChange={e => setNewPrizeSecret(e.target.value)} style={{padding:'10px', borderRadius:'5px', border:'none'}} />
+                
+                {/* Preview Image */}
+                <div style={{display:'flex', gap:'5px'}}>
+                    <input type="text" placeholder="예고 이미지 URL" value={newPrizeImg} onChange={e => setNewPrizeImg(e.target.value)} style={{flex:1, padding:'10px', borderRadius:'5px', border:'none'}} />
+                    <label style={{background:'#666', color:'#fff', padding:'0 10px', borderRadius:'5px', cursor:'pointer', fontSize:'1.2rem', display:'flex', alignItems:'center', justifyContent:'center'}} title="내 컴퓨터에서 업로드">
+                        📁
+                        <input type="file" accept="image/*" style={{display:'none'}} onChange={e => handleFileUpload(e, setNewPrizeImg)} />
+                    </label>
+                </div>
+
+                {/* Secret Image */}
+                <div style={{display:'flex', gap:'5px'}}>
+                    <input type="text" placeholder="실제 상품권 URL (필수)" value={newPrizeSecret} onChange={e => setNewPrizeSecret(e.target.value)} style={{flex:1, padding:'10px', borderRadius:'5px', border:'none'}} />
+                    <label style={{background:'#ffc107', color:'#000', padding:'0 10px', borderRadius:'5px', cursor:'pointer', fontSize:'1.2rem', display:'flex', alignItems:'center', justifyContent:'center'}} title="내 컴퓨터에서 업로드">
+                        📁
+                        <input type="file" accept="image/*" style={{display:'none'}} onChange={e => handleFileUpload(e, setNewPrizeSecret)} />
+                    </label>
+                </div>
+
                 <button onClick={addPrize} style={{background:'#28a745', color:'#fff', border:'none', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>창고에 추가</button>
              </div>
-             <p style={{fontSize:'0.8rem', color:'#aaa', marginTop:'10px'}}>* 창고에 등록된 순서대로 우승자에게 자동 지급됩니다.</p>
+             <p style={{fontSize:'0.8rem', color:'#aaa', marginTop:'10px'}}>* 창고에 등록된 순서대로 우승자에게 자동 지급됩니다. (이미지 업로드 시 Base64로 변환됩니다)</p>
           </div>
 
           <div style={{ overflowX: 'auto' }}>

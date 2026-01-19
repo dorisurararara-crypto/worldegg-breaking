@@ -202,8 +202,9 @@ const GameArea = ({
     });
 
     // BGM & SFX Refs
-    const webAudioRefs = useRef({});
-    const bgmRef = useRef(null); // For Web Audio BGM
+    const webAudioRefs = useRef({}); // Stores AudioBuffers for Web
+    const audioContextRef = useRef(null); // Web Audio Context
+    const bgmRef = useRef(null); // For Web Audio BGM (HTML5 Audio is fine for BGM usually, or use Context)
     const currentPhaseRef = useRef('none');
 
     useEffect(() => {
@@ -247,13 +248,24 @@ const GameArea = ({
                 setAudioLoaded(true); // Signal completion
 
             } else {
-                // Web: Preload using HTML5 Audio
-                sounds.forEach(sound => {
-                    const audio = new Audio(`/sounds/${sound}.mp3`);
-                    audio.volume = 1.0;
-                    webAudioRefs.current[sound] = audio;
-                });
-                setAudioLoaded(true);
+                // Web: Preload using Web Audio API for low latency
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    const ctx = new AudioContext();
+                    audioContextRef.current = ctx;
+
+                    const loadBuffer = async (name) => {
+                        const res = await fetch(`/sounds/${name}.mp3`);
+                        const arrayBuffer = await res.arrayBuffer();
+                        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                        webAudioRefs.current[name] = audioBuffer;
+                    };
+
+                    await Promise.all(sounds.map(s => loadBuffer(s)));
+                    setAudioLoaded(true);
+                } catch (e) {
+                    console.error("Web Audio Init Failed", e);
+                }
             }
         };
 
@@ -261,6 +273,11 @@ const GameArea = ({
 
         // [Autoplay Fix] Global listener to unlock audio context on any first click
         const unlockAudio = () => {
+             // Unlock Web Audio Context
+             if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+                 audioContextRef.current.resume().catch(e => console.log("Context resume failed", e));
+             }
+             // Unlock BGM
              if (!Capacitor.isNativePlatform() && bgmRef.current && bgmRef.current.paused && isBgmOn) {
                  bgmRef.current.play().catch(e => console.log("Unlock play failed", e));
              }
@@ -274,6 +291,7 @@ const GameArea = ({
                 ['bgm_peace', 'bgm_tense', 'bgm_danger'].forEach(bgm => NativeAudio.unload({ assetId: bgm }).catch(() => {}));
             }
             if (bgmRef.current) { bgmRef.current.pause(); bgmRef.current = null; }
+            if (audioContextRef.current) { audioContextRef.current.close(); }
             document.removeEventListener('click', unlockAudio);
             document.removeEventListener('touchstart', unlockAudio);
         };
@@ -421,10 +439,19 @@ const GameArea = ({
                 // console.error("Native play error", e);
             }
         } else {
-            const audio = webAudioRefs.current[soundName];
-            if (audio) {
-                audio.currentTime = 0;
-                audio.play().catch(e => console.log('Web Audio play failed', e));
+            // Web Audio API
+            const ctx = audioContextRef.current;
+            const buffer = webAudioRefs.current[soundName];
+            if (ctx && buffer) {
+                if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+                try {
+                    const source = ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(ctx.destination);
+                    source.start(0);
+                } catch(e) {
+                    console.warn("Web Audio Play Error", e);
+                }
             }
         }
     };
@@ -678,9 +705,9 @@ const GameArea = ({
             >
                 {/* Switch Item Helper */}
                 {[
-                    { label: '효과음', active: isSoundOn, toggle: toggleSound },
-                    { label: '배경음', active: isBgmOn, toggle: toggleBgm },
-                    { label: '진동', active: isVibrationOn, toggle: toggleVibration }
+                    { label: lang.soundOn || 'SFX', active: isSoundOn, toggle: toggleSound },
+                    { label: lang.bgmOn || 'BGM', active: isBgmOn, toggle: toggleBgm },
+                    { label: lang.vibrationOn || 'Vib', active: isVibrationOn, toggle: toggleVibration }
                 ].map((item, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                         <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#5d4037' }}>{item.label}</span>
