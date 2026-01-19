@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo, forwardRef } from 'react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { NativeAudio } from '@capacitor-community/native-audio';
 import { Capacitor } from '@capacitor/core';
@@ -18,7 +18,7 @@ const TOOL_EMOJIS = {
 const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '🎀', '🎵', '🐇'];
 
 // --- 깨지는 알 SVG 컴포넌트 ---
-const CrackedEgg = React.memo(React.forwardRef(({ hp, maxHp, tool, onEggClick }, ref) => {
+const CrackedEgg = memo(forwardRef(({ hp, maxHp, tool, onEggClick }, ref) => {
     const percentage = (hp / maxHp) * 100;
 
     // 10단계 파괴 로직 (10% 단위)

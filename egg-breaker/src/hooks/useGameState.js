@@ -20,7 +20,7 @@ const WS_URL = getWsUrl(API_URL);
 // [Config] Replace this with your actual R2 Public Bucket URL
 // e.g. "https://pub-xxxxxxxx.r2.dev" or "https://state.your-domain.com"
 // If not set, it falls back to the Worker API (Costly for high traffic).
-const R2_URL = import.meta.env.VITE_R2_URL || "https://CHANGE-ME.r2.dev";
+const R2_URL = import.meta.env.VITE_R2_URL || "https://pub-0bab0208ca534683bb0bea2973b7e4c9.r2.dev";
 
 export function useGameState() {
   const [serverState, setServerState] = useState({
