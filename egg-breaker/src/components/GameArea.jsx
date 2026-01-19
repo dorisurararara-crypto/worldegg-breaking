@@ -217,7 +217,7 @@ const GameArea = ({
     useEffect(() => {
         const sounds = [
             'fist', 'hammer', 'pickaxe', 'dynamite', 'drill', 'excavator', 'laser', 'nuke', 
-            'buy', 'win'
+            'buy', 'win', 'egg_cracking'
         ];
 
         const loadSounds = async () => {
@@ -309,15 +309,20 @@ const GameArea = ({
         };
     }, [isBgmOn]);
 
-    // --- Audio Logic (SFX & Stage Detection) ---
-    const prevStageRef = useRef(0);
+    // --- Crack Sound Logic ---
+    const lastStageRef = useRef(0);
     useEffect(() => {
         const currentStage = Math.ceil(10 - ((hp / 1000000) * 100 / 10));
-        if (currentStage > prevStageRef.current && hp > 0) {
-            playToolSound('egg_craking');
-            prevStageRef.current = currentStage;
+        if (hp > 0 && hp < 1000000) {
+             // Only play if stage increases AND it's not the initial load (prev was not 0 or handled elsewhere)
+             // Actually, initial load might set ref to current. 
+             // We want sound only on CHANGE.
+             if (currentStage > lastStageRef.current && lastStageRef.current > 0) {
+                 playToolSound('egg_cracking');
+             }
+             lastStageRef.current = currentStage;
         } else if (hp >= 1000000) {
-            prevStageRef.current = 0; // Reset for new round
+             lastStageRef.current = 0;
         }
     }, [hp]);
 
