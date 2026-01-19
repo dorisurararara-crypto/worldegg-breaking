@@ -150,6 +150,39 @@ function App() {
   // Local HP for Optimistic Updates
   const [hp, setHp] = useState(1000000);
 
+  // [Performance] Batch Updates Refs
+  const accumulatedDamage = useRef(0);
+  const accumulatedPoints = useRef(0);
+  const accumulatedClicks = useRef(0);
+
+  // [Performance] Flush Updates Loop (100ms throttle)
+  useEffect(() => {
+    const timer = setInterval(() => {
+        if (accumulatedDamage.current > 0 || accumulatedPoints.current > 0) {
+            const dmg = accumulatedDamage.current;
+            const pts = accumulatedPoints.current;
+            const clks = accumulatedClicks.current;
+            
+            accumulatedDamage.current = 0;
+            accumulatedPoints.current = 0;
+            accumulatedClicks.current = 0;
+
+            setHp(prev => Math.max(0, prev - dmg));
+            setMyPoints(prev => prev + pts);
+            
+            if (clks > 0) {
+                setMyTotalClicks(prev => {
+                    const nextVal = prev + clks;
+                    localStorage.setItem('egg_breaker_clicks', nextVal.toString());
+                    return nextVal;
+                });
+            }
+        }
+    }, 100); 
+
+    return () => clearInterval(timer);
+  }, []);
+
   // const [isShaking, setIsShaking] = useState(false); // Removed for performance
   const [myPoints, setMyPoints] = useState(() => {
       return parseInt(localStorage.getItem('saved_points') || '0', 10);
@@ -542,27 +575,17 @@ function App() {
     setLastActivity(Date.now());
     setShowGuide(false);
     
-    // 1. [Optimistic Update] UI 즉시 반영 (isShaking is handled in GameArea via ref)
-    // setIsShaking(true);
-    // setTimeout(() => setIsShaking(false), 100);
+    // 1. [Performance] Accumulate Changes (UI update is batched in useEffect)
+    accumulatedDamage.current += clickPower;
+    accumulatedPoints.current += clickPower;
+    accumulatedClicks.current += 1;
     
-    const newHp = Math.max(0, hp - clickPower);
+    // 2. Use Hook to Add Click (Hook handles server batching)
+    // Pass estimated current values
+    addClick(clickPower, myCountry, myPoints + accumulatedPoints.current, myTotalClicks + accumulatedClicks.current);
     
-    // 로컬 상태 즉시 변경
-    setMyPoints(prev => prev + clickPower);
-    setHp(newHp);
-    
-    // 로컬 통계 갱신
-    const newTotalClicks = myTotalClicks + 1;
-    setMyTotalClicks(newTotalClicks);
-    localStorage.setItem('egg_breaker_clicks', newTotalClicks.toString());
-
-    // Use Hook to Add Click
-    addClick(clickPower, myCountry, myPoints + clickPower, newTotalClicks);
-    
-    // If HP hits 0 locally, we rely on server to confirm.
-    if (newHp === 0) {
-       // setIsWinner(true); // Removed: Wait for server confirmation
+    // If HP hits 0 locally (Optimistic check)
+    if (hp - accumulatedDamage.current <= 0) {
        setShowLoserMessage(true); // Temporarily show checking status
     }
   };
