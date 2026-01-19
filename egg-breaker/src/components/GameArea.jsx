@@ -136,8 +136,13 @@ const GameArea = ({
     clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected,
     onComboReward
 }) => {
-    const [clickEffects, setClickEffects] = useState([]);
-    const [isPrizeSaved, setIsPrizeSaved] = useState(false); // [New] Track if prize image is saved
+    // [Performance] Canvas Effects System
+    const canvasRef = useRef(null);
+    const effectsRef = useRef([]); // Stores active effects objects
+    const stageRectRef = useRef({ left: 0, top: 0, width: 0, height: 0 }); // Cache rect
+    
+    // [New] Track if prize image is saved
+    const [isPrizeSaved, setIsPrizeSaved] = useState(false); 
     const stageRef = useRef(null); // 스테이지 좌표 기준점
     const eggRef = useRef(null);   // [New] Egg DOM Ref for performant shaking
     const wasActivePlayer = useRef(false);
@@ -145,8 +150,9 @@ const GameArea = ({
     const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
     const [isSettingsFocused, setIsSettingsFocused] = useState(false); // [New] For fading icons
     
-    // [Performance] Sound Throttling
+    // [Performance] Throttling
     const lastSoundTime = useRef(0);
+    const lastVibTime = useRef(0); // [New] Vibration throttle
 
     // [New] Submission Loading State
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -194,6 +200,117 @@ const GameArea = ({
         }, 6000);
         return () => clearInterval(timer);
     }, [lang.eggFacts]);
+
+    // [Performance] Canvas Render Loop
+    useEffect(() => {
+        let animationFrameId;
+        let lastTime = 0;
+
+        const renderLoop = (timestamp) => {
+            if (!lastTime) lastTime = timestamp;
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            const canvas = canvasRef.current;
+            const ctx = canvas?.getContext('2d');
+            
+            if (canvas && ctx) {
+                // Clear Canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Filter and Update Effects
+                effectsRef.current = effectsRef.current.filter(effect => {
+                    effect.life -= deltaTime;
+                    if (effect.life <= 0) return false;
+
+                    // Physics / Movement
+                    effect.y -= effect.vy * (deltaTime / 16); // Move up
+                    // effect.x += Math.sin(effect.life / 50) * 0.5; // Slight wobble
+                    effect.alpha = Math.min(1, effect.life / 300); // Fade out last 300ms
+
+                    // Draw Logic
+                    ctx.save();
+                    ctx.globalAlpha = effect.alpha;
+                    
+                    // Damage Text
+                    if (effect.type === 'text') {
+                        // Apply shake/rotate transform
+                        const rotate = effect.rotation || 0;
+                        ctx.translate(effect.x, effect.y);
+                        ctx.rotate(rotate * Math.PI / 180);
+                        
+                        ctx.font = `900 ${effect.size}px 'Fredoka', sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        
+                        // Stroke
+                        ctx.lineWidth = 4;
+                        ctx.strokeStyle = effect.val >= 10000 ? '#000' : '#fff';
+                        ctx.strokeText(effect.text, 0, 0);
+                        
+                        // Fill
+                        ctx.fillStyle = effect.color;
+                        ctx.fillText(effect.text, 0, 0);
+                    } 
+                    // Tool/Particle (Emoji)
+                    else if (effect.type === 'emoji') {
+                        ctx.translate(effect.x, effect.y);
+                        ctx.font = `${effect.size}px serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(effect.text, 0, 0);
+                    }
+
+                    ctx.restore();
+                    return true;
+                });
+            }
+            
+            animationFrameId = requestAnimationFrame(renderLoop);
+        };
+        
+        animationFrameId = requestAnimationFrame(renderLoop);
+        return () => cancelAnimationFrame(animationFrameId);
+    }, []);
+
+    // [Performance] Canvas Resize & Rect Cache
+    useEffect(() => {
+        const handleResize = () => {
+            if (canvasRef.current && stageRef.current) {
+                const rect = stageRef.current.getBoundingClientRect();
+                stageRectRef.current = rect; // Cache rect for click handler
+
+                // Set internal resolution to match physical pixels
+                const dpr = window.devicePixelRatio || 1;
+                canvasRef.current.width = rect.width * dpr;
+                canvasRef.current.height = rect.height * dpr;
+                
+                // Scale context to match
+                const ctx = canvasRef.current.getContext('2d');
+                ctx.scale(dpr, dpr);
+                
+                // Style width/height
+                canvasRef.current.style.width = `${rect.width}px`;
+                canvasRef.current.style.height = `${rect.height}px`;
+                canvasRef.current.style.position = 'absolute';
+                canvasRef.current.style.top = '0';
+                canvasRef.current.style.left = '0';
+                canvasRef.current.style.pointerEvents = 'none'; // Click through
+                canvasRef.current.style.zIndex = '20';
+            }
+        };
+        
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('scroll', handleResize); // Scroll changes rect pos
+        
+        // Initial setup with small delay to ensure layout is done
+        setTimeout(handleResize, 100);
+        
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('scroll', handleResize);
+        };
+    }, []);
 
     // BGM & SFX Refs
     const webAudioRefs = useRef({}); // Stores AudioBuffers for Web
@@ -584,22 +701,25 @@ const GameArea = ({
         // Only allow click if connected and playing
         if (!connected) return; 
 
-        // 0. Blur settings when clicking the egg/game area
+        // 0. Blur settings
         setIsSettingsFocused(false);
 
-        // 1. Trigger Vibration & Sound & Check Autoplay
-        triggerVibration();
+        // 1. Vibration Throttle
+        const now = Date.now();
+        if (now - lastVibTime.current > 80) {
+            triggerVibration();
+            lastVibTime.current = now;
+        }
         
         // --- Combo Logic & Sound ---
         const nextCombo = combo + 1;
         setCombo(prev => {
-            const val = prev + 1;
             if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
             comboTimerRef.current = setTimeout(() => setCombo(0), 1200); 
-            return val;
+            return prev + 1;
         });
 
-        // Sound: Only at 10, 100, 1000
+        // Sound: Only at 10, 100, 1000 or throttle
         if ([10, 100, 1000].includes(nextCombo)) {
             playToolSound('many_hit');
         } else {
@@ -608,81 +728,130 @@ const GameArea = ({
 
         checkWebAudioAutoplay(); // Try to resume BGM if paused
 
-        // 1. Trigger Game Logic
+        // 1. Trigger Game Logic (Batched UI)
         handleClick();
         
-        // 2. Visuals: Calculate position relative to the stage
-        if (!stageRef.current) return;
-        const rect = stageRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        // 1-1. [Performance] Optimized Shaking (Web Animations API)
+        if (eggRef.current) {
+            // No force reflow. Just fire and forget animation.
+            // If already animating, it will either restart or overlay.
+            // Using a simple keyframe animation is compositor-friendly.
+            eggRef.current.animate([
+                { transform: 'translate(0, 0) rotate(0deg)' },
+                { transform: 'translate(-3px, 2px) rotate(-2deg)', offset: 0.2 },
+                { transform: 'translate(3px, -2px) rotate(2deg)', offset: 0.4 },
+                { transform: 'translate(-3px, -2px) rotate(-2deg)', offset: 0.6 },
+                { transform: 'translate(3px, 2px) rotate(2deg)', offset: 0.8 },
+                { transform: 'translate(0, 0) rotate(0deg)' }
+            ], {
+                duration: 150,
+                easing: 'linear'
+            });
+        }
+        
+        // 2. Visuals: Calculate position
+        // Use cached rect or fallback to offset if available
+        let x = 100; // Center fallback
+        let y = 100;
+        
+        // Using cached rect is safest for absolute positioning mapping
+        const rect = stageRectRef.current;
+        if (rect.width > 0) {
+            x = e.clientX - rect.left;
+            y = e.clientY - rect.top;
+        } else if (e.nativeEvent && e.nativeEvent.offsetX) {
+             // Fallback to native offset (might be relative to svg child)
+             x = e.nativeEvent.offsetX;
+             y = e.nativeEvent.offsetY;
+        }
         
         // Determine scale and color based on damage (clickPower)
         let scale = 1;
-        let toolSize = 2; 
+        let toolSize = 30; // px
         let dmgColor = '#ff6f61'; // Default (Low)
         
-        if (clickPower >= 10000) dmgColor = '#ffd700'; // Gold (Legendary)
-        else if (clickPower >= 1000) dmgColor = '#9c27b0'; // Purple (Epic)
-        else if (clickPower >= 100) dmgColor = '#e91e63'; // Pink (Rare)
-        else if (clickPower >= 10) dmgColor = '#ff9800'; // Orange (Uncommon)
+        if (clickPower >= 10000) dmgColor = '#ffd700'; // Gold
+        else if (clickPower >= 1000) dmgColor = '#9c27b0'; // Purple
+        else if (clickPower >= 100) dmgColor = '#e91e63'; // Pink
+        else if (clickPower >= 10) dmgColor = '#ff9800'; // Orange
 
         switch(currentTool) {
-            case 'hammer': scale = 1.2; toolSize = 2.5; break;
-            case 'pickaxe': scale = 1.5; toolSize = 3.5; break;
-            case 'dynamite': scale = 2.0; toolSize = 5.0; break;
-            case 'drill': scale = 2.5; toolSize = 7.0; break;
-            case 'excavator': scale = 3.0; toolSize = 10.0; break;
-            case 'laser': scale = 4.5; toolSize = 14.0; break; // Increased scale
-            case 'nuke': scale = 7.0; toolSize = 20.0; break; // Increased scale
-            default: scale = 1; toolSize = 2;
+            case 'hammer': scale = 1.2; toolSize = 40; break;
+            case 'pickaxe': scale = 1.5; toolSize = 50; break;
+            case 'dynamite': scale = 2.0; toolSize = 70; break;
+            case 'drill': scale = 2.5; toolSize = 90; break;
+            case 'excavator': scale = 3.0; toolSize = 120; break;
+            case 'laser': scale = 4.5; toolSize = 160; break;
+            case 'nuke': scale = 7.0; toolSize = 200; break;
+            default: scale = 1; toolSize = 30;
         }
 
         // Random Cute Particle
         const randomParticle = CUTE_PARTICLES[Math.floor(Math.random() * CUTE_PARTICLES.length)];
         
-        // Add Combo Effect if high enough (10, 100, 1000)
-        let comboText = null;
-        let comboColor = '#ff4081'; // Default
-
-        if (nextCombo === 10) {
-            comboText = "10 COMBO!";
-            comboColor = '#ff4081'; 
-        } else if (nextCombo === 100) {
-            comboText = "100 COMBO!!";
-            comboColor = '#00e676'; // Green
-            if (onComboReward) onComboReward(50, "100 COMBO!! +50P");
-        } else if (nextCombo === 1000) {
-            comboText = "1000 COMBO!!!";
-            comboColor = '#ffea00'; // Gold
-            if (onComboReward) onComboReward(700, "1000 COMBO!!! +700P");
-        }
-
-        const newEffect = { 
-            id: Date.now() + Math.random(), 
-            x, 
-            y, 
+        // Push effects to Canvas Queue (No State Update!)
+        const nowEffectTime = 800; // ms
+        
+        // 1. Damage Number
+        effectsRef.current.push({
+            type: 'text',
+            text: `-${clickPower.toLocaleString()}`,
+            x: x + (Math.random() * 20 - 10),
+            y: y - 40,
             val: clickPower,
-            scale,
-            toolSize,
-            dmgColor,
-            toolEmoji: TOOL_EMOJIS[currentTool] || '👊',
-            particle: randomParticle,
-            comboText,
-            comboColor
-        };
-
-        // 3. Add to state (Limit concurrent particles for optimization)
-        setClickEffects(prev => {
-            const next = [...prev, newEffect];
-            if (next.length > 20) return next.slice(next.length - 20); // Keep max 20
-            return next;
+            color: dmgColor,
+            size: 24 * scale,
+            life: nowEffectTime,
+            vy: 2, // Velocity Y
+            rotation: (Math.random() * 30 - 15)
         });
 
-        // 4. Cleanup after animation (800ms matches CSS)
-        setTimeout(() => {
-            setClickEffects(prev => prev.filter(item => item.id !== newEffect.id));
-        }, 800);
+        // 2. Tool Icon
+        effectsRef.current.push({
+            type: 'emoji',
+            text: TOOL_EMOJIS[currentTool] || '👊',
+            x: x,
+            y: y,
+            size: toolSize,
+            life: 500, // Shorter life
+            vy: 0
+        });
+
+        // 3. Particle
+        if (Math.random() > 0.5) { // 50% chance to reduce load
+            effectsRef.current.push({
+                type: 'emoji',
+                text: randomParticle,
+                x: x + (Math.random() * 60 - 30),
+                y: y + (Math.random() * 60 - 30),
+                size: 20 * (0.8 + Math.random()),
+                life: 600,
+                vy: 3 // Float up faster
+            });
+        }
+
+        // 4. Combo Text (Canvas)
+        if (nextCombo === 10 || nextCombo === 100 || nextCombo === 1000) {
+             let comboText = `${nextCombo} COMBO!`;
+             let cColor = '#ff4081';
+             if (nextCombo === 100) { comboText = "100 COMBO!!"; cColor = '#00e676'; }
+             if (nextCombo === 1000) { comboText = "1000 COMBO!!!"; cColor = '#ffea00'; }
+             
+             if (onComboReward && nextCombo >= 100) onComboReward(nextCombo === 100 ? 50 : 700, `${comboText} +${nextCombo === 100 ? 50 : 700}P`);
+
+             effectsRef.current.push({
+                type: 'text',
+                text: comboText,
+                x: x,
+                y: y - 100,
+                val: 0,
+                color: cColor,
+                size: 40,
+                life: 1000,
+                vy: 1,
+                rotation: 0
+            });
+        }
     };
 
     return (
@@ -786,8 +955,12 @@ const GameArea = ({
             <div 
                 className="egg-stage" 
                 ref={stageRef}
+                style={{ position: 'relative' }} // Ensure canvas is relative to this
                 /* onPointerDown removed here for precise hitbox */
             >
+                {/* [Performance] Effects Canvas Overlay */}
+                <canvas ref={canvasRef} />
+
                 <CrackedEgg 
                     ref={eggRef}
                     hp={hp} 
@@ -818,82 +991,7 @@ const GameArea = ({
                     </div>
                 )}
                 
-                {/* Render Multiple Click Effects (Damage + Tool Icon + Cute Particle) */}
-                {clickEffects.map(effect => (
-                    <React.Fragment key={effect.id}>
-                        {/* Damage Number */}
-                        <span 
-                            className={`damage-float ${effect.val >= 1000 ? 'critical' : ''}`}
-                            style={{ 
-                                left: effect.x, 
-                                top: effect.y - 50,
-                                fontSize: `${1.8 * effect.scale}rem`,
-                                fontWeight: '900',
-                                color: effect.dmgColor,
-                                WebkitTextStroke: effect.val >= 10000 ? '2px #000' : '2px #fff',
-                                textShadow: effect.val >= 10000 ? '0 0 10px rgba(255, 215, 0, 0.8)' : 'none',
-                                pointerEvents: 'none',
-                                zIndex: 12,
-                                transform: `rotate(${Math.random() * 20 - 10}deg)`
-                            }}
-                        >
-                            -{effect.val.toLocaleString()}
-                        </span>
-                        
-                        {/* Tool Icon */}
-                        <span 
-                            className="tool-float"
-                            style={{ 
-                                left: effect.x, 
-                                top: effect.y,
-                                fontSize: `${effect.toolSize}rem`,
-                                position: 'absolute',
-                                transform: 'translate(-50%, -50%)',
-                                pointerEvents: 'none',
-                                zIndex: 11,
-                                animation: 'toolPop 0.5s ease-out forwards'
-                            }}
-                        >
-                            {effect.toolEmoji}
-                        </span>
-
-                        {/* Extra Cute Particle */}
-                        <span 
-                            className="particle-float"
-                            style={{ 
-                                left: effect.x + (Math.random() * 40 - 20), 
-                                top: effect.y + (Math.random() * 40 - 20),
-                                fontSize: `${1.5 + Math.random()}rem`,
-                                position: 'absolute',
-                                transform: 'translate(-50%, -50%)',
-                                pointerEvents: 'none',
-                                zIndex: 10,
-                                animation: 'particlePop 0.8s ease-out forwards'
-                            }}
-                        >
-                            {effect.particle}
-                        </span>
-                        
-                        {/* Combo Text Pop */}
-                        {effect.comboText && (
-                             <span 
-                                style={{
-                                    position: 'absolute',
-                                    left: effect.x,
-                                    top: effect.y - 100,
-                                    color: effect.comboColor || '#ff4081',
-                                    fontWeight: '900',
-                                    fontSize: '2rem',
-                                    zIndex: 20,
-                                    animation: 'bounceIn 0.5s forwards',
-                                    textShadow: '0 0 10px #fff'
-                                }}
-                             >
-                                {effect.comboText}
-                             </span>
-                        )}
-                    </React.Fragment>
-                ))}
+                {/* [Performance] DOM Click Effects Removed (Replaced by Canvas) */}
 
             {/* Unified Modal Logic */}
             {(isWinnerCheck || isFinished || showRetry) && (
