@@ -94,24 +94,13 @@ export function useGameState() {
               usedR2 = true;
           } else if (R2_URL) {
               // R2 failed 3+ times. Fallback to API but slow down to save cost.
-              // Also try to reset fail count after a successful API hit? 
-              // No, let's try R2 again after some time (handled by nextDelay logic implicitly if we reset)
-              // But here we just stick to API for this turn.
-              // If we want to retry R2 later, we can decrement fail count occasionally or reset it after N success.
-              // For safety, let's keep using API for a while (handled by nextDelay).
-              // Simple Reset: Try R2 again after 1 minute?
-              // Let's implement simple backoff: If API works, we stay on API for safety? 
-              // Guide says: "fallback backoff". 
-              // Let's reset fail count with 10% chance to retry R2?
               if (Math.random() < 0.1) r2FailCount.current = 0; 
               
               targetUrl = `${API_URL}/api/state`;
-              nextDelay = 20000; // Slow polling on API (20s)
+              nextDelay = 30000; // Slow polling on API (30s)
           } else {
               // No R2 configured. Always API.
-              // If we want to save cost here too, use 20s. But default to 5s for responsiveness if no R2.
-              // Guide says: "R2_URL 없으면 20~30초"
-              nextDelay = 20000; 
+              nextDelay = 30000; 
           }
 
           const res = await fetch(targetUrl);
@@ -125,10 +114,10 @@ export function useGameState() {
               
               if (usedR2) {
                   r2FailCount.current = 0; // Success!
-                  nextDelay = 5000; // Fast polling on R2 (free/cheap)
+                  nextDelay = 10000; // Fast polling on R2 (10s)
               } else {
                   // API Success. Keep slow polling.
-                  nextDelay = 20000; 
+                  nextDelay = 30000; 
               }
           } else {
               console.warn(`[Polling] Failed: ${res.status} (${usedR2 ? 'R2' : 'API'})`);
