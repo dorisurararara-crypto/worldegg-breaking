@@ -910,8 +910,27 @@ const GameArea = ({
 
             {/* Unified Modal Logic */}
             {(isWinnerCheck || isFinished || showRetry) && (
-                <div className="modal-overlay">
-                    <div className="modal-content glass" style={{ maxWidth: '500px', width: '90%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '40px' }}>
+                <div 
+                    className="modal-overlay" 
+                    style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.7)', zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        pointerEvents: 'auto' // Block clicks to background
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div 
+                        className="modal-content glass" 
+                        style={{ 
+                            maxWidth: '320px', // Reduced for mobile
+                            width: '90%', 
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', 
+                            padding: '20px', // Reduced padding
+                            maxHeight: '90vh', overflowY: 'auto' // Handle small screens
+                        }}
+                        onClick={(e) => e.stopPropagation()} // Prevent closing/bubbling
+                    >
                         
                         {/* 1. FINISHED State (Round Over, Waiting for Admin) */}
                         {isFinished && (
