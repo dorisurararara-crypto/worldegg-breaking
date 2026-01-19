@@ -207,8 +207,9 @@ export class GameDO extends DurableObject {
           await this.env.STATE_BUCKET.put("state.json", JSON.stringify(publicState), {
               httpMetadata: {
                   contentType: "application/json",
-                  // Cache: Edge 1s, Browser 1s, Stale 5s
-                  cacheControl: "public, max-age=1, s-maxage=1, stale-while-revalidate=5",
+                  // Cache: Edge 10s, Browser 1s, Stale 5s
+                  // s-maxage=10 matches the 10s polling interval
+                  cacheControl: "public, max-age=1, s-maxage=10, stale-while-revalidate=5",
               }
           });
       } catch (e) {
