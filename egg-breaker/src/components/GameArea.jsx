@@ -130,7 +130,7 @@ const CrackedEgg = memo(({ hp, maxHp, tool, onEggClick, ref }) => {
             </svg>
         </div>
     );
-}));
+});
 
 const GameArea = ({
     lang, hp, isShaking: _ignoredIsShaking, clickPower, myPoints, isWinner, emailSubmitted, winnerEmail,
