@@ -207,9 +207,8 @@ export class GameDO extends DurableObject {
           await this.env.STATE_BUCKET.put("state.json", JSON.stringify(publicState), {
               httpMetadata: {
                   contentType: "application/json",
-                  // Cache: Edge 10s, Browser 1s, Stale 5s
-                  // s-maxage=10 matches the 10s polling interval
-                  cacheControl: "public, max-age=1, s-maxage=10, stale-while-revalidate=5",
+                  // Cache: Public 5s, Stale 30s
+                  cacheControl: "public, max-age=5, stale-while-revalidate=30",
               }
           });
       } catch (e) {
@@ -219,6 +218,19 @@ export class GameDO extends DurableObject {
 
   async fetch(request: Request) {
     const url = new URL(request.url);
+
+    // [P3] Emergency Stop Logic
+    // If EMERGENCY_STOP env is set, block expensive APIs
+    if (this.env.EMERGENCY_STOP && (this.env.EMERGENCY_STOP === "1" || this.env.EMERGENCY_STOP === "true")) {
+        // Allow /state (read-only, fallback) and /admin (control)
+        // Block /ws (connection), /winner (write), /invite-reward (write)
+        if (url.pathname === "/ws" || url.pathname === "/winner" || url.pathname === "/invite-reward") {
+             return new Response(JSON.stringify({ 
+                 error: "Service Temporarily Unavailable (Emergency Mode)",
+                 retryAfter: 30
+             }), { status: 503, headers: { "Retry-After": "30" } });
+        }
+    }
 
     if (url.pathname === "/ws") {
       if (request.headers.get("Upgrade") !== "websocket") {

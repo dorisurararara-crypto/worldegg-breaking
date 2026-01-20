@@ -17,10 +17,8 @@ const getWsUrl = (apiUrl) => {
 
 const WS_URL = getWsUrl(API_URL);
 
-// [Config] Replace this with your actual R2 Public Bucket URL
-// e.g. "https://pub-xxxxxxxx.r2.dev" or "https://state.your-domain.com"
-// If not set, it falls back to the Worker API (Costly for high traffic).
-const R2_URL = import.meta.env.VITE_R2_URL || "";
+// [Config] Fixed R2 URL
+const R2_URL = "https://r2.egglest.com";
 
 export function useGameState() {
   const [serverState, setServerState] = useState({
@@ -76,13 +74,15 @@ export function useGameState() {
   const countryRef = useRef("UN");
   const pollingTimeoutRef = useRef(null);
   const r2FailCount = useRef(0);
+  const consecFailures = useRef(0); // For exponential backoff
 
   // --- 1. Polling Logic (Dynamic with Backoff) ---
   const fetchState = useCallback(async () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
 
-      let nextDelay = 5000; // Default 5s
+      let nextDelay = 10000; // Default 10s
       let usedR2 = false;
+      const jitter = Math.floor(Math.random() * 3000); // 0~3000ms Jitter
 
       try {
           // Determine Target URL
@@ -92,15 +92,12 @@ export function useGameState() {
           if (R2_URL && r2FailCount.current < 3) {
               targetUrl = `${R2_URL}/state.json`;
               usedR2 = true;
-          } else if (R2_URL) {
+          } else {
               // R2 failed 3+ times. Fallback to API but slow down to save cost.
+              // Occasionally retry R2 (10% chance) to see if it recovered
               if (Math.random() < 0.1) r2FailCount.current = 0; 
               
               targetUrl = `${API_URL}/api/state`;
-              nextDelay = 30000; // Slow polling on API (30s)
-          } else {
-              // No R2 configured. Always API.
-              nextDelay = 30000; 
           }
 
           const res = await fetch(targetUrl);
@@ -113,30 +110,37 @@ export function useGameState() {
               });
               
               if (usedR2) {
-                  r2FailCount.current = 0; // Success!
-                  nextDelay = 10000; // Fast polling on R2 (10s)
+                  r2FailCount.current = 0; 
+                  consecFailures.current = 0;
+                  nextDelay = 10000; // Normal polling 10s
               } else {
                   // API Success. Keep slow polling.
+                  consecFailures.current = 0;
                   nextDelay = 30000; 
               }
           } else {
               console.warn(`[Polling] Failed: ${res.status} (${usedR2 ? 'R2' : 'API'})`);
-              if (usedR2) {
-                  r2FailCount.current++;
-                  nextDelay = 1000; // Retry quickly (will likely fall to API next time)
-              } else {
-                  nextDelay = 30000; // API failed? Wait longer.
-              }
+              if (usedR2) r2FailCount.current++;
+              
+              consecFailures.current++;
+              
+              // Exponential Backoff: 30s -> 45s -> 60s (Max)
+              // 1st fail: 30s, 2nd: 45s, 3rd+: 60s
+              const backoff = Math.min(60000, 30000 + (consecFailures.current - 1) * 15000);
+              nextDelay = Math.max(30000, backoff);
           }
       } catch (e) {
           console.error("[Polling] Error:", e);
-          if (usedR2) {
-              r2FailCount.current++;
-              nextDelay = 1000;
-          } else {
-              nextDelay = 30000;
-          }
+          if (usedR2) r2FailCount.current++;
+          
+          consecFailures.current++;
+          
+          const backoff = Math.min(60000, 30000 + (consecFailures.current - 1) * 15000);
+          nextDelay = Math.max(30000, backoff);
       }
+
+      // Add jitter to prevent thundering herd
+      nextDelay += jitter;
 
       // Schedule Next Poll
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
