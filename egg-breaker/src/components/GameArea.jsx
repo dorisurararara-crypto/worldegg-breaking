@@ -152,13 +152,31 @@ const GameArea = ({
     const [localLoserTimer, setLocalLoserTimer] = useState(null);
     const [showWinnerClaiming, setShowWinnerClaiming] = useState(false);
     const [isSettingsFocused, setIsSettingsFocused] = useState(false); // [New] For fading icons
-    
+    const [winnerLocked, setWinnerLocked] = useState(null); // [Fix A] Lock winner status
+
     // [Performance] Throttling
     const lastSoundTime = useRef(0);
     const lastVibTime = useRef(0); // [New] Vibration throttle
 
     // [New] Submission Loading State
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // --- Render Conditions (Moved to top) ---
+    const isMyWin = serverState?.winningClientId === clientId;
+    const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
+    const isFinished = serverState?.status === 'FINISHED';
+    const isInQueue = connected && isSpectating && !isWinnerCheck && !isFinished;
+
+    // [Fix A] Update Winner Lock
+    useEffect(() => {
+        if (isWinnerCheck) {
+            if (winnerLocked === null) {
+                setWinnerLocked(isMyWin);
+            }
+        } else {
+            if (winnerLocked !== null) setWinnerLocked(null);
+        }
+    }, [isWinnerCheck, isMyWin, winnerLocked]);
 
     // Wrapper for submit to handle loading state
     const handleSubmit = async (customEmail = null) => {
@@ -171,12 +189,6 @@ const GameArea = ({
             setIsSubmitting(false);
         }
     };
-    
-    // --- Render Conditions (Moved to top) ---
-    const isMyWin = serverState?.winningClientId === clientId;
-    const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
-    const isFinished = serverState?.status === 'FINISHED';
-    const isInQueue = connected && isSpectating && !isWinnerCheck && !isFinished;
     
     // Combo System
     const [combo, setCombo] = useState(0);
@@ -675,6 +687,9 @@ const GameArea = ({
 
     // Loser Timer Logic
     useEffect(() => {
+        // [Fix B] Don't play lose sound or start loser timer if winner or submitting
+        if (winnerLocked === true || isSubmitting || emailSubmitted) return;
+
         if (serverState?.status === 'WINNER_CHECK' && serverState?.winningClientId !== clientId && wasActivePlayer.current) {
             if (localLoserTimer === null) {
                 setLocalLoserTimer(7); // Start 7s countdown
@@ -691,7 +706,7 @@ const GameArea = ({
             // Pure spectator sees claiming screen immediately
             setShowWinnerClaiming(true);
         }
-    }, [serverState, clientId, localLoserTimer, wasActivePlayer]);
+    }, [serverState, clientId, localLoserTimer, wasActivePlayer, winnerLocked, isSubmitting, emailSubmitted]);
 
     // Helper to format seconds to mm:ss
     const formatTime = (seconds) => {
@@ -1022,7 +1037,7 @@ const GameArea = ({
                         
                         {/* 2. WINNER CHECK State */}
                         {isWinnerCheck && !isFinished && !showRetry && (
-                             isMyWin ? (
+                             winnerLocked === true ? (
                                 <>
                                     <div style={{ fontSize: '4rem', marginBottom: '15px' }}>🎉</div>
                                     <h2 style={{ color: '#ff6f61', fontSize: '1.8rem', marginBottom: '10px' }}>{lang.congratsTitle}</h2>
