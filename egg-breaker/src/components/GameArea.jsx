@@ -1020,6 +1020,87 @@ const GameArea = ({
                         onClick={(e) => e.stopPropagation()} // Prevent closing/bubbling
                     >
                         
+                        {/* 2. WINNER CHECK State */}
+                        {isWinnerCheck && !isFinished && !showRetry && (
+                             isMyWin ? (
+                                <>
+                                    <div style={{ fontSize: '4rem', marginBottom: '15px' }}>🎉</div>
+                                    <h2 style={{ color: '#ff6f61', fontSize: '1.8rem', marginBottom: '10px' }}>{lang.congratsTitle}</h2>
+                                    <p style={{ color: '#5d4037', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '5px' }}>
+                                        {serverState?.prize || serverState?.announcement}
+                                    </p>
+                                    
+                                    {prizeSecretImageUrl && (
+                                        <div style={{ margin: '15px 0', border: '2px dashed #ffb6c1', padding: '10px', borderRadius: '10px' }}>
+                                            <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '5px' }}>Secret Code / Image</p>
+                                            <img 
+                                                src={prizeSecretImageUrl} 
+                                                alt="Prize Secret" 
+                                                style={{ maxWidth: '100%', height: 'auto', display: 'block', objectFit: 'contain' }}
+                                                onError={() => console.log('winner image load fail', prizeSecretImageUrl)}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {!emailSubmitted ? (
+                                        <>
+                                            <p style={{ fontSize: '0.95rem', color: '#8d6e63', marginBottom: '20px' }}>
+                                                {lang.enterEmailDesc} <br/>
+                                                <span style={{ fontSize: '0.8rem', color: '#e57373' }}>
+                                                    ({winnerCountdown}초 내 미입력 시 취소됨)
+                                                </span>
+                                            </p>
+                                            <input 
+                                                type="email" 
+                                                placeholder="example@email.com" 
+                                                value={winnerEmail}
+                                                onChange={(e) => setWinnerEmail(e.target.value)}
+                                                style={{ 
+                                                    padding: '12px', width: '80%', borderRadius: '8px', 
+                                                    border: '1px solid #ccc', marginBottom: '15px', fontSize: '1rem' 
+                                                }}
+                                            />
+                                            <button 
+                                                onClick={() => handleSubmit()} 
+                                                disabled={isSubmitting}
+                                                style={{ 
+                                                    background: isSubmitting ? '#ccc' : '#4caf50', 
+                                                    color: '#fff', border: 'none', 
+                                                    padding: '12px 30px', borderRadius: '25px', 
+                                                    fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer',
+                                                    width: '100%'
+                                                }}
+                                            >
+                                                {isSubmitting ? "전송 중..." : (lang.submitBtn || "상품 수령하기")}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div style={{ fontSize: '3rem', margin: '20px 0' }}>✅</div>
+                                            <p style={{ fontSize: '1.1rem', color: '#2e7d32', fontWeight: 'bold' }}>
+                                                전송 완료! 이메일을 확인하세요.
+                                            </p>
+                                            <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '10px' }}>
+                                                {exitCountdown}초 후 종료됩니다.
+                                            </p>
+                                        </>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <div style={{ fontSize: '4rem', marginBottom: '15px' }}>⏳</div>
+                                    <h2 style={{ color: '#5d4037', marginBottom: '10px' }}>승자 확인 중...</h2>
+                                    <p style={{ color: '#8d6e63', marginBottom: '20px' }}>
+                                        다른 플레이어가 알을 깼습니다.<br/>
+                                        승자가 정보를 입력하는 중입니다.
+                                    </p>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ff6f61' }}>
+                                        {loserCountdown}
+                                    </p>
+                                </>
+                            )
+                        )}
+
                         {/* 1. FINISHED State (Round Over, Waiting for Admin) */}
                         {isFinished && (
                             <>
