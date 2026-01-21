@@ -881,17 +881,18 @@ function App() {
             )}
         </div>
 
-        <RightPanel 
-          lang={lang}
-          buyItem={buyItem}
-          myPoints={myPoints}
-          clickPower={clickPower}
-          myTotalClicks={myTotalClicks}
-          handleKakaoShare={handleKakaoShare}
-          isOpen={mobilePanel === 'right'}
-          toggleMobilePanel={toggleMobilePanel}
-          shareCount={shareCount} // [New] Pass share count
-        />
+            <RightPanel 
+              lang={lang}
+              buyItem={buyItem}
+              myPoints={myPoints}
+              clickPower={clickPower}
+              myTotalClicks={myTotalClicks}
+              handleKakaoShare={handleKakaoShare}
+              prizeUrl={prizeUrl} // [New]
+              isOpen={mobilePanel === 'right'}
+              toggleMobilePanel={toggleMobilePanel}
+              shareCount={shareCount} 
+            />
       </div>
     </div>
   );

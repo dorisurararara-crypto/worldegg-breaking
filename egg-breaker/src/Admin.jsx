@@ -27,6 +27,7 @@ function Admin() {
   const [prizeImageUrl, setPrizeImageUrl] = useState("");
   const [prizeSecretUrl, setPrizeSecretUrl] = useState("");
   const [adUrl, setAdUrl] = useState("");
+
   const [winners, setWinners] = useState([]);
   const [prizePool, setPrizePool] = useState([]);
   
@@ -34,6 +35,7 @@ function Admin() {
   const [newPrizeName, setNewPrizeName] = useState("");
   const [newPrizeImg, setNewPrizeImg] = useState("");
   const [newPrizeSecret, setNewPrizeSecret] = useState("");
+  const [newPrizeLink, setNewPrizeLink] = useState(""); // [New]
 
   // Checkbox State for Winners
   const [selectedWinners, setSelectedWinners] = useState(new Set());
@@ -108,10 +110,15 @@ function Admin() {
           const res = await fetch(`${API_URL}/api/admin/add-prize`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'x-admin-key': password },
-              body: JSON.stringify({ name: newPrizeName, image_url: newPrizeImg, secret_url: newPrizeSecret })
+              body: JSON.stringify({ 
+                  name: newPrizeName, 
+                  image_url: newPrizeImg, 
+                  secret_url: newPrizeSecret,
+                  link: newPrizeLink
+              })
           });
           if (res.ok) {
-              setNewPrizeName(""); setNewPrizeImg(""); setNewPrizeSecret("");
+              setNewPrizeName(""); setNewPrizeImg(""); setNewPrizeSecret(""); setNewPrizeLink("");
               fetchPrizePool();
               alert("상품이 창고에 추가되었습니다.");
           }
@@ -363,7 +370,7 @@ function Admin() {
              </div>
 
              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>🎁 상품명</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>🎁 상품명 (현재 라운드)</label>
                 <input 
                     type="text" 
                     value={prize} 
@@ -374,7 +381,7 @@ function Admin() {
              </div>
 
              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>🔗 상품 링크 URL</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>🔗 상품 링크 URL (현재 라운드)</label>
                 <input 
                     type="text" 
                     value={prizeUrl} 
@@ -385,7 +392,7 @@ function Admin() {
              </div>
 
              <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>🖼️ 상품 예고 이미지 URL (모두 공개)</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>🖼️ 상품 예고 이미지 URL (현재 라운드)</label>
                 <input 
                     type="text" 
                     value={prizeImageUrl} 
@@ -393,11 +400,10 @@ function Admin() {
                     style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', boxSizing: 'border-box' }} 
                     placeholder="https://..."
                 />
-                <span style={{fontSize:'0.7rem', color:'#aaa'}}>* 상단 보드나 명예의 전당에 표시됩니다.</span>
              </div>
 
              <div style={{ background: 'rgba(255, 193, 7, 0.1)', padding: '10px', borderRadius: '10px', border: '1px dashed #ffc107' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#ffc107' }}>🔑 실제 상품권 이미지 URL (우승자 전용)</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#ffc107' }}>🔑 실제 상품권 이미지 URL (현재 라운드)</label>
                 <input 
                     type="text" 
                     value={prizeSecretUrl} 
@@ -405,12 +411,13 @@ function Admin() {
                     style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', boxSizing: 'border-box', background: '#fff' }} 
                     placeholder="상품권 일련번호가 포함된 이미지 주소"
                 />
-                <span style={{fontSize:'0.7rem', color:'#ffc107'}}>* 주의: 이 이미지는 우승자에게만 즉시 노출됩니다.</span>
              </div>
           </div>
           
           <button 
-            onClick={() => callAdminApi('config', { announcement, prize, prizeUrl, prizeImageUrl, prizeSecretUrl, adUrl })} 
+            onClick={() => {
+                callAdminApi('config', { announcement, prize, prizeUrl, prizeImageUrl, prizeSecretUrl, adUrl });
+            }} 
             style={{ marginTop: '25px', width: '100%', background: '#28a745', color: 'white', border: 'none', padding: '15px', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}
           >
             💾 설정 저장하기 (즉시 반영)
@@ -425,6 +432,7 @@ function Admin() {
              <h4 style={{marginTop: 0}}>➕ 새 상품 등록</h4>
              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                 <input type="text" placeholder="상품명 (예: 신세계 1만원)" value={newPrizeName} onChange={e => setNewPrizeName(e.target.value)} style={{padding:'10px', borderRadius:'5px', border:'none'}} />
+                <input type="text" placeholder="상품 링크 (쿠팡 등)" value={newPrizeLink} onChange={e => setNewPrizeLink(e.target.value)} style={{padding:'10px', borderRadius:'5px', border:'none'}} />
                 
                 {/* Preview Image */}
                 <div style={{display:'flex', gap:'5px'}}>
@@ -446,7 +454,7 @@ function Admin() {
 
                 <button onClick={addPrize} style={{background:'#28a745', color:'#fff', border:'none', borderRadius:'5px', cursor:'pointer', fontWeight:'bold'}}>창고에 추가</button>
              </div>
-             <p style={{fontSize:'0.8rem', color:'#aaa', marginTop:'10px'}}>* 창고에 등록된 순서대로 우승자에게 자동 지급됩니다. (이미지 업로드 시 Base64로 변환됩니다)</p>
+             <p style={{fontSize:'0.8rem', color:'#aaa', marginTop:'10px'}}>* 창고에 등록된 순서대로 우승자에게 자동 지급됩니다.</p>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
@@ -455,6 +463,7 @@ function Admin() {
                     <tr style={{ background: 'rgba(255,255,255,0.1)' }}>
                         <th>순번</th>
                         <th>상품명</th>
+                        <th>링크</th>
                         <th>상태</th>
                         <th>배정 라운드</th>
                         <th>관리</th>
@@ -465,6 +474,9 @@ function Admin() {
                         <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: p.is_used ? 'rgba(0,0,0,0.2)' : 'transparent' }}>
                             <td style={{ padding: '10px', textAlign:'center' }}>{idx + 1}</td>
                             <td style={{ padding: '10px' }}>{p.name}</td>
+                            <td style={{ padding: '10px', maxWidth:'150px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                <a href={p.link} target="_blank" rel="noreferrer" style={{color:'#00cec9'}}>{p.link || '-'}</a>
+                            </td>
                             <td style={{ padding: '10px', textAlign:'center' }}>
                                 {p.is_used ? <span style={{color:'#888'}}>지급 완료</span> : <span style={{color:'#28a745', fontWeight:'bold'}}>대기 중</span>}
                             </td>
@@ -474,7 +486,7 @@ function Admin() {
                             </td>
                         </tr>
                     )) : (
-                        <tr><td colSpan="5" style={{padding:'20px', textAlign:'center', color:'#888'}}>등록된 상품이 없습니다.</td></tr>
+                        <tr><td colSpan="6" style={{padding:'20px', textAlign:'center', color:'#888'}}>등록된 상품이 없습니다.</td></tr>
                     )}
                 </tbody>
             </table>

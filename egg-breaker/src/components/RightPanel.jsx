@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 
-const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handleKakaoShare, isOpen, toggleMobilePanel, shareCount = 0 }) => {
+const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handleKakaoShare, prizeUrl, isOpen, toggleMobilePanel, shareCount = 0 }) => {
   const TOOL_ITEMS = [
     { id: 'item1', name: lang.item1, cost: 50, power: 1, icon: '🔨' },
     { id: 'item2', name: lang.item2, cost: 300, power: 5, icon: '⛏️' },
@@ -25,6 +25,34 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
         <h3>{lang.shop}</h3>
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
+
+      {/* Today's Prize Link Button */}
+      {prizeUrl && (
+        <a 
+            href={prizeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                background: 'linear-gradient(45deg, #FF6F61, #FF9A9E)',
+                color: '#fff',
+                border: 'none',
+                padding: '12px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                marginBottom: '10px',
+                textDecoration: 'none',
+                boxShadow: '0 4px 6px rgba(255, 111, 97, 0.3)',
+                boxSizing: 'border-box'
+            }}
+        >
+            <span style={{fontSize: '1.2rem', marginRight:'5px'}}>🎁</span> 
+            {lang.viewPrize || "오늘의 경품 보러가기"}
+        </a>
+      )}
 
       <button 
         onClick={handleKakaoShare}
