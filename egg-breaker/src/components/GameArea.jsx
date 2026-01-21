@@ -1211,15 +1211,33 @@ const GameArea = ({
                 <div className="hp-text">{hp.toLocaleString()} HP</div>
             </div>
 
-            {adWatchCount < 1 && (
-                <button className="power-btn" onClick={handleAdWatch}>
-                    <span className="btn-title">{lang.adWatchBtn}</span>
-                    <span className="btn-sub">{lang.adReward}</span>
-                </button>
-            )}
+            {/* 오늘 상품 보러가기 버튼 (구 광고 버튼 위치) */}
+            <a 
+                href={serverState?.prizeUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => { if(!serverState?.prizeUrl) { e.preventDefault(); alert("등록된 상품 링크가 없습니다."); } }}
+                className="power-btn"
+                style={{
+                    textDecoration: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(45deg, #FF6F61, #FF9A9E)',
+                    boxShadow: '0 6px 20px rgba(255, 111, 97, 0.4)',
+                    border: 'none'
+                }}
+            >
+                <span className="btn-title" style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '900' }}>
+                    🎁 오늘 상품 보러가기
+                </span>
+                <span className="btn-sub" style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.8rem' }}>
+                    (클릭 시 해당 상품으로 이동)
+                </span>
+            </a>
 
-            {adWatchCount < 1 && (
-                <div className="coupang-notice" style={{
+            <div className="coupang-notice" style={{
                     fontSize: '8px', 
                     color: 'rgba(0,0,0,0.4)', 
                     textAlign: 'center', 
