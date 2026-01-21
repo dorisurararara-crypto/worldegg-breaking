@@ -1189,7 +1189,7 @@ const GameArea = ({
                         )}
 
                         {/* 3. Retry / Spectating Mode */}
-                        {showRetry && !isFinished && !isWinnerCheck && (
+                        {showRetry && !isFinished && (
                             <>
                                 <div style={{ fontSize: '4rem', marginBottom: '15px' }}>👀</div>
                                 <h2 style={{ color: '#5d4037', marginBottom: '10px' }}>관전 모드</h2>

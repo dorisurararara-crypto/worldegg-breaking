@@ -530,7 +530,11 @@ function App() {
         });
         setEmailSubmitted(true);
         // Alert success
-        showNotification("이메일이 정상적으로 접수되었습니다!");
+        if (targetEmail === "saved@prize.com") {
+             showNotification(lang.prizeReceivedBtn || "상품 수령 완료!");
+        } else {
+             showNotification(lang.sent || "이메일이 정상적으로 접수되었습니다!");
+        }
         // Start exit timer
         setExitCountdown(5); 
     } catch(e) {
