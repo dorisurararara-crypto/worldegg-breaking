@@ -26,33 +26,37 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
 
-      {/* Today's Prize Link Button */}
-      {prizeUrl && (
-        <a 
-            href={prizeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                background: 'linear-gradient(45deg, #FF6F61, #FF9A9E)',
-                color: '#fff',
-                border: 'none',
-                padding: '12px',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                marginBottom: '10px',
-                textDecoration: 'none',
-                boxShadow: '0 4px 6px rgba(255, 111, 97, 0.3)',
-                boxSizing: 'border-box'
-            }}
-        >
-            <span style={{fontSize: '1.2rem', marginRight:'5px'}}>🎁</span> 
-            {lang.viewPrize || "오늘의 경품 보러가기"}
-        </a>
-      )}
+      {/* 오늘의 경품 링크 버튼 (구 광고 버튼 위치) */}
+      <a 
+          href={prizeUrl || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => { if(!prizeUrl) { e.preventDefault(); alert("등록된 경품 링크가 없습니다."); } }}
+          style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              background: 'linear-gradient(45deg, #FF6F61, #FF9A9E)',
+              color: '#fff',
+              border: 'none',
+              padding: '15px',
+              borderRadius: '10px',
+              fontWeight: '900',
+              fontSize: '1.1rem',
+              marginBottom: '15px',
+              textDecoration: 'none',
+              boxShadow: '0 4px 15px rgba(255, 111, 97, 0.4)',
+              boxSizing: 'border-box',
+              cursor: 'pointer',
+              transition: 'transform 0.2s'
+          }}
+          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+      >
+          <span style={{fontSize: '1.4rem', marginRight:'8px'}}>🎁</span> 
+          오늘 상품 보러가기
+      </a>
 
       <button 
         onClick={handleKakaoShare}
