@@ -26,38 +26,6 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
         <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
       </div>
 
-      {/* 오늘의 경품 링크 버튼 (구 광고 버튼 위치) */}
-      <a 
-          href={prizeUrl || "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => { if(!prizeUrl) { e.preventDefault(); alert("등록된 경품 링크가 없습니다."); } }}
-          style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              background: 'linear-gradient(45deg, #FF6F61, #FF9A9E)',
-              color: '#fff',
-              border: 'none',
-              padding: '15px',
-              borderRadius: '10px',
-              fontWeight: '900',
-              fontSize: '1.1rem',
-              marginBottom: '15px',
-              textDecoration: 'none',
-              boxShadow: '0 4px 15px rgba(255, 111, 97, 0.4)',
-              boxSizing: 'border-box',
-              cursor: 'pointer',
-              transition: 'transform 0.2s'
-          }}
-          onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-          onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-      >
-          <span style={{fontSize: '1.4rem', marginRight:'8px'}}>🎁</span> 
-          오늘 상품 보러가기
-      </a>
-
       <button 
         onClick={handleKakaoShare}
         style={{
@@ -80,6 +48,40 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
         <span style={{fontSize: '1.2rem'}}>💬</span> 
         {lang.shareReward} {shareCount >= 5 ? '(Max)' : `(${shareCount}/5)`}
       </button>
+
+      {/* 오늘의 경품 링크 버튼 */}
+      {prizeUrl && (
+        <a 
+            href={prizeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => { if(!prizeUrl) { e.preventDefault(); alert("등록된 경품 링크가 없습니다."); } }}
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                background: 'linear-gradient(45deg, #FF6F61, #FF9A9E)',
+                color: '#fff',
+                border: 'none',
+                padding: '15px',
+                borderRadius: '10px',
+                fontWeight: '900',
+                fontSize: '1.1rem',
+                marginBottom: '20px',
+                textDecoration: 'none',
+                boxShadow: '0 4px 15px rgba(255, 111, 97, 0.4)',
+                boxSizing: 'border-box',
+                cursor: 'pointer',
+                transition: 'transform 0.2s'
+            }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+            <span style={{fontSize: '1.4rem', marginRight:'8px'}}>🎁</span> 
+            오늘 상품 보러가기
+        </a>
+      )}
 
       <div className="shop-list">
         <div className="shop-item" onClick={() => buyItem(500, 1, 'hammer')}>
