@@ -162,7 +162,7 @@ const GameArea = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     // --- Render Conditions (Moved to top) ---
-    const isMyWin = serverState?.winningClientId === clientId;
+    const isMyWin = isWinner || serverState?.winningClientId === clientId;
     const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
     const isFinished = serverState?.status === 'FINISHED';
     const isInQueue = connected && isSpectating && !isWinnerCheck && !isFinished;
@@ -186,6 +186,43 @@ const GameArea = ({
             await submitWinnerEmail(customEmail);
         } finally {
             // Success case might reload page, but if error, we reset
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleSavePrize = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
+        // 1. Download Image (if available)
+        if (prizeSecretImageUrl) {
+            try {
+                // Fetch blob to force download instead of open
+                const response = await fetch(prizeSecretImageUrl);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `egg_prize_${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (e) {
+                console.error("Download failed", e);
+                // Fallback
+                window.open(prizeSecretImageUrl, '_blank');
+            }
+        }
+
+        // 2. Notify Server
+        try {
+            // Send dummy email to mark as claimed
+            await submitWinnerEmail("saved@prize.com");
+        } catch(e) {
+            console.error("Submit failed", e);
+        } finally {
             setIsSubmitting(false);
         }
     };
@@ -1059,41 +1096,62 @@ const GameArea = ({
 
                                     {!emailSubmitted ? (
                                         <>
-                                            <p style={{ fontSize: '0.95rem', color: '#8d6e63', marginBottom: '20px' }}>
-                                                {lang.enterEmailDesc} <br/>
-                                                <span style={{ fontSize: '0.8rem', color: '#e57373' }}>
-                                                    ({winnerCountdown}초 내 미입력 시 취소됨)
-                                                </span>
-                                            </p>
-                                            <input 
-                                                type="email" 
-                                                placeholder="example@email.com" 
-                                                value={winnerEmail}
-                                                onChange={(e) => setWinnerEmail(e.target.value)}
-                                                style={{ 
-                                                    padding: '12px', width: '80%', borderRadius: '8px', 
-                                                    border: '1px solid #ccc', marginBottom: '15px', fontSize: '1rem' 
-                                                }}
-                                            />
-                                            <button 
-                                                onClick={() => handleSubmit()} 
-                                                disabled={isSubmitting}
-                                                style={{ 
-                                                    background: isSubmitting ? '#ccc' : '#4caf50', 
-                                                    color: '#fff', border: 'none', 
-                                                    padding: '12px 30px', borderRadius: '25px', 
-                                                    fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer',
-                                                    width: '100%'
-                                                }}
-                                            >
-                                                {isSubmitting ? "전송 중..." : (lang.submitBtn || "상품 수령하기")}
-                                            </button>
+                                            {/* If Prize Image exists, show Save Button instead of Email Input */}
+                                            {prizeSecretImageUrl ? (
+                                                <button 
+                                                    onClick={handleSavePrize}
+                                                    disabled={isSubmitting}
+                                                    style={{ 
+                                                        background: isSubmitting ? '#ccc' : '#ff4081', 
+                                                        color: '#fff', border: 'none', 
+                                                        padding: '15px 40px', borderRadius: '30px', 
+                                                        fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer',
+                                                        width: '100%', boxShadow: '0 5px 15px rgba(255, 64, 129, 0.4)',
+                                                        animation: 'pulse 1s infinite'
+                                                    }}
+                                                >
+                                                    {isSubmitting ? "Processing..." : lang.savePrizeBtn}
+                                                </button>
+                                            ) : (
+                                                /* Fallback to Email Input if no image (or physical prize) */
+                                                <>
+                                                    <p style={{ fontSize: '0.95rem', color: '#8d6e63', marginBottom: '20px' }}>
+                                                        {lang.enterEmailDesc} <br/>
+                                                        <span style={{ fontSize: '0.8rem', color: '#e57373' }}>
+                                                            ({winnerCountdown}초 내 미입력 시 취소됨)
+                                                        </span>
+                                                    </p>
+                                                    <input 
+                                                        type="email" 
+                                                        placeholder="example@email.com" 
+                                                        value={winnerEmail}
+                                                        onChange={(e) => setWinnerEmail(e.target.value)}
+                                                        style={{ 
+                                                            padding: '12px', width: '80%', borderRadius: '8px', 
+                                                            border: '1px solid #ccc', marginBottom: '15px', fontSize: '1rem' 
+                                                        }}
+                                                    />
+                                                    <button 
+                                                        onClick={() => handleSubmit()} 
+                                                        disabled={isSubmitting}
+                                                        style={{ 
+                                                            background: isSubmitting ? '#ccc' : '#4caf50', 
+                                                            color: '#fff', border: 'none', 
+                                                            padding: '12px 30px', borderRadius: '25px', 
+                                                            fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer',
+                                                            width: '100%'
+                                                        }}
+                                                    >
+                                                        {isSubmitting ? "전송 중..." : (lang.submitBtn || "상품 수령하기")}
+                                                    </button>
+                                                </>
+                                            )}
                                         </>
                                     ) : (
                                         <>
                                             <div style={{ fontSize: '3rem', margin: '20px 0' }}>✅</div>
                                             <p style={{ fontSize: '1.1rem', color: '#2e7d32', fontWeight: 'bold' }}>
-                                                전송 완료! 이메일을 확인하세요.
+                                                {prizeSecretImageUrl ? lang.prizeReceivedBtn : "전송 완료! 이메일을 확인하세요."}
                                             </p>
                                             <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '10px' }}>
                                                 {exitCountdown}초 후 종료됩니다.
