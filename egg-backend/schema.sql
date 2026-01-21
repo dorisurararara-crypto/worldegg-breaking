@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS game_snapshots;
 DROP TABLE IF EXISTS winners;
 DROP TABLE IF EXISTS audit_logs;
 DROP TABLE IF EXISTS invites;
+DROP TABLE IF EXISTS prize_pool;
 
 CREATE TABLE game_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -16,7 +17,7 @@ CREATE TABLE winners (
     round INTEGER,
     email TEXT,
     country TEXT,
-    prize TEXT, -- 상품명 추가
+    prize TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -33,5 +34,17 @@ CREATE TABLE invites (
     from_user TEXT,
     to_user TEXT,
     date TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE prize_pool (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    image_url TEXT,
+    secret_url TEXT,
+    link TEXT, -- [New] Coupang Link
+    is_used INTEGER DEFAULT 0,
+    winner_id TEXT,
+    round INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -140,16 +140,48 @@ export class GameDO extends DurableObject {
       }
 
       this.startLoops();
-      this.updateNextPrize(); // [New] Initial prize check
+      this.updateNextPrize();
+      this.loadCurrentPrize(); // [New]
     });
   }
 
   async updateNextPrize() {
       try {
           const nextPrize: any = await this.env.DB.prepare(
-              "SELECT name FROM prize_pool WHERE is_used = 0 ORDER BY id ASC LIMIT 1"
+              "SELECT name, link FROM prize_pool WHERE is_used = 0 ORDER BY id ASC LIMIT 1"
           ).first();
-          this.gameState.nextPrizeName = nextPrize ? nextPrize.name : undefined;
+          
+          if (nextPrize) {
+               if (this.gameState.nextPrizeName !== nextPrize.name) {
+                   this.gameState.nextPrizeName = nextPrize.name;
+               }
+          } else {
+               this.gameState.nextPrizeName = undefined;
+          }
+          this.stateChanged = true;
+      } catch (e) {}
+  }
+
+  // [New] Load Prize for New Round (Helper)
+  async loadCurrentPrize() {
+      try {
+          const currentPrize: any = await this.env.DB.prepare(
+              "SELECT name, image_url, secret_url, link FROM prize_pool WHERE is_used = 0 ORDER BY id ASC LIMIT 1"
+          ).first();
+
+          if (currentPrize) {
+              this.gameState.prize = currentPrize.name;
+              this.gameState.prizeUrl = currentPrize.link || ""; // [New] Link
+              this.gameState.prizeImageUrl = currentPrize.image_url || "";
+              this.gameState.prizeSecretUrl = currentPrize.secret_url || "";
+          } else {
+              // Fallback
+              this.gameState.prize = "Mystery Prize";
+              this.gameState.prizeUrl = "";
+              this.gameState.prizeImageUrl = "";
+              this.gameState.prizeSecretUrl = "";
+          }
+          this.stateChanged = true;
       } catch (e) {}
   }
 
@@ -779,6 +811,8 @@ export class GameDO extends DurableObject {
               this.promoteFromQueue();
           }
           
+          await this.loadCurrentPrize(); // [New]
+
           details = `Reset Round to ${this.gameState.round}${clearMsg}`;
           await this.saveState();
           this.broadcastState();
@@ -834,9 +868,13 @@ export class GameDO extends DurableObject {
           const body: any = await request.json();
           try {
               await this.env.DB.prepare(
-                  "INSERT INTO prize_pool (name, image_url, secret_url) VALUES (?, ?, ?)"
-              ).bind(body.name, body.image_url, body.secret_url).run();
-              await this.updateNextPrize(); // [New]
+                  "INSERT INTO prize_pool (name, image_url, secret_url, link) VALUES (?, ?, ?, ?)"
+              ).bind(body.name, body.image_url, body.secret_url, body.link || "").run();
+              await this.updateNextPrize(); 
+              // If current prize is fallback, try loading this new one immediately
+              if (this.gameState.prize === "Mystery Prize") {
+                  await this.loadCurrentPrize();
+              }
               details = `Added prize: ${body.name}`;
           } catch(e) {
               return new Response("DB Error: " + e, { status: 500 });
