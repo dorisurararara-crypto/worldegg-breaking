@@ -34,7 +34,11 @@ CREATE TABLE invites (
     from_user TEXT,
     to_user TEXT,
     date TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    to_ip_hash TEXT,
+    to_ua_hash TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(from_user, to_user),
+    UNIQUE(from_user, date, to_ip_hash)
 );
 
 CREATE TABLE prize_pool (

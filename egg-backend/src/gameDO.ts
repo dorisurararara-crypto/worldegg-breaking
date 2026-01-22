@@ -296,32 +296,63 @@ export class GameDO extends DurableObject {
                 return new Response(JSON.stringify({ success: false, error: "Invalid Request (Self or Empty)" }), { status: 400 });
             }
 
-            // Memory Rate Limit (Optional)
-            // const lastReq = this.inviteCooldowns.get(from);
-            // if (lastReq && Date.now() - lastReq < 5000) { ... }
-            
+            const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+            const ua = request.headers.get("User-Agent") || "unknown";
+
+            // Hash IP and UA
+            const hash = async (text: string) => {
+                const msgBuffer = new TextEncoder().encode(text);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            };
+
+            const ipHash = await hash(ip);
+            const uaHash = await hash(ua);
+
             // Use KST (UTC+9) for date
             const now = new Date();
             const kstDate = new Date(now.getTime() + 9 * 60 * 60 * 1000);
             const today = kstDate.toISOString().split('T')[0];
             
             const { results } = await this.env.DB.prepare(
-                "SELECT (SELECT COUNT(*) FROM invites WHERE from_user = ? AND date = ?) as daily_count, (SELECT COUNT(*) FROM invites WHERE from_user = ? AND to_user = ?) as pair_exists"
-            ).bind(from, today, from, to).all();
+                `SELECT 
+                    (SELECT COUNT(*) FROM invites WHERE from_user = ? AND date = ?) as daily_count, 
+                    (SELECT COUNT(*) FROM invites WHERE from_user = ? AND to_user = ?) as pair_exists,
+                    (SELECT COUNT(*) FROM invites WHERE from_user = ? AND date = ? AND to_ip_hash = ?) as ip_exists`
+            ).bind(from, today, from, to, from, today, ipHash).all();
             
             const stats = results[0];
             
             if (stats.pair_exists > 0) {
                 return new Response(JSON.stringify({ success: false, error: "Already invited this friend" }), { status: 400 });
             }
+            if (stats.ip_exists > 0) {
+                 return new Response(JSON.stringify({ success: false, error: "Duplicate IP invite" }), { status: 400 });
+            }
             if (stats.daily_count >= 5) {
                 return new Response(JSON.stringify({ success: false, error: "Daily limit exceeded" }), { status: 400 });
             }
             
+            // Check Self-Referral via IP
+            if (ip !== "unknown") {
+                let referrerIp = "";
+                for (const s of this.sessions.values()) {
+                    if (s.clientId === from) {
+                        referrerIp = s.ip;
+                        break;
+                    }
+                }
+                
+                if (referrerIp && referrerIp === ip) {
+                     return new Response(JSON.stringify({ success: false, error: "Self-referral suspected (IP)" }), { status: 400 });
+                }
+            }
+            
             try {
                 await this.env.DB.prepare(
-                    "INSERT INTO invites (from_user, to_user, date) VALUES (?, ?, ?)"
-                ).bind(from, to, today).run();
+                    "INSERT INTO invites (from_user, to_user, date, to_ip_hash, to_ua_hash) VALUES (?, ?, ?, ?, ?)"
+                ).bind(from, to, today, ipHash, uaHash).run();
             } catch (dbErr) {
                 return new Response(JSON.stringify({ success: false, error: "Duplicate or DB Error" }), { status: 400 });
             }
@@ -444,6 +475,7 @@ export class GameDO extends DurableObject {
   }
 
   handleSession(ws: WebSocket, ip: string, requestedMode: string) {
+    (ws as any)._ip = ip;
     this.state.acceptWebSocket(ws);
   }
 
@@ -454,6 +486,7 @@ export class GameDO extends DurableObject {
       if (msg.type === 'join') {
         const clientId = msg.clientId || crypto.randomUUID();
         const country = msg.country || "UN";
+        const realIp = (ws as any)._ip || "unknown";
         
         // [Modified] Allow Winner to Reconnect
         if (this.gameState.status !== 'PLAYING') {
@@ -478,7 +511,7 @@ export class GameDO extends DurableObject {
         if (this.players.size < this.MAX_PLAYERS) {
             role = 'player';
             this.players.set(clientId, {
-                ws, ip: "unknown", clientId, country, 
+                ws, ip: realIp, clientId, country, 
                 lastSeen: Date.now(), lastDeltaTime: 0, role: 'player'
             });
         } else {
@@ -495,7 +528,7 @@ export class GameDO extends DurableObject {
         }
 
         const session: PlayerSession = {
-            ws, ip: "unknown", clientId, country, 
+            ws, ip: realIp, clientId, country, 
             lastSeen: Date.now(), lastDeltaTime: 0, role, queueToken, warnings: 0
         };
         this.sessions.set(ws, session);
@@ -752,6 +785,8 @@ export class GameDO extends DurableObject {
           onlinePlayers: (this.gameState.fakePlayers && this.gameState.fakePlayers > 0) ? this.gameState.fakePlayers : this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
           queueLength: (this.gameState.fakeQueue && this.gameState.fakeQueue > 0) ? this.gameState.fakeQueue : this.queue.length, // [Sync]
+          maxPlayers: this.MAX_PLAYERS, // [New]
+          maxQueue: this.MAX_QUEUE, // [New]
           maxAtk: this.gameState.maxAtk, // [Sync]
           maxAtkCountry: this.gameState.maxAtkCountry, // [Sync]
           maxPoints: this.gameState.maxPoints,
@@ -804,7 +839,7 @@ export class GameDO extends DurableObject {
               console.error("Failed to clear invites:", e);
               // If delete fails, try creating table ONLY if needed, with simple schema
               try {
-                  await this.env.DB.prepare("CREATE TABLE IF NOT EXISTS invites (id INTEGER PRIMARY KEY, from_user TEXT, to_user TEXT, date TEXT)").run();
+                  await this.env.DB.prepare("CREATE TABLE IF NOT EXISTS invites (id INTEGER PRIMARY KEY, from_user TEXT, to_user TEXT, date TEXT, to_ip_hash TEXT, to_ua_hash TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(from_user, to_user), UNIQUE(from_user, date, to_ip_hash))").run();
                   const { meta } = await this.env.DB.prepare("DELETE FROM invites").run();
                   clearMsg = ` (Invites table created & cleared: ${meta.changes || 0} rows)`;
               } catch (e2) {

@@ -176,10 +176,18 @@ const GameArea = ({
     
     // Guide Text Logic
     let guideText = lang.touchGuide;
+    const MAX_PLAYERS = serverState.maxPlayers || 1000;
+    const MAX_QUEUE = serverState.maxQueue || 1000;
+    const queueLen = serverState.queueLength || 0;
+
     if (isQueueActive) {
         guideText = "다음 게임에 참가할수 있습니다!";
-    } else if (serverState.onlinePlayers >= 1000 && !connected) {
-         guideText = "현재 참가자와 대기자가 꽉차 있습니다! (관전중)";
+    } else if (serverState.onlinePlayers >= MAX_PLAYERS && !connected) {
+         if (queueLen < MAX_QUEUE) {
+             guideText = "대기자니까 다음 게임에 참가할수 있습니다!";
+         } else {
+             guideText = "현재 참가자와 대기자가 꽉차 있습니다! (관전중)";
+         }
     } else if (isRoleSpectator || isSpectating) {
          guideText = "현재 게임 진행 중... (관전)";
     } else if (!connected) {

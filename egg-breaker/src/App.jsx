@@ -285,7 +285,7 @@ function App() {
           // Remove client-side check to allow round resets to work
           if (referrer && referrer !== clientId) {
               // [New] Local duplication check scoped by Round
-              const checkKey = `egg_invite_checked_${referrer}_r${currentRound}`;
+              const checkKey = `egg_invite_checked_${referrer}_${clientId}_r${currentRound}`;
               const lastChecked = localStorage.getItem(checkKey);
               
               if (lastChecked) {
@@ -340,13 +340,17 @@ function App() {
 
         let msg = rewardEvent.msg;
         if (msg === "INVITE_REWARD_MSG" || msg === "INVITE_REWARD_WELCOME") {
-            msg = lang.inviteSuccess || "Friend joined! +800P";
+            setShareCount(prev => prev + 1);
+            msg = `친구 초대 성공! 보상 지급 (누적 ${shareCount + 1}회)`;
+        } else {
+            // Translate other messages if needed
+            if (msg === "INVITE_REWARD_MSG") msg = lang.inviteSuccess || "Friend joined! +800P";
         }
 
         showNotification(msg);
         console.log(`[App] Reward: ${msg}`);
     }
-  }, [rewardEvent, lang]);
+  }, [rewardEvent, lang, shareCount]);
 
   // ... (Sync Local HP Logic) ... 
   // (We need to insert the render part before the closing brace of the component)
@@ -606,10 +610,10 @@ function App() {
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         // 2. Reward Removed (Only given when friend joins)
-        setShareCount(prev => prev + 1);
+        // setShareCount(prev => prev + 1); // Removed: Reward only on actual join
         
         // 3. Inform user
-        showNotification(`${lang.shareSuccess} (${shareCount + 1}/5)`);
+        showNotification("공유창이 열렸어요. 친구가 링크로 접속하면 800P 지급!");
     } catch (e) {
         console.error("Kakao Share Error:", e);
         if (e.name === 'NotAllowedError' || e.message?.includes('intent')) {
