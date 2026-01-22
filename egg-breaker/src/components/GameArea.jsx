@@ -757,7 +757,7 @@ const GameArea = ({
         if (!connected) return; 
         
         // [New] Block clicks for spectators (including queue)
-        if (role === 'spectator') return;
+        if (role === 'spectator' || isInQueue || isSpectating) return;
 
         // 0. Blur settings
         setIsSettingsFocused(false);
@@ -914,20 +914,8 @@ const GameArea = ({
 
     return (
         <main className="game-area">
-            {/* Queue Overlay */}
-            {isInQueue && (
-                 <div className="modal-overlay">
-                    <div className="modal-content glass" style={{ textAlign: 'center', padding: '40px' }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
-                        <h1 style={{ color: '#ff6f61', marginBottom: '10px' }}>대기열 대기 중...</h1>
-                        <p style={{ fontSize: '1.2rem' }}>잠시만 기다려주세요.</p>
-                        <div className="spinner" style={{
-                            width: '30px', height: '30px', border: '4px solid #ffe4e1', borderTop: '4px solid #ff6f61', 
-                            borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '20px auto'
-                        }}></div>
-                    </div>
-                </div>
-            )}
+            {/* Queue Overlay Removed for Spectator Mode */}
+
             {/* Notification removed (moved to App.jsx) */}
 
             {/* Minimal Settings Toggles (Text + Pill Switches) */}
@@ -1028,7 +1016,7 @@ const GameArea = ({
                     onEggClick={handlePointerDown} 
                 />
 
-                {showGuide && (
+                {(showGuide || isInQueue || role === 'spectator' || isSpectating) && (
                     <div style={{
                         position: 'absolute',
                         top: '50%',
@@ -1045,7 +1033,7 @@ const GameArea = ({
                         animation: 'pulse 1s infinite',
                         border: '2px solid #ffb6c1'
                     }}>
-                        {lang.touchGuide}
+                        {(isInQueue || role === 'spectator' || isSpectating) ? "현재 게임 진행 중..." : lang.touchGuide}
                     </div>
                 )}
                 
@@ -1207,7 +1195,7 @@ const GameArea = ({
             )}
             </div>
 
-            <div className="hp-wrapper">
+            <div className="hp-wrapper" style={{ position: 'relative', zIndex: 10 }}>
                 <div className="hp-container">
                     <div className="hp-bar" style={{ width: `${(hp / 1000000) * 100}%` }}></div>
                 </div>
