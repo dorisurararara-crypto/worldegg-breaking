@@ -60,6 +60,7 @@ html.tense-theme, html.tense-theme body, body.tense-theme {
 html.tense-theme .title, body.tense-theme .title {
   background: linear-gradient(to right, #ffd700, #ff8c00); /* Gold/Orange */
   -webkit-background-clip: text;
+  background-clip: text;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
@@ -79,6 +80,7 @@ html.dark-theme body::before, body.dark-theme::before {
 html.dark-theme .title, body.dark-theme .title {
   background: linear-gradient(to right, #ff0000, #ff4d4d);
   -webkit-background-clip: text;
+  background-clip: text;
   text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
 }
 html.dark-theme .game-area, body.dark-theme .game-area {

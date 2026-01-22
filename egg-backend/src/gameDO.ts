@@ -14,6 +14,8 @@ interface GameState {
   maxAtkCountry: string;   // [Sync] Added
   maxPoints: number;       // [Sync] Added
   maxClicks: number;       // [Sync] Added
+  fakePlayers?: number;    // [Test]
+  fakeQueue?: number;      // [Test]
   announcement: string;
   prize: string;
   prizeUrl: string;
@@ -97,6 +99,8 @@ export class GameDO extends DurableObject {
       maxAtkCountry: "UN",    // [Sync] Added
       maxPoints: 0,           // [Sync] Added
       maxClicks: 0,           // [Sync] Added
+      fakePlayers: 0,         // [Test]
+      fakeQueue: 0,           // [Test]
       announcement: "Welcome to Egg Pong!",
       prize: "Amazon Gift Card $50",
       prizeUrl: "https://amazon.com",
@@ -228,9 +232,9 @@ export class GameDO extends DurableObject {
           recentWinners: this.gameState.recentWinners,
           lastUpdatedAt: this.gameState.lastUpdatedAt,
 
-          onlinePlayers: this.players.size,
+          onlinePlayers: (this.gameState.fakePlayers && this.gameState.fakePlayers > 0) ? this.gameState.fakePlayers : this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
-          queueLength: this.queue.length,
+          queueLength: (this.gameState.fakeQueue && this.gameState.fakeQueue > 0) ? this.gameState.fakeQueue : this.queue.length,
           serverTs: Date.now()
       };
       
@@ -745,9 +749,9 @@ export class GameDO extends DurableObject {
           status: this.gameState.status,
           winnerInfo: this.gameState.winnerInfo,
           winningClientId: this.gameState.winningClientId,
-          onlinePlayers: this.players.size,
+          onlinePlayers: (this.gameState.fakePlayers && this.gameState.fakePlayers > 0) ? this.gameState.fakePlayers : this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
-          queueLength: this.queue.length, // [Sync]
+          queueLength: (this.gameState.fakeQueue && this.gameState.fakeQueue > 0) ? this.gameState.fakeQueue : this.queue.length, // [Sync]
           maxAtk: this.gameState.maxAtk, // [Sync]
           maxAtkCountry: this.gameState.maxAtkCountry, // [Sync]
           maxPoints: this.gameState.maxPoints,
@@ -845,6 +849,8 @@ export class GameDO extends DurableObject {
           if (body.prizeImageUrl !== undefined) this.gameState.prizeImageUrl = body.prizeImageUrl;
           if (body.prizeSecretUrl !== undefined) this.gameState.prizeSecretUrl = body.prizeSecretUrl;
           if (body.adUrl !== undefined) this.gameState.adUrl = body.adUrl;
+          if (body.fakePlayers !== undefined) this.gameState.fakePlayers = Number(body.fakePlayers);
+          if (body.fakeQueue !== undefined) this.gameState.fakeQueue = Number(body.fakeQueue);
           this.gameState.lastUpdatedAt = Date.now();
           details = `Config Updated`;
           await this.saveState();
@@ -964,9 +970,9 @@ export class GameDO extends DurableObject {
           status: this.gameState.status,
           winnerInfo: this.gameState.winnerInfo,
           winningClientId: this.gameState.winningClientId,
-          onlinePlayers: this.players.size,
+          onlinePlayers: (this.gameState.fakePlayers && this.gameState.fakePlayers > 0) ? this.gameState.fakePlayers : this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
-          queueLength: this.queue.length,
+          queueLength: (this.gameState.fakeQueue && this.gameState.fakeQueue > 0) ? this.gameState.fakeQueue : this.queue.length,
           maxAtk: this.gameState.maxAtk,
           maxAtkCountry: this.gameState.maxAtkCountry,
           maxPoints: this.gameState.maxPoints,

@@ -38,7 +38,7 @@ export const TRANSLATIONS = {
     touchGuide: "가운데 계란을 👈 터치하세요!",
     crackWarning: "알에 금이 더 가고 있습니다! ⚡",
     rivalryTitle: "국가 대항전", gap: "차이", waiting: "대기중...", noRival: "라이벌 없음",
-    hallOfFame: "상품", recentPrizes: "최근 우승 상품", noRecords: "아직 우승자가 없습니다. 첫 우승자가 되어보세요!",
+    hallOfFame: "메뉴", recentPrizes: "최근 우승 상품", noRecords: "아직 우승자가 없습니다. 첫 우승자가 되어보세요!",
     adWatchBtn: "📺 광고 보고 포인트 받기(+2000P)", shareBtn: "💬 공유하기 (+800P)",
     adReward: "", shareReward: "카톡으로 공유하고 800P 받기 (최대 5회)",
     roundOverTitle: "라운드 종료!", roundOverDesc: "다음 라운드 준비 중입니다.",

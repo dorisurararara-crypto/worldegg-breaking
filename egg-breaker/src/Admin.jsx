@@ -27,6 +27,8 @@ function Admin() {
   const [prizeImageUrl, setPrizeImageUrl] = useState("");
   const [prizeSecretUrl, setPrizeSecretUrl] = useState("");
   const [adUrl, setAdUrl] = useState("");
+  const [fakePlayers, setFakePlayers] = useState("");
+  const [fakeQueue, setFakeQueue] = useState("");
 
   const [winners, setWinners] = useState([]);
   const [prizePool, setPrizePool] = useState([]);
@@ -155,6 +157,8 @@ function Admin() {
       setPrizeImageUrl(data.prizeImageUrl || "");
       setPrizeSecretUrl(data.prizeSecretUrl || "");
       setAdUrl(data.adUrl || "");
+      setFakePlayers(data.fakePlayers || 0);
+      setFakeQueue(data.fakeQueue || 0);
     } catch (e) {
       console.error("데이터 불러오기 실패:", e);
     }
@@ -438,11 +442,33 @@ function Admin() {
                     placeholder="상품권 일련번호가 포함된 이미지 주소"
                 />
              </div>
+
+             <div style={{ background: 'rgba(220, 53, 69, 0.1)', padding: '10px', borderRadius: '10px', border: '1px dashed #dc3545' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#dc3545' }}>🧪 테스트: 가짜 접속자 수 (0이면 꺼짐)</label>
+                <input 
+                    type="number" 
+                    value={fakePlayers} 
+                    onChange={e => setFakePlayers(e.target.value)}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', boxSizing: 'border-box' }} 
+                    placeholder="예: 1000"
+                />
+             </div>
+
+             <div style={{ background: 'rgba(220, 53, 69, 0.1)', padding: '10px', borderRadius: '10px', border: '1px dashed #dc3545' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#dc3545' }}>🧪 테스트: 가짜 대기자 수 (0이면 꺼짐)</label>
+                <input 
+                    type="number" 
+                    value={fakeQueue} 
+                    onChange={e => setFakeQueue(e.target.value)}
+                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', boxSizing: 'border-box' }} 
+                    placeholder="예: 500"
+                />
+             </div>
           </div>
           
           <button 
             onClick={() => {
-                callAdminApi('config', { announcement, prize, prizeUrl, prizeImageUrl, prizeSecretUrl, adUrl });
+                callAdminApi('config', { announcement, prize, prizeUrl, prizeImageUrl, prizeSecretUrl, adUrl, fakePlayers, fakeQueue });
             }} 
             style={{ marginTop: '25px', width: '100%', background: '#28a745', color: 'white', border: 'none', padding: '15px', fontSize: '1.1rem', fontWeight: 'bold', borderRadius: '10px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}
           >
