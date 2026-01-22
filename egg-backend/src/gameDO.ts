@@ -866,18 +866,37 @@ export class GameDO extends DurableObject {
 
       } else if (action === "add-prize" && request.method === "POST") {
           const body: any = await request.json();
-          try {
-              await this.env.DB.prepare(
+          
+          const runInsert = async () => {
+             await this.env.DB.prepare(
                   "INSERT INTO prize_pool (name, image_url, secret_url, link) VALUES (?, ?, ?, ?)"
               ).bind(body.name, body.image_url, body.secret_url, body.link || "").run();
+          };
+
+          try {
+              await runInsert();
+              details = `Added prize: ${body.name}`;
+          } catch(e: any) {
+              // Self-healing: Check if error is due to missing 'link' column
+              if (e.message && (e.message.includes("no such column: link") || e.message.includes("has no column named link"))) {
+                   try {
+                       await this.env.DB.prepare("ALTER TABLE prize_pool ADD COLUMN link TEXT").run();
+                       await runInsert(); // Retry
+                       details = `Added prize: ${body.name} (Schema Updated)`;
+                   } catch (e2) {
+                       return new Response("DB Error (Retry failed): " + e2, { status: 500 });
+                   }
+              } else {
+                  return new Response("DB Error: " + e, { status: 500 });
+              }
+          }
+
+          if (details) {
               await this.updateNextPrize(); 
               // If current prize is fallback, try loading this new one immediately
               if (this.gameState.prize === "Mystery Prize") {
                   await this.loadCurrentPrize();
               }
-              details = `Added prize: ${body.name}`;
-          } catch(e) {
-              return new Response("DB Error: " + e, { status: 500 });
           }
 
       } else if (action.startsWith("prize-pool/") && request.method === "DELETE") {

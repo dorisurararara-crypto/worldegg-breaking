@@ -121,8 +121,13 @@ function Admin() {
               setNewPrizeName(""); setNewPrizeImg(""); setNewPrizeSecret(""); setNewPrizeLink("");
               fetchPrizePool();
               alert("상품이 창고에 추가되었습니다.");
+          } else {
+              const text = await res.text();
+              alert("오류 발생: " + text);
           }
-      } catch (e) {}
+      } catch (e) {
+          alert("통신 오류: " + e.message);
+      }
   };
 
   const deletePrize = async (id) => {
