@@ -165,7 +165,16 @@ const GameArea = ({
     const isMyWin = isWinner || serverState?.winningClientId === clientId;
     const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
     const isFinished = serverState?.status === 'FINISHED';
-    const isInQueue = connected && (isSpectating || role === 'spectator') && !isWinnerCheck && !isFinished; // [Mod] Check role
+    // [Fix] Accurate Queue/Spectator Check
+    // If role is explicitly 'spectator' OR we have a positive queue position
+    const isRoleSpectator = role === 'spectator';
+    const isQueueActive = (connected && (isRoleSpectator || (serverState.queueLength > 0 && role === null))); 
+    // Note: role is null during polling/waiting or if not assigned yet.
+    // If connected is true, role should be assigned eventually.
+    
+    // Simplification: Check props passed from App (isInQueue logic there was based on queuePos)
+    // Actually GameArea doesn't receive queuePos. We need to rely on `role` and `isSpectating` prop.
+    const isPassiveMode = role === 'spectator' || isSpectating;
 
     // [Fix A] Update Winner Lock
     useEffect(() => {
@@ -757,7 +766,7 @@ const GameArea = ({
         if (!connected) return; 
         
         // [New] Block clicks for spectators (including queue)
-        if (role === 'spectator' || isInQueue || isSpectating) return;
+        if (isPassiveMode) return;
 
         // 0. Blur settings
         setIsSettingsFocused(false);
@@ -1016,7 +1025,7 @@ const GameArea = ({
                     onEggClick={handlePointerDown} 
                 />
 
-                {(showGuide || isInQueue || role === 'spectator' || isSpectating) && (
+                {(showGuide || isPassiveMode) && (
                     <div style={{
                         position: 'absolute',
                         top: '50%',
@@ -1031,9 +1040,10 @@ const GameArea = ({
                         color: '#ff6f61',
                         pointerEvents: 'none',
                         animation: 'pulse 1s infinite',
-                        border: '2px solid #ffb6c1'
+                        border: '2px solid #ffb6c1',
+                        whiteSpace: 'nowrap'
                     }}>
-                        {(isInQueue || role === 'spectator' || isSpectating) ? "현재 게임 진행 중..." : lang.touchGuide}
+                        {isPassiveMode ? "현재 게임 진행 중..." : lang.touchGuide}
                     </div>
                 )}
                 

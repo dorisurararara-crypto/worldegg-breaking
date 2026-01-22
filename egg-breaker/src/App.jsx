@@ -840,20 +840,21 @@ function App() {
             {!connected && serverState.status === 'PLAYING' && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                    background: 'transparent', // [Mod] Transparent to see game
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: 1000, // No blur
-                    pointerEvents: 'none' // [Mod] Let clicks pass through (visually), but button blocks them? No, button needs auto.
+                    background: 'transparent', 
+                    display: 'flex', alignItems: 'flex-end', justifyContent: 'center', // [Mod] Align to bottom
+                    zIndex: 1000, 
+                    pointerEvents: 'none',
+                    paddingBottom: '20px' // [Mod] Add padding from bottom
                 }}>
                     <button 
                         onClick={connect}
                         className="pulse-btn"
                         disabled={serverState.onlinePlayers >= 1000 && (serverState.queueLength || 0) >= 1000}
                         style={{
-                            pointerEvents: 'auto', // [Mod] Enable button click
-                            padding: '20px 50px', fontSize: '2rem', fontWeight: '900',
+                            pointerEvents: 'auto', 
+                            padding: '15px 40px', fontSize: '1.5rem', fontWeight: '900', // [Mod] Slightly smaller
                             background: (serverState.onlinePlayers >= 1000 && (serverState.queueLength || 0) >= 1000) 
-                                ? '#999' 
+                                ? 'rgba(153, 153, 153, 0.9)' // [Mod] Semi-transparent
                                 : 'linear-gradient(45deg, #ff6f61, #ff9a9e)',
                             color: 'white', border: 'none', borderRadius: '50px',
                             cursor: (serverState.onlinePlayers >= 1000 && (serverState.queueLength || 0) >= 1000) ? 'not-allowed' : 'pointer', 
