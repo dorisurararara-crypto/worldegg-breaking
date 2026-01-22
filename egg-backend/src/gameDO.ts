@@ -464,6 +464,7 @@ export class GameDO extends DurableObject {
       this.kickAllPlayers();
 
       this.gameState.lastUpdatedAt = Date.now();
+      this.stateChanged = true;
       await this.saveState();
       await this.updateNextPrize(); // [New] Prize used, find next
       this.broadcastState();
@@ -748,7 +749,6 @@ export class GameDO extends DurableObject {
               this.gameState.winningClientId = undefined;
               this.gameState.winningToken = undefined;
               this.gameState.lastUpdatedAt = Date.now();
-          this.stateChanged = true;
               this.stateChanged = true;
               this.saveState();
               this.kickAllPlayers();
@@ -808,6 +808,8 @@ export class GameDO extends DurableObject {
           
           // Clear invites table for the new round
           let clearMsg = "";
+          // [Changed] Invites are permanent (one per friend forever), so do NOT delete invites.
+          /*
           try {
               // Simply try to delete. If table missing, it will throw, which is fine (we catch it).
               const { meta } = await this.env.DB.prepare("DELETE FROM invites").run();
@@ -823,6 +825,7 @@ export class GameDO extends DurableObject {
                   clearMsg = ` (Invites clear FAILED: ${e.message})`;
               }
           }
+          */
           
           // Promote all possible players
           while (this.players.size < this.MAX_PLAYERS && this.queue.length > 0) {

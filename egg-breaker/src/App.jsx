@@ -849,7 +849,7 @@ function App() {
             />
 
             {/* JOIN BUTTON OVERLAY (When NOT connected and PLAYING) */}
-            {!connected && serverState.status === 'PLAYING' && (serverState.onlinePlayers < 1000 && (serverState.queueLength || 0) < 1000) && (
+            {!connected && serverState.status === 'PLAYING' && ((serverState.onlinePlayers < (serverState.maxPlayers || 1000)) || ((serverState.queueLength || 0) < (serverState.maxQueue || 1000))) && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
                     background: 'transparent', 
@@ -873,8 +873,8 @@ function App() {
                         }}
                     >
                         {
-                            serverState.onlinePlayers < 1000 ? `⚔️ ${lang.joinGame || "JOIN GAME"}` :
-                            `⏳ ${lang.joinQueue || "Join Queue"}`
+                            (serverState.onlinePlayers >= (serverState.maxPlayers || 1000) && (serverState.queueLength || 0) < (serverState.maxQueue || 1000)) ? `⏳ ${lang.joinQueue || "Join Queue"}` :
+                            `⚔️ ${lang.joinGame || "JOIN GAME"}`
                         }
                     </button>
                 </div>
