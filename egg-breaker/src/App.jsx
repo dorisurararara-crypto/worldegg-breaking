@@ -804,6 +804,7 @@ function App() {
             <GameArea 
               lang={lang}
               hp={hp}
+              role={role} // [New] Pass role
               clickPower={clickPower}
               myPoints={myPoints}
               isWinner={isWinner}
@@ -839,15 +840,17 @@ function App() {
             {!connected && serverState.status === 'PLAYING' && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                    background: 'rgba(255, 255, 255, 0.4)', // Slightly dim
+                    background: 'transparent', // [Mod] Transparent to see game
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: 1000, backdropFilter: 'blur(2px)'
+                    zIndex: 1000, // No blur
+                    pointerEvents: 'none' // [Mod] Let clicks pass through (visually), but button blocks them? No, button needs auto.
                 }}>
                     <button 
                         onClick={connect}
                         className="pulse-btn"
                         disabled={serverState.onlinePlayers >= 1000 && (serverState.queueLength || 0) >= 1000}
                         style={{
+                            pointerEvents: 'auto', // [Mod] Enable button click
                             padding: '20px 50px', fontSize: '2rem', fontWeight: '900',
                             background: (serverState.onlinePlayers >= 1000 && (serverState.queueLength || 0) >= 1000) 
                                 ? '#999' 

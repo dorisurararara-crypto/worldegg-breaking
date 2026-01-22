@@ -137,7 +137,7 @@ const GameArea = ({
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, adWatchCount, showGuide,
     winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry,
     clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected,
-    onComboReward
+    onComboReward, role // [New]
 }) => {
     // [Performance] Canvas Effects System
     const canvasRef = useRef(null);
@@ -165,7 +165,7 @@ const GameArea = ({
     const isMyWin = isWinner || serverState?.winningClientId === clientId;
     const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
     const isFinished = serverState?.status === 'FINISHED';
-    const isInQueue = connected && isSpectating && !isWinnerCheck && !isFinished;
+    const isInQueue = connected && (isSpectating || role === 'spectator') && !isWinnerCheck && !isFinished; // [Mod] Check role
 
     // [Fix A] Update Winner Lock
     useEffect(() => {
@@ -755,6 +755,9 @@ const GameArea = ({
     const handlePointerDown = (e) => {
         // Only allow click if connected and playing
         if (!connected) return; 
+        
+        // [New] Block clicks for spectators (including queue)
+        if (role === 'spectator') return;
 
         // 0. Blur settings
         setIsSettingsFocused(false);
