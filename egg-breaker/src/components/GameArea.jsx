@@ -15,14 +15,13 @@ const TOOL_EMOJIS = {
     fist: '👊'
 };
 
-const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '🎀', '🎵', '🐇', '🦋', '🌺', '💕', '🍡', '🧁'];
+const PARTICLES = ['✨', '💫', '⚡', '🔥', '💥', '✦', '◆', '●'];
 
-// 럭키 이벤트 설정
+// 럭키 이벤트 설정 (보상 축소 - 카카오 공유 800P 대비 적절하게)
 const LUCKY_EVENTS = [
-    { name: '🍀 럭키 보너스!', chance: 0.02, reward: 100, msg: '행운이 찾아왔어요! +100P' },
-    { name: '💎 다이아몬드!', chance: 0.005, reward: 500, msg: '다이아몬드 발견! +500P' },
-    { name: '🌟 슈퍼스타!', chance: 0.001, reward: 2000, msg: '슈퍼스타 등장! +2000P' },
-    { name: '🦄 유니콘!', chance: 0.0005, reward: 5000, msg: '전설의 유니콘! +5000P' },
+    { name: 'Lucky!', chance: 0.008, reward: 10, msg: '럭키! +10P' },
+    { name: 'Great!', chance: 0.003, reward: 30, msg: '대박! +30P' },
+    { name: 'Amazing!', chance: 0.001, reward: 50, msg: '잭팟! +50P' },
 ];
 
 // --- 깨지는 알 SVG 컴포넌트 ---
@@ -44,40 +43,38 @@ const CrackedEgg = memo(({ hp, maxHp, tool, onEggClick, ref }) => {
     // 기본 표정 구성 요소
     let eyeLeft, eyeRight, mouth, blush, extra;
 
-    // 기본 상태 설정 (평소)
-    // NOTE: Shaking 표정 변화 로직은 CSS 클래스로 처리하기 어려우므로
-    // 성능을 위해 "피격 표정"은 렌더링 시 잠시 무시하거나, 
-    // 정말 필요하다면 DOM 조작 대신 React 상태를 써야 하지만 
-    // 여기서는 렉 방지를 위해 "기본 표정"과 "위기 표정" 위주로만 구성합니다.
-    // (피격 순간 표정 변화는 너무 빠른 렌더링 교체를 요구함)
+    // 알 표정 (심플한 디자인)
+    const eyeColor = "#2d3436";
 
-    eyeLeft = <circle cx="75" cy="110" r="8" fill="#5d4037" />;
-    eyeRight = <circle cx="125" cy="110" r="8" fill="#5d4037" />;
-    mouth = <path d="M90 135 Q100 145 110 135" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
+    eyeLeft = <circle cx="75" cy="110" r="6" fill={eyeColor} />;
+    eyeRight = <circle cx="125" cy="110" r="6" fill={eyeColor} />;
+    mouth = <path d="M90 140 Q100 148 110 140" fill="none" stroke={eyeColor} strokeWidth="2.5" strokeLinecap="round" />;
     blush = (
         <>
-            <ellipse cx="65" cy="125" rx="8" ry="4" fill="#ffb6c1" opacity="0.6" />
-            <ellipse cx="135" cy="125" rx="8" ry="4" fill="#ffb6c1" opacity="0.6" />
+            <ellipse cx="60" cy="125" rx="10" ry="5" fill="#fab1a0" opacity="0.4" />
+            <ellipse cx="140" cy="125" rx="10" ry="5" fill="#fab1a0" opacity="0.4" />
         </>
     );
 
-    if (percentage < 70) { // 슬픔
-        eyeLeft = <path d="M68 115 Q75 105 82 115" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-        eyeRight = <path d="M118 115 Q125 105 132 115" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-        mouth = <path d="M90 145 Q100 135 110 145" fill="none" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-        extra = <path d="M65 125 Q60 135 65 145 M135 125 Q140 135 135 145" fill="none" stroke="#a1c4fd" strokeWidth="2" />; // 눈물
+    if (percentage < 70) {
+        // 걱정 표정
+        eyeLeft = <ellipse cx="75" cy="110" rx="6" ry="7" fill={eyeColor} />;
+        eyeRight = <ellipse cx="125" cy="110" rx="6" ry="7" fill={eyeColor} />;
+        mouth = <path d="M90 145 Q100 138 110 145" fill="none" stroke={eyeColor} strokeWidth="2.5" strokeLinecap="round" />;
+        extra = null;
     }
-    if (isCritical) { // 분노
-        eyeLeft = <g><path d="M65 105 L85 115 L65 120" fill="red" /><circle cx="72" cy="112" r="2" fill="#fff" /></g>;
-        eyeRight = <g><path d="M135 105 L115 115 L135 120" fill="red" /><circle cx="128" cy="112" r="2" fill="#fff" /></g>;
-        mouth = <path d="M85 140 L90 130 L95 140 L100 130 L105 140 L110 130 L115 140" fill="none" stroke="#5d4037" strokeWidth="2" />;
+    if (isCritical) {
+        // 위기 표정
+        eyeLeft = <ellipse cx="75" cy="110" rx="7" ry="8" fill={eyeColor} />;
+        eyeRight = <ellipse cx="125" cy="110" rx="7" ry="8" fill={eyeColor} />;
+        mouth = <ellipse cx="100" cy="145" rx="8" ry="6" fill="none" stroke={eyeColor} strokeWidth="2.5" />;
         blush = null;
     }
 
     if (isBroken) {
-        eyeLeft = <path d="M68 103 L82 117 M82 103 L68 117" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-        eyeRight = <path d="M118 103 L132 117 M132 103 L118 117" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />;
-        mouth = <circle cx="100" cy="140" r="10" fill="none" stroke="#5d4037" strokeWidth="3" />;
+        eyeLeft = <path d="M70 105 L80 115 M80 105 L70 115" stroke={eyeColor} strokeWidth="2.5" strokeLinecap="round" />;
+        eyeRight = <path d="M120 105 L130 115 M130 105 L120 115" stroke={eyeColor} strokeWidth="2.5" strokeLinecap="round" />;
+        mouth = <ellipse cx="100" cy="145" rx="10" ry="8" fill="none" stroke={eyeColor} strokeWidth="2.5" />;
         blush = null;
     }
 
@@ -93,13 +90,12 @@ const CrackedEgg = memo(({ hp, maxHp, tool, onEggClick, ref }) => {
             <svg viewBox="0 0 200 250" className="egg-svg" style={{ overflow: 'visible' }}>
                 <defs>
                     <radialGradient id="eggGradient" cx="40%" cy="30%" r="80%">
-                        <stop offset="0%" stopColor={isCritical ? "#ff6b6b" : isBroken ? "#ddd" : "#fff5f8"} />
-                        <stop offset="50%" stopColor={isCritical ? "#ee5a5a" : isBroken ? "#ccc" : "#ffd1dc"} />
-                        <stop offset="100%" stopColor={isCritical ? "#cc4444" : isBroken ? "#aaa" : "#ffb6c1"} />
+                        <stop offset="0%" stopColor={isCritical ? "#ff6b6b" : isBroken ? "#bdc3c7" : "#fff"} />
+                        <stop offset="50%" stopColor={isCritical ? "#e74c3c" : isBroken ? "#95a5a6" : "#f8f9fa"} />
+                        <stop offset="100%" stopColor={isCritical ? "#c0392b" : isBroken ? "#7f8c8d" : "#dfe6e9"} />
                     </radialGradient>
-                    {/* 반짝이 효과 */}
                     <radialGradient id="sparkle" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stopColor="white" stopOpacity="0.8" />
+                        <stop offset="0%" stopColor="white" stopOpacity="0.9" />
                         <stop offset="100%" stopColor="white" stopOpacity="0" />
                     </radialGradient>
                 </defs>
@@ -128,8 +124,8 @@ const CrackedEgg = memo(({ hp, maxHp, tool, onEggClick, ref }) => {
                     {extra}
                 </g>
 
-                {/* 10단계 금(Cracks) - 단계가 올라갈수록 더 많은 금이 나타남 */}
-                <g stroke="#5d4037" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.7" style={{ pointerEvents: 'none' }}>
+                {/* 10단계 금(Cracks) */}
+                <g stroke="#636e72" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.6" style={{ pointerEvents: 'none' }}>
                     {stage >= 1 && <path d="M100 30 L110 50 L90 60" />}
                     {stage >= 2 && <path d="M50 100 L70 110 L60 130" />}
                     {stage >= 3 && <path d="M140 80 L130 100 L150 110" />}
@@ -897,7 +893,7 @@ const GameArea = ({
         }
 
         // Random Cute Particle
-        const randomParticle = CUTE_PARTICLES[Math.floor(Math.random() * CUTE_PARTICLES.length)];
+        const randomParticle = PARTICLES[Math.floor(Math.random() * PARTICLES.length)];
         
         // Push effects to Canvas Queue (No State Update!)
         const nowEffectTime = 800; // ms
@@ -990,7 +986,7 @@ const GameArea = ({
                 for (let i = 0; i < 5; i++) {
                     effectsRef.current.push({
                         type: 'emoji',
-                        text: CUTE_PARTICLES[Math.floor(Math.random() * CUTE_PARTICLES.length)],
+                        text: PARTICLES[Math.floor(Math.random() * PARTICLES.length)],
                         x: x + (Math.random() * 100 - 50),
                         y: y + (Math.random() * 100 - 50),
                         size: 25 + Math.random() * 15,
@@ -1009,62 +1005,60 @@ const GameArea = ({
 
             {/* Notification removed (moved to App.jsx) */}
 
-            {/* Minimal Settings Toggles (Text + Pill Switches) */}
-            <div 
+            {/* Settings Toggles */}
+            <div
                 style={{
                     position: 'absolute',
-                    top: '10px',
-                    right: '10px',
+                    top: '12px',
+                    right: '12px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '8px',
+                    gap: '6px',
                     zIndex: 100,
-                    padding: '12px',
-                    borderRadius: '18px',
-                    background: isSettingsFocused ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.15)',
-                    border: isSettingsFocused ? '2px solid #fff' : '1px solid rgba(255, 255, 255, 0.3)',
-                    boxShadow: isSettingsFocused ? '0 10px 25px rgba(0,0,0,0.1)' : 'none',
-                    backdropFilter: isSettingsFocused ? 'blur(10px)' : 'none',
-                    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                    opacity: isSettingsFocused ? 1 : 0.25, 
+                    padding: '10px',
+                    borderRadius: '10px',
+                    background: isSettingsFocused ? '#fff' : 'rgba(255,255,255,0.6)',
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    boxShadow: isSettingsFocused ? '0 4px 16px rgba(0,0,0,0.1)' : '0 2px 8px rgba(0,0,0,0.04)',
+                    transition: 'all 0.2s ease',
+                    opacity: isSettingsFocused ? 1 : 0.5,
                     cursor: 'pointer',
-                    minWidth: '110px'
+                    minWidth: '100px'
                 }}
                 onClick={(e) => {
                     e.stopPropagation();
                     setIsSettingsFocused(true);
                 }}
             >
-                {/* Switch Item Helper */}
                 {[
-                    { label: lang.soundOn || 'SFX', active: isSoundOn, toggle: toggleSound },
-                    { label: lang.bgmOn || 'BGM', active: isBgmOn, toggle: toggleBgm },
-                    { label: lang.vibrationOn || 'Vib', active: isVibrationOn, toggle: toggleVibration }
+                    { label: '효과음', active: isSoundOn, toggle: toggleSound },
+                    { label: '배경음', active: isBgmOn, toggle: toggleBgm },
+                    { label: '진동', active: isVibrationOn, toggle: toggleVibration }
                 ].map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#5d4037' }}>{item.label}</span>
-                        <div 
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#636e72' }}>{item.label}</span>
+                        <div
                             onClick={(e) => { e.stopPropagation(); item.toggle(); }}
                             style={{
-                                width: '36px',
-                                height: '20px',
-                                background: item.active ? '#ff9a9e' : '#bbb',
-                                borderRadius: '20px',
+                                width: '32px',
+                                height: '18px',
+                                background: item.active ? '#2d3436' : '#dfe6e9',
+                                borderRadius: '9px',
                                 position: 'relative',
-                                transition: 'background 0.3s',
+                                transition: 'background 0.2s',
                                 cursor: 'pointer'
                             }}
                         >
                             <div style={{
-                                width: '16px',
-                                height: '16px',
+                                width: '14px',
+                                height: '14px',
                                 background: '#fff',
                                 borderRadius: '50%',
                                 position: 'absolute',
                                 top: '2px',
-                                left: item.active ? '18px' : '2px',
-                                transition: 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                left: item.active ? '16px' : '2px',
+                                transition: 'left 0.2s ease',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
                             }} />
                         </div>
                     </div>
@@ -1077,14 +1071,17 @@ const GameArea = ({
                 {/* 에그퐁 제목 제거 (상단 바와 중복) */}
                 <p className="subtitle">{lang.subtitle}</p>
                 {combo > 5 && (
-                    <div style={{ 
-                        color: '#ff4081', 
-                        fontWeight: '900', 
-                        fontSize: '1.5rem', 
-                        animation: 'bounceIn 0.3s',
-                        marginTop: '5px'
+                    <div style={{
+                        color: '#e17055',
+                        fontWeight: '700',
+                        fontSize: '1.1rem',
+                        marginTop: '4px',
+                        padding: '4px 12px',
+                        background: 'rgba(225, 112, 85, 0.1)',
+                        borderRadius: '16px',
+                        display: 'inline-block'
                     }}>
-                        🔥 {combo} COMBO! 🔥
+                        {combo} COMBO
                     </div>
                 )}
             </div>
@@ -1113,16 +1110,16 @@ const GameArea = ({
                         top: '50%',
                         left: '50%',
                         transform: 'translate(-50%, -50%)',
-                        background: 'rgba(255, 255, 255, 0.9)',
+                        background: 'rgba(255, 255, 255, 0.95)',
                         padding: '15px 25px',
-                        borderRadius: '20px',
-                        boxShadow: '0 0 20px rgba(0,0,0,0.1)',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                         zIndex: 100,
-                        fontWeight: 'bold',
-                        color: '#ff6f61',
+                        fontWeight: '600',
+                        color: '#2d3436',
                         pointerEvents: 'none',
                         animation: 'pulse 1s infinite',
-                        border: '2px solid #ffb6c1',
+                        border: '1px solid rgba(0,0,0,0.08)',
                         whiteSpace: 'nowrap'
                     }}>
                         {guideText}
@@ -1160,13 +1157,13 @@ const GameArea = ({
                              winnerLocked === true ? (
                                 <>
                                     <div style={{ fontSize: '4rem', marginBottom: '15px' }}>🎉</div>
-                                    <h2 style={{ color: '#ff6f61', fontSize: '1.8rem', marginBottom: '10px' }}>{lang.congratsTitle}</h2>
-                                    <p style={{ color: '#5d4037', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '5px' }}>
+                                    <h2 style={{ color: '#2d3436', fontSize: '1.8rem', marginBottom: '10px' }}>{lang.congratsTitle}</h2>
+                                    <p style={{ color: '#636e72', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '5px' }}>
                                         {serverState?.prize || serverState?.announcement}
                                     </p>
-                                    
+
                                     {prizeSecretImageUrl && (
-                                        <div style={{ margin: '15px 0', border: '2px dashed #ffb6c1', padding: '10px', borderRadius: '10px' }}>
+                                        <div style={{ margin: '15px 0', border: '2px dashed #dfe6e9', padding: '10px', borderRadius: '10px' }}>
                                             <p style={{ fontSize: '0.9rem', color: '#888', marginBottom: '5px' }}>Secret Code / Image</p>
                                             <img 
                                                 src={prizeSecretImageUrl} 
@@ -1181,16 +1178,16 @@ const GameArea = ({
                                         <>
                                             {/* If Prize Image exists, show Save Button instead of Email Input */}
                                             {prizeSecretImageUrl ? (
-                                                <button 
+                                                <button
                                                     onClick={handleSavePrize}
                                                     disabled={isSubmitting}
-                                                    style={{ 
-                                                        background: isSubmitting ? '#ccc' : '#ff4081', 
-                                                        color: '#fff', border: 'none', 
-                                                        padding: '15px 40px', borderRadius: '30px', 
-                                                        fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer',
-                                                        width: '100%', boxShadow: '0 5px 15px rgba(255, 64, 129, 0.4)',
-                                                        animation: 'pulse 1s infinite'
+                                                    style={{
+                                                        background: isSubmitting ? '#b2bec3' : '#2d3436',
+                                                        color: '#fff', border: 'none',
+                                                        padding: '15px 40px', borderRadius: '12px',
+                                                        fontSize: '1.2rem', fontWeight: '600', cursor: 'pointer',
+                                                        width: '100%', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                                        transition: 'all 0.2s'
                                                     }}
                                                 >
                                                     {isSubmitting ? "Processing..." : lang.savePrizeBtn}
@@ -1198,30 +1195,30 @@ const GameArea = ({
                                             ) : (
                                                 /* Fallback to Email Input if no image (or physical prize) */
                                                 <>
-                                                    <p style={{ fontSize: '0.95rem', color: '#8d6e63', marginBottom: '20px' }}>
+                                                    <p style={{ fontSize: '0.95rem', color: '#636e72', marginBottom: '20px' }}>
                                                         {lang.enterEmailDesc} <br/>
-                                                        <span style={{ fontSize: '0.8rem', color: '#e57373' }}>
+                                                        <span style={{ fontSize: '0.8rem', color: '#e17055' }}>
                                                             ({winnerCountdown}초 내 미입력 시 취소됨)
                                                         </span>
                                                     </p>
-                                                    <input 
-                                                        type="email" 
-                                                        placeholder="example@email.com" 
+                                                    <input
+                                                        type="email"
+                                                        placeholder="example@email.com"
                                                         value={winnerEmail}
                                                         onChange={(e) => setWinnerEmail(e.target.value)}
-                                                        style={{ 
-                                                            padding: '12px', width: '80%', borderRadius: '8px', 
-                                                            border: '1px solid #ccc', marginBottom: '15px', fontSize: '1rem' 
+                                                        style={{
+                                                            padding: '12px', width: '80%', borderRadius: '10px',
+                                                            border: '1px solid #dfe6e9', marginBottom: '15px', fontSize: '1rem'
                                                         }}
                                                     />
-                                                    <button 
-                                                        onClick={() => handleSubmit()} 
+                                                    <button
+                                                        onClick={() => handleSubmit()}
                                                         disabled={isSubmitting}
-                                                        style={{ 
-                                                            background: isSubmitting ? '#ccc' : '#4caf50', 
-                                                            color: '#fff', border: 'none', 
-                                                            padding: '12px 30px', borderRadius: '25px', 
-                                                            fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer',
+                                                        style={{
+                                                            background: isSubmitting ? '#b2bec3' : '#2d3436',
+                                                            color: '#fff', border: 'none',
+                                                            padding: '12px 30px', borderRadius: '12px',
+                                                            fontSize: '1.1rem', fontWeight: '600', cursor: 'pointer',
                                                             width: '100%'
                                                         }}
                                                     >
@@ -1245,12 +1242,12 @@ const GameArea = ({
                             ) : (
                                 <>
                                     <div style={{ fontSize: '4rem', marginBottom: '15px' }}>⏳</div>
-                                    <h2 style={{ color: '#5d4037', marginBottom: '10px' }}>승자 확인 중...</h2>
-                                    <p style={{ color: '#8d6e63', marginBottom: '20px' }}>
+                                    <h2 style={{ color: '#2d3436', marginBottom: '10px' }}>승자 확인 중...</h2>
+                                    <p style={{ color: '#636e72', marginBottom: '20px' }}>
                                         다른 플레이어가 알을 깼습니다.<br/>
                                         승자가 정보를 입력하는 중입니다.
                                     </p>
-                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ff6f61' }}>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#e17055' }}>
                                         {loserCountdown}
                                     </p>
                                 </>
@@ -1261,11 +1258,11 @@ const GameArea = ({
                         {isFinished && (
                             <>
                                 <div style={{ fontSize: '4rem', marginBottom: '15px' }}>🏁</div>
-                                <h2 style={{ color: '#ff6f61', fontSize: '2rem', marginBottom: '10px' }}>{lang.roundOverTitle}</h2>
-                                <p style={{ color: '#5d4037', fontSize: '1.1rem', marginBottom: '25px', lineHeight: '1.6' }}>
+                                <h2 style={{ color: '#2d3436', fontSize: '2rem', marginBottom: '10px' }}>{lang.roundOverTitle}</h2>
+                                <p style={{ color: '#636e72', fontSize: '1.1rem', marginBottom: '25px', lineHeight: '1.6' }}>
                                     {lang.roundOverDesc} <br/> (다음 라운드 준비 중)
                                 </p>
-                                <button onClick={handleRetry} style={{ background: '#ff6f61', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '5px', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                                <button onClick={handleRetry} style={{ background: '#2d3436', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '10px', fontSize: '1.1rem', fontWeight: '600' }}>
                                     {lang.retryBtn || "새로고침"}
                                 </button>
                             </>
@@ -1275,9 +1272,9 @@ const GameArea = ({
                         {showRetry && !isFinished && (
                             <>
                                 <div style={{ fontSize: '4rem', marginBottom: '15px' }}>👀</div>
-                                <h2 style={{ color: '#5d4037', marginBottom: '10px' }}>관전 모드</h2>
-                                <p style={{ marginBottom: '20px' }}>게임이 종료되었거나 이미 참여했습니다.</p>
-                                <button onClick={handleRetry} style={{ background: '#ff6f61', color: '#fff', border: 'none', padding: '12px 30px', borderRadius: '25px', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                                <h2 style={{ color: '#2d3436', marginBottom: '10px' }}>관전 모드</h2>
+                                <p style={{ color: '#636e72', marginBottom: '20px' }}>게임이 종료되었거나 이미 참여했습니다.</p>
+                                <button onClick={handleRetry} style={{ background: '#2d3436', color: '#fff', border: 'none', padding: '12px 30px', borderRadius: '12px', fontSize: '1.1rem', fontWeight: '600' }}>
                                     {lang.retryBtn || "다시 접속하기"}
                                 </button>
                             </>
@@ -1294,42 +1291,42 @@ const GameArea = ({
                 <div className="hp-text">{hp.toLocaleString()} HP</div>
             </div>
 
-            {/* 오늘 상품 보러가기 버튼 (구 광고 버튼 위치) */}
-            <a 
+            {/* 오늘 상품 보러가기 버튼 */}
+            <a
                 href={serverState?.prizeUrl || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => { if(!serverState?.prizeUrl) { e.preventDefault(); alert("등록된 상품 링크가 없습니다."); } }}
-                className="power-btn"
+                onClick={(e) => { if(!serverState?.prizeUrl) { e.preventDefault(); } }}
                 style={{
                     textDecoration: 'none',
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: 'linear-gradient(45deg, #FF6F61, #FF9A9E)',
-                    boxShadow: '0 6px 20px rgba(255, 111, 97, 0.4)',
-                    border: 'none'
+                    gap: '8px',
+                    background: '#fff',
+                    padding: '14px 24px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                    marginBottom: '12px',
+                    transition: 'all 0.2s ease'
                 }}
             >
-                <span className="btn-title" style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '900' }}>
-                    🎁 오늘 상품 보러가기
-                </span>
-                <span className="btn-sub" style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.8rem' }}>
-                    (클릭 시 해당 상품으로 이동)
+                <span style={{ fontSize: '1.2rem' }}>🎁</span>
+                <span style={{ color: '#2d3436', fontSize: '0.95rem', fontWeight: '600' }}>
+                    오늘의 상품 보러가기
                 </span>
             </a>
 
-            <div className="coupang-notice" style={{
-                    fontSize: '8px', 
-                    color: 'rgba(0,0,0,0.4)', 
-                    textAlign: 'center', 
-                    marginBottom: '15px',
-                    marginTop: '-10px',
-                    pointerEvents: 'none'
-                }}>
-                    이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다
-                </div>
+            <div style={{
+                fontSize: '0.65rem',
+                color: 'rgba(0,0,0,0.35)',
+                textAlign: 'center',
+                marginBottom: '16px',
+                pointerEvents: 'none'
+            }}>
+                이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다
+            </div>
             
           <div className="status-row glass">
             <div>{lang.myPoint}: <span>{myPoints}</span></div>
@@ -1346,18 +1343,18 @@ const GameArea = ({
             justifyContent: 'center'
           }}>
               <p key={currentFactIndex} style={{ // Key to trigger animation on change
-                fontSize: '0.9rem',
-                color: '#8d6e63',
-                fontWeight: 'bold',
-                background: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '0.85rem',
+                color: '#636e72',
+                fontWeight: '500',
+                background: 'rgba(255, 255, 255, 0.8)',
                 padding: '8px 20px',
-                borderRadius: '20px',
-                border: '1px dashed #d7ccc8',
+                borderRadius: '12px',
+                border: '1px solid rgba(0,0,0,0.06)',
                 animation: 'fadeIn 0.5s',
                 maxWidth: '90%',
                 wordBreak: 'keep-all'
               }}>
-                🥚 {lang.eggFacts ? lang.eggFacts[currentFactIndex] : "Loading..."}
+                {lang.eggFacts ? lang.eggFacts[currentFactIndex] : "Loading..."}
               </p>
           </div>
         </main>

@@ -1,126 +1,187 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 
 const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handleKakaoShare, prizeUrl, isOpen, toggleMobilePanel, shareCount = 0 }) => {
-  // 귀여운 아이콘으로 변경
-  const TOOL_ITEMS = [
-    { id: 'item1', name: lang.item1, cost: 500, power: 1, icon: '🌸', bgColor: '#fff0f5' },
-    { id: 'item2', name: lang.item2, cost: 2500, power: 6, icon: '💎', bgColor: '#e8f4fd' },
-    { id: 'item3', name: lang.item3, cost: 12000, power: 35, icon: '🎀', bgColor: '#fef0f5' },
-    { id: 'item4', name: lang.item4, cost: 60000, power: 200, icon: '🌈', bgColor: '#f0fff4' },
-    { id: 'item5', name: lang.item5, cost: 300000, power: 1200, icon: '🦄', bgColor: '#f5f0ff' },
-    { id: 'item6', name: lang.item6, cost: 1500000, power: 7000, icon: '⭐', bgColor: '#fffef0' },
-    { id: 'item7', name: lang.item7, cost: 10000000, power: 60000, icon: '🌟', bgColor: '#fff5f0' },
+  // 아이템 데이터
+  const SHOP_ITEMS = [
+    { key: 'hammer', name: lang.item1, cost: 500, power: 1, icon: '🔨', tier: 1 },
+    { key: 'pickaxe', name: lang.item2, cost: 2500, power: 6, icon: '⛏️', tier: 2 },
+    { key: 'dynamite', name: lang.item3, cost: 12000, power: 35, icon: '💣', tier: 3 },
+    { key: 'drill', name: lang.item4, cost: 60000, power: 200, icon: '🔧', tier: 4 },
+    { key: 'excavator', name: lang.item5, cost: 300000, power: 1200, icon: '🏗️', tier: 5 },
+    { key: 'laser', name: lang.item6, cost: 1500000, power: 7000, icon: '⚡', tier: 6 },
+    { key: 'nuke', name: lang.item7, cost: 10000000, power: 60000, icon: '🚀', tier: 7 },
   ];
 
+  const formatNumber = (num) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(num >= 10000 ? 0 : 1)}K`;
+    return num.toLocaleString();
+  };
+
+  const getTierColor = (tier) => {
+    const colors = {
+      1: '#78909c', // 회색
+      2: '#66bb6a', // 초록
+      3: '#42a5f5', // 파랑
+      4: '#ab47bc', // 보라
+      5: '#ff7043', // 주황
+      6: '#ec407a', // 핑크
+      7: '#ffd54f', // 금색
+    };
+    return colors[tier] || '#78909c';
+  };
+
   return (
-    <aside 
-        className={`panel right-panel glass ${isOpen ? 'active' : ''}`} 
-        style={{ 
-            overflowY: 'auto',
-            transition: 'transform 0.4s cubic-bezier(0.33, 1, 0.68, 1)'
-        }}
-    >
-      <div 
-        className="panel-header"
-      >
+    <aside className={`panel right-panel ${isOpen ? 'active' : ''}`}>
+      <div className="panel-header">
         <h3>{lang.shop}</h3>
-        <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>×</button>
+        <button className="panel-close-btn" onClick={() => toggleMobilePanel('none')}>✕</button>
       </div>
 
-      <button 
-        onClick={handleKakaoShare}
-        style={{
+      {/* 카카오 공유 버튼 */}
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+        <button
+          onClick={handleKakaoShare}
+          disabled={shareCount >= 5}
+          style={{
             width: '100%',
             background: shareCount >= 5 ? '#e0e0e0' : '#FEE500',
-            color: shareCount >= 5 ? '#999' : '#000000',
+            color: shareCount >= 5 ? '#999' : '#3c1e1e',
             border: 'none',
-            padding: '12px',
-            borderRadius: '8px',
-            fontWeight: 'bold',
-            marginBottom: '15px',
+            padding: '14px 16px',
+            borderRadius: '12px',
+            fontWeight: '600',
+            fontSize: '0.95rem',
             cursor: shareCount >= 5 ? 'default' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px'
-        }}
-        disabled={shareCount >= 5}
-      >
-        <span style={{fontSize: '1.2rem'}}>💬</span> 
-        {lang.shareReward} {shareCount >= 5 ? '(Max)' : `(${shareCount}/5)`}
-      </button>
+            gap: '8px',
+            transition: 'all 0.2s',
+            boxShadow: shareCount >= 5 ? 'none' : '0 2px 8px rgba(254, 229, 0, 0.4)'
+          }}
+        >
+          <span style={{ fontSize: '1.1rem' }}>💬</span>
+          친구 초대하고 800P 받기
+          <span style={{
+            background: 'rgba(0,0,0,0.1)',
+            padding: '2px 8px',
+            borderRadius: '10px',
+            fontSize: '0.8rem'
+          }}>
+            {shareCount}/5
+          </span>
+        </button>
+      </div>
 
-      <div className="shop-list" style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px' }}>
-        {TOOL_ITEMS.map((item, idx) => {
-          const toolNames = ['hammer', 'pickaxe', 'dynamite', 'drill', 'excavator', 'laser', 'nuke'];
+      {/* 내 현재 상태 */}
+      <div style={{
+        padding: '12px 16px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        margin: '12px',
+        borderRadius: '12px',
+        color: 'white'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '2px' }}>보유 포인트</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: '700' }}>{myPoints.toLocaleString()}P</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '2px' }}>현재 공격력</div>
+            <div style={{ fontSize: '1.4rem', fontWeight: '700' }}>x{clickPower.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 상점 아이템 리스트 */}
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '0 12px 12px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px'
+      }}>
+        {SHOP_ITEMS.map((item) => {
           const canBuy = myPoints >= item.cost;
-          const formatCost = (cost) => {
-            if (cost >= 1000000) return `${(cost/1000000).toFixed(1)}M`;
-            if (cost >= 1000) return `${(cost/1000).toFixed(cost >= 10000 ? 0 : 1)}k`;
-            return cost;
-          };
+          const tierColor = getTierColor(item.tier);
 
           return (
             <div
-              key={item.id}
-              className="shop-item"
-              onClick={() => canBuy && buyItem(item.cost, item.power, toolNames[idx])}
+              key={item.key}
+              onClick={() => canBuy && buyItem(item.cost, item.power, item.key)}
               style={{
-                background: canBuy ? `linear-gradient(135deg, ${item.bgColor}, #ffffff)` : '#f5f5f5',
-                opacity: canBuy ? 1 : 0.6,
-                cursor: canBuy ? 'pointer' : 'not-allowed',
-                border: canBuy ? '2px solid #ffb6c1' : '1px solid #ddd',
-                borderRadius: '16px',
-                padding: '12px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
+                padding: '12px',
+                background: canBuy ? '#fff' : '#f8f9fa',
+                border: `1px solid ${canBuy ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.04)'}`,
+                borderRadius: '12px',
+                cursor: canBuy ? 'pointer' : 'not-allowed',
+                opacity: canBuy ? 1 : 0.5,
                 transition: 'all 0.2s ease',
-                boxShadow: canBuy ? '0 4px 12px rgba(255, 182, 193, 0.3)' : 'none'
+                boxShadow: canBuy ? '0 2px 8px rgba(0,0,0,0.04)' : 'none'
               }}
             >
+              {/* 아이콘 */}
               <div style={{
-                fontSize: '2rem',
-                width: '50px',
-                height: '50px',
+                width: '44px',
+                height: '44px',
+                background: `linear-gradient(135deg, ${tierColor}20, ${tierColor}10)`,
+                borderRadius: '10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'white',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                fontSize: '1.5rem',
+                flexShrink: 0
               }}>
                 {item.icon}
               </div>
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#5d4037', fontWeight: '700' }}>{item.name}</h4>
+
+              {/* 정보 */}
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  fontSize: '0.85rem',
-                  color: canBuy ? '#ff6f61' : '#999',
+                  fontSize: '0.9rem',
                   fontWeight: '600',
-                  marginTop: '4px'
+                  color: '#2d3436',
+                  marginBottom: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}>
-                  💰 {formatCost(item.cost)} P
+                  {item.name}
                   <span style={{
-                    color: '#9c27b0',
-                    marginLeft: '8px',
-                    background: 'rgba(156, 39, 176, 0.1)',
+                    fontSize: '0.65rem',
                     padding: '2px 6px',
-                    borderRadius: '8px',
-                    fontSize: '0.75rem'
+                    borderRadius: '4px',
+                    background: tierColor,
+                    color: 'white',
+                    fontWeight: '500'
                   }}>
-                    +{item.power.toLocaleString()} ATK
+                    +{formatNumber(item.power)}
                   </span>
                 </div>
+                <div style={{
+                  fontSize: '0.85rem',
+                  color: canBuy ? '#e17055' : '#b2bec3',
+                  fontWeight: '600'
+                }}>
+                  {formatNumber(item.cost)} P
+                </div>
               </div>
+
+              {/* 구매 버튼 */}
               {canBuy && (
                 <div style={{
-                  background: 'linear-gradient(45deg, #ff9a9e, #fad0c4)',
+                  padding: '8px 14px',
+                  background: 'linear-gradient(135deg, #ff6b6b, #ee5a5a)',
                   color: 'white',
-                  padding: '6px 12px',
-                  borderRadius: '20px',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold'
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  flexShrink: 0
                 }}>
                   구매
                 </div>
@@ -130,17 +191,17 @@ const RightPanel = ({ lang, buyItem, myPoints, clickPower, myTotalClicks, handle
         })}
       </div>
 
-      <div className="status-row glass">
-        <div style={{width:'100%', textAlign:'center'}}>{lang.atk}: <span>x{clickPower}</span></div>
+      {/* 하단 통계 */}
+      <div style={{
+        padding: '12px 16px',
+        borderTop: '1px solid rgba(0,0,0,0.06)',
+        background: '#f8f9fa',
+        fontSize: '0.8rem',
+        color: '#636e72',
+        textAlign: 'center'
+      }}>
+        누적 클릭: {myTotalClicks.toLocaleString()}회
       </div>
-
-      <div className="info-box">
-        <h4>📊 {lang.myInfoTitle}</h4>
-        <p>
-          {lang.totalClick}: {myTotalClicks}
-        </p>
-      </div>
-
     </aside>
   );
 };

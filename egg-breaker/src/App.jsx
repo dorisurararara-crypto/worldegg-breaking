@@ -716,26 +716,23 @@ function App() {
       {notification && (
         <div style={{
             position: 'fixed',
-            top: '10%',
+            top: '80px',
             left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: 'rgba(255, 255, 255, 0.95)',
-            color: '#ff6f61',
-            border: '3px solid #ffb6c1',
-            padding: '12px 30px',
-            borderRadius: '50px',
-            fontWeight: '800',
-            fontSize: '1.2rem',
+            transform: 'translateX(-50%)',
+            background: '#2d3436',
+            color: '#fff',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            fontWeight: '500',
+            fontSize: '0.95rem',
             zIndex: 10000,
             pointerEvents: 'none',
-            animation: 'bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-            boxShadow: '0 8px 20px rgba(255, 105, 180, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            whiteSpace: 'nowrap'
+            animation: 'fadeIn 0.2s ease-out forwards',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+            maxWidth: '90%',
+            textAlign: 'center'
         }}>
-            <span style={{fontSize: '1.5rem'}}>🛍️</span> {notification}
+            {notification}
         </div>
       )}
       <Header 
@@ -749,12 +746,12 @@ function App() {
       />
       
       {announcement && !hideAnnouncement && (
-        <div 
+        <div
           onClick={() => setHideAnnouncement(true)}
           style={{
-            background: '#ffefd5', color: '#ff6f61', padding: '12px', textAlign: 'center', fontWeight: 'bold',
-            animation: 'fadeIn 0.5s', borderRadius: '0 0 20px 20px', boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-            border: '1px solid #ffe4e1', marginBottom: '10px', cursor: 'pointer'
+            background: '#fff', color: '#2d3436', padding: '12px', textAlign: 'center', fontWeight: '600',
+            animation: 'fadeIn 0.5s', borderRadius: '0 0 16px 16px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+            border: '1px solid rgba(0,0,0,0.06)', marginBottom: '10px', cursor: 'pointer'
           }}
         >
           📢 {announcement} <span style={{ fontSize: '0.8rem', opacity: 0.7, fontWeight: 'normal', marginLeft: '5px' }}>{lang.tapToClose}</span>
@@ -861,19 +858,19 @@ function App() {
             {isPollingPaused && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                    background: 'rgba(255, 255, 255, 0.8)', 
+                    background: 'rgba(255, 255, 255, 0.9)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    zIndex: 1100, 
+                    zIndex: 1100,
                     backdropFilter: 'blur(3px)'
                 }}>
-                    <h3 style={{color: '#5d4037', marginBottom: '15px'}}>💤 절전 모드</h3>
-                    <button 
+                    <h3 style={{color: '#2d3436', marginBottom: '15px'}}>💤 절전 모드</h3>
+                    <button
                         onClick={resumePolling}
                         className="pulse-btn"
                         style={{
-                            padding: '12px 30px', fontSize: '1.2rem', fontWeight: 'bold',
-                            background: '#ff6f61', color: 'white', border: 'none', borderRadius: '30px',
-                            cursor: 'pointer', boxShadow: '0 5px 15px rgba(255, 111, 97, 0.4)'
+                            padding: '12px 30px', fontSize: '1.2rem', fontWeight: '600',
+                            background: '#2d3436', color: 'white', border: 'none', borderRadius: '12px',
+                            cursor: 'pointer', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                         }}
                     >
                         화면 켜기
@@ -881,33 +878,36 @@ function App() {
                 </div>
             )}
 
-            {/* JOIN BUTTON OVERLAY (When NOT connected and PLAYING) */}
+            {/* JOIN BUTTON OVERLAY */}
             {!connected && !isPollingPaused && serverState.status === 'PLAYING' && ((serverState.onlinePlayers < (serverState.maxPlayers || 1000)) || ((serverState.queueLength || 0) < (serverState.maxQueue || 1000))) && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                    background: 'transparent', 
-                    display: 'flex', alignItems: 'flex-end', justifyContent: 'center', // [Mod] Align to bottom
-                    zIndex: 1000, 
+                    background: 'transparent',
+                    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                    zIndex: 1000,
                     pointerEvents: 'none',
-                    paddingBottom: '20px' // [Mod] Add padding from bottom
+                    paddingBottom: '20px'
                 }}>
-                    <button 
+                    <button
                         onClick={connect}
-                        className="pulse-btn"
                         style={{
-                            pointerEvents: 'auto', 
-                            padding: '15px 40px', fontSize: '1.5rem', fontWeight: '900', // [Mod] Slightly smaller
-                            background: 'linear-gradient(45deg, #ff6f61, #ff9a9e)',
-                            color: 'white', border: 'none', borderRadius: '50px',
-                            cursor: 'pointer', 
-                            boxShadow: '0 10px 30px rgba(255, 111, 97, 0.5)',
-                            transform: 'scale(1)', transition: 'transform 0.2s',
-                            textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            pointerEvents: 'auto',
+                            padding: '14px 32px',
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            background: '#2d3436',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                            transition: 'all 0.2s ease'
                         }}
                     >
                         {
-                            (serverState.onlinePlayers >= (serverState.maxPlayers || 1000) && (serverState.queueLength || 0) < (serverState.maxQueue || 1000)) ? `⏳ ${lang.joinQueue || "Join Queue"}` :
-                            `⚔️ ${lang.joinGame || "JOIN GAME"}`
+                            (serverState.onlinePlayers >= (serverState.maxPlayers || 1000) && (serverState.queueLength || 0) < (serverState.maxQueue || 1000))
+                            ? `대기열 참여`
+                            : `게임 참여하기`
                         }
                     </button>
                 </div>

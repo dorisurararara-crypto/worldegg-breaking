@@ -49,33 +49,33 @@ const InfoPanel = ({ lang, recentWinners, prize, prizeUrl, isOpen, toggleMobileP
       </div>
       
       <div className="scroll-box">
-        <h4 style={{ margin: '15px 0 10px', color: '#ff6f61', textAlign: 'center' }}>📅 {lang.recentPrizes}</h4>
-        
+        <h4 style={{ margin: '15px 0 10px', color: '#2d3436', textAlign: 'center' }}>📅 {lang.recentPrizes}</h4>
+
         {recentWinners && recentWinners.length > 0 ? (
             <div className="prize-list">
                 {recentWinners.map((w, i) => (
-                    <div key={i} className="prize-item" style={{ 
-                        background: 'white', 
-                        margin: '10px', 
-                        padding: '15px', 
-                        borderRadius: '15px',
-                        boxShadow: '0 4px 10px rgba(0,0,0,0.05)',
-                        border: '1px solid #ffe4e1'
+                    <div key={i} className="prize-item" style={{
+                        background: 'white',
+                        margin: '10px',
+                        padding: '15px',
+                        borderRadius: '12px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                        border: '1px solid rgba(0,0,0,0.06)'
                     }}>
-                        <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '5px' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#b2bec3', marginBottom: '5px' }}>
                             ROUND {w.round}
                         </div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#5d4037' }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#2d3436' }}>
                             {w.prize || "Secret Prize"}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#ccc', marginTop: '5px' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#b2bec3', marginTop: '5px' }}>
                             {new Date(w.date).toLocaleDateString()}
                         </div>
                     </div>
                 ))}
             </div>
         ) : (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#aaa' }}>
+            <div style={{ textAlign: 'center', padding: '20px', color: '#b2bec3' }}>
                 {lang.noRecords}
             </div>
         )}
