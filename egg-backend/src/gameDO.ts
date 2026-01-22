@@ -66,10 +66,10 @@ export class GameDO extends DurableObject {
   
   // Constants
   MAX_PLAYERS = 1000;
-  MAX_QUEUE = 1000; 
-  BROADCAST_INTERVAL_MS = 2000; 
-  SAVE_INTERVAL_MS = 20000; 
-  CLEANUP_INTERVAL_MS = 60000; // [New]
+  MAX_QUEUE = 1000;   // 대기자 1000명
+  BROADCAST_INTERVAL_MS = 2000;
+  SAVE_INTERVAL_MS = 20000;
+  CLEANUP_INTERVAL_MS = 60000;
   
   // Loop Handles
   broadcastInterval: any = null;
@@ -320,8 +320,8 @@ export class GameDO extends DurableObject {
           await this.env.STATE_BUCKET.put("state.json", JSON.stringify(publicState), {
               httpMetadata: {
                   contentType: "application/json",
-                  // Cache: Public 20s, Stale 120s
-                  cacheControl: "public, max-age=20, stale-while-revalidate=120",
+                  // Cache: Public 5s, Stale 30s (실시간성 개선)
+                  cacheControl: "public, max-age=5, stale-while-revalidate=30",
               }
           });
           
@@ -354,11 +354,26 @@ export class GameDO extends DurableObject {
       if (request.headers.get("Upgrade") !== "websocket") {
         return new Response("Expected Upgrade: websocket", { status: 426 });
       }
-      
+
+      // [비용 최적화] 빠른 FULL 체크 - WebSocket 연결 전에 거부
+      const totalSlots = this.MAX_PLAYERS + this.MAX_QUEUE;
+      const currentOccupancy = this.players.size + this.queue.length;
+      if (currentOccupancy >= totalSlots) {
+          return new Response(JSON.stringify({
+              error: "Server Full",
+              code: "FULL",
+              onlinePlayers: this.players.size,
+              queueLength: this.queue.length
+          }), {
+              status: 503,
+              headers: { "Content-Type": "application/json" }
+          });
+      }
+
       const { 0: client, 1: server } = new WebSocketPair();
       const ip = request.headers.get("CF-Connecting-IP") || "unknown";
-      const mode = url.searchParams.get("mode") || "spectator"; 
-      
+      const mode = url.searchParams.get("mode") || "spectator";
+
       this.handleSession(server, ip, mode);
 
       return new Response(null, { status: 101, webSocket: client });
@@ -853,7 +868,9 @@ export class GameDO extends DurableObject {
 
   async handleAdmin(request: Request, url: URL) {
       const authKey = request.headers.get("x-admin-key");
-      if (authKey !== "egg1234") return new Response("Unauthorized", { status: 401 });
+      // [Security] 환경변수에서 Admin Key 로드 (없으면 기본값 사용 - 프로덕션에서는 반드시 설정 필요)
+      const expectedKey = this.env.ADMIN_KEY || "egg1234";
+      if (authKey !== expectedKey) return new Response("Unauthorized", { status: 401 });
       
       const action = url.pathname.replace("/admin/", "");
       let details = "";
@@ -1046,28 +1063,10 @@ export class GameDO extends DurableObject {
   }
   
   sendStateTo(ws: WebSocket) {
+      // [Security Fix] buildPublicState 사용하여 민감정보(winningClientId, winningToken, prizeSecretUrl) 제외
       ws.send(JSON.stringify({
           type: 'state',
-          hp: this.gameState.hp,
-          maxHp: this.gameState.maxHp,
-          round: this.gameState.round,
-          status: this.gameState.status,
-          winnerInfo: this.gameState.winnerInfo,
-          winningClientId: this.gameState.winningClientId,
-          onlinePlayers: (this.gameState.fakePlayers && this.gameState.fakePlayers > 0) ? this.gameState.fakePlayers : this.players.size,
-          onlineSpectatorsApprox: this.sessions.size - this.players.size,
-          queueLength: (this.gameState.fakeQueue && this.gameState.fakeQueue > 0) ? this.gameState.fakeQueue : this.queue.length,
-          maxAtk: this.gameState.maxAtk,
-          maxAtkCountry: this.gameState.maxAtkCountry,
-          maxPoints: this.gameState.maxPoints,
-          maxClicks: this.gameState.maxClicks,
-          announcement: this.gameState.announcement,
-          prize: this.gameState.prize,
-          prizeUrl: this.gameState.prizeUrl,
-          adUrl: this.gameState.adUrl,
-          recentWinners: this.gameState.recentWinners,
-          rev: this.gameState.rev,
-          lastUpdatedAt: this.gameState.lastUpdatedAt
+          ...this.buildPublicState()
       }));
   }
 }

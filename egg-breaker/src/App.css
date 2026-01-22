@@ -528,33 +528,51 @@ html.dark-theme .game-area, body.dark-theme .game-area {
 .flag { font-size: 1.4rem; }
 .count { font-weight: 700; color: #ff6f61; }
 
-/* Shop Item Styling */
+/* Shop Item Styling - 귀여운 스타일 */
 .shop-item {
   display: flex;
   align-items: center;
   gap: 15px;
-  background: #ffffff;
-  margin-bottom: 15px;
-  padding: 15px;
-  border-radius: 20px;
+  background: linear-gradient(135deg, #fff0f5, #ffffff);
+  margin-bottom: 10px;
+  padding: 12px;
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s;
-  border: 2px solid transparent;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid #ffb6c1;
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.2);
   position: relative;
   overflow: hidden;
 }
 
-.shop-item:hover {
-  background: #fffafa;
-  border-color: #ffb6c1;
-  transform: translateY(-4px);
-  box-shadow: 0 10px 20px rgba(255, 182, 193, 0.2);
+.shop-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
 }
 
-.shop-item .icon { font-size: 2.2rem; }
-.shop-item .info h4 { margin: 0; font-size: 1.1rem; color: #5d4037; }
-.shop-item .price { color: #ff9a9e; font-weight: 700; font-size: 0.95rem; margin-top: 4px; }
+.shop-item:hover::before {
+  left: 100%;
+}
+
+.shop-item:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(255, 182, 193, 0.35);
+  border-color: #ff9a9e;
+}
+
+.shop-item:active {
+  transform: scale(0.98);
+}
+
+.shop-item .icon { font-size: 2rem; }
+.shop-item .info h4 { margin: 0; font-size: 0.95rem; color: #5d4037; font-weight: 700; }
+.shop-item .price { color: #ff6f61; font-weight: 700; font-size: 0.85rem; margin-top: 4px; }
 
 .info-box {
   padding: 20px;

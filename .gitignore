@@ -4,3 +4,5 @@ dist
 *.msi
 .DS_Store
 .wrangler.idea
+.history
+.claude

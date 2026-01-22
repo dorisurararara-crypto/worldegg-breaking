@@ -1,126 +1,150 @@
-너는 내 레포(worldegg-breaking-main (2).zip / 동일 구조의 로컬 egg-backend, egg-breaker)를 수정하는 코드 패치 담당자다.
-아래 4가지 이슈를 “정확한 파일/앵커 기준”으로 수정하고, 변경된 파일 목록 + 주요 diff 요약 + 테스트 체크리스트를 출력해.
-(중요) 일괄 치환으로 횟수 mismatch 나지 않게, 가능하면 “특정 블록/앵커 기준으로 삽입/삭제” 방식으로 수정해.
+너는 내 코드를 “앵커 기준”으로 수정해라.
+⚠️ 일괄치환(occurrence 개수 기대) 방식 금지. 반드시 아래 앵커(주변 코드 문자열)로 위치를 찾아 “그 자리”에만 수정/삽입해라.
+목표: 월 4~5만원대(관전 10만) 비용 안정화 + 장시간 방치 UX 개선 + 상태 동기화/경합 버그 예방.
 
 ================================================================================
-[1] 백엔드: 우승 처리 후 stateChanged 누락 (R2 state.json 갱신 누락 가능)
+[1] 프론트: 관전자(visible) 기본 폴링 20초 → 30~60초로 상향
+================================================================================
+파일: egg-breaker/src/hooks/useGameState.js
+
+앵커 A(필수):
+- 파일 안에서 “R2 성공” 또는 “R2 fetch success” 이후 nextDelay를 잡는 구간을 찾아라.
+- 특히 아래 중 하나를 포함하는 줄 근처를 찾아 수정:
+  - `nextDelay = 20000`
+  - 또는 `const baseDelay = 20000`
+  - 또는 `POLL_MS_ACTIVE = 20000` 같은 상수
+
+수정 요구:
+- “visible + spectator(connected=false)” 기본 폴링을 최소 30초로 올려라. (권장 45초)
+- 예시(권장값): 45000ms (45초)
+- 기존 jitter 로직은 유지하되, visible 구간은 ±20% 정도면 충분.
+
+반영 방식(앵커 기준):
+- `nextDelay = 20000;` 라인이 있으면 그 라인을 `nextDelay = 45000;` 로 교체.
+- 만약 상수로 정의돼 있으면 `20000`을 `45000`으로 교체.
+- “PLAYING일 때만 더 자주” 같은 적응형이 이미 있으면, 그 로직의 최소값만 30초 이상으로 올려라.
+
+================================================================================
+[2] 프론트: Hard-stop(절전 모드) 조건을 visible/hidden로 분리 (UX 개선)
+================================================================================
+파일: egg-breaker/src/hooks/useGameState.js
+
+앵커 B(필수):
+- 아래 같은 조건을 찾는다:
+  - `idleTime > 2 * 60 * 60 * 1000`
+  - 또는 `IDLE_HARD_STOP_MS`
+  - 또는 `if (idleMs > ... ) { setIsPollingPaused(true) ... }`
+
+현재 문제:
+- visible 상태에서 2시간 인터랙션이 없으면(사용자가 가만히 보기만 해도) 절전이 걸릴 수 있음.
+
+수정 요구:
+- hidden일 때만 2시간 hard-stop 유지
+- visible일 때는 더 느슨하게(권장 8시간) hard-stop 적용
+  - hiddenHardStopMs = 2h
+  - visibleHardStopMs = 8h
+
+반영 방식(앵커 기준):
+- `document.visibilityState === "hidden"` (또는 `isHidden`) 분기 근처에 아래처럼 분리:
+  - `const hardStopMs = isHidden ? 2h : 8h;`
+  - 기존 `idleTime > 2h` 비교는 `idleTime > hardStopMs`로 바꿔라.
+
+================================================================================
+[3] 백엔드: cleanupInactiveSessions()에서 상태 변화 시 broadcastState까지 호출
 ================================================================================
 파일: egg-backend/src/gameDO.ts
 
-현상:
-우승 확정 처리 이후에 `this.gameState.lastUpdatedAt = Date.now();`는 있는데
-`this.stateChanged = true;`가 없어, stateChanged 기반 R2 업로드 게이트가 false면
-관전자들이 보는 R2 state.json이 갱신되지 않을 수 있음.
+앵커 C(필수):
+- `cleanupInactiveSessions()` 함수(또는 비슷한 이름) 정의를 찾아라.
+- 그 안에서 아래 중 하나가 보일 것이다:
+  - `this.broadcastQueueUpdate();`
+  - 또는 `removedPlayers` / `removedQueue` / `removedSpectators` 같은 카운트 변수
+  - 또는 `if (removed > 0) { ... }`
 
 수정 요구:
-- 우승 확정 처리 블록에서 lastUpdatedAt을 갱신하는 지점에 반드시 stateChanged=true를 같이 설정.
+- cleanup이 실제로 무엇인가를 제거/정리해서 “상태가 바뀌었으면”
+  - `this.touchState();` 또는 `this.stateChanged = true;` 를 확실히 세팅
+  - `this.broadcastState();` 를 1회 호출
+- 단, 매 tick마다 무조건 broadcast하지 말고 “변화가 있었을 때만” 호출
 
-정확한 앵커:
-아래 코드가 연속으로 있는 구간을 찾아서 그 “바로 아래”에 stateChanged=true를 추가해.
+반영 방식(앵커 기준):
+- `this.broadcastQueueUpdate();`가 있는 조건 블록을 찾고,
+  그 **바로 아래**에 아래를 추가:
+  - `this.broadcastState();`
+- 그리고 변화가 있었던 조건 블록 안에서 `this.touchState();`(없으면 `this.stateChanged = true; this.gameState.lastUpdatedAt = Date.now();`)도 함께 보장
 
-앵커 블록(대략 이런 형태):
-  this.kickAllPlayers();
-  this.gameState.lastUpdatedAt = Date.now();
-  await this.saveState();
-  await this.updateNextPrize();
-  this.broadcastState();
+================================================================================
+[4] 백엔드: R2 업로드 stateChanged 경합(누락) 방지 - stateVersion 도입
+================================================================================
+파일: egg-backend/src/gameDO.ts
+
+앵커 D-1(필수, 필드 추가):
+- class GameDO 내부 필드 선언들(예: `private stateChanged = false;` 근처)을 찾아라.
 
 수정:
-- `this.gameState.lastUpdatedAt = Date.now();` 다음 줄에:
-  `this.stateChanged = true;`
+- 아래 필드 추가:
+  - `private stateVersion = 0;`
+
+앵커 D-2(필수, 변경 시 증가):
+- `touchState(` 메서드가 있으면 그 메서드 내부를 수정해라.
+  - 앵커: `private touchState` 또는 `touchState(`
+
+수정:
+- touchState 내부에서 stateChanged=true와 함께:
+  - `this.stateVersion++;` 를 추가
+
+(만약 touchState가 없고 여기저기 `lastUpdatedAt` 직접 대입이면)
+- lastUpdatedAt 갱신하는 공용 헬퍼(touchState)를 먼저 만들고,
+- lastUpdatedAt 갱신은 반드시 touchState를 쓰게 해라.
+(기존에 touchState가 이미 있으면 그대로 활용)
+
+앵커 D-3(필수, 업로드 게이트 수정):
+- `async uploadStateToR2()` 함수 정의를 찾아라.
+- 그 안에 아래 같은 패턴이 있을 것:
+  - `if (!this.stateChanged) return;`
+  - 업로드 성공 후 `this.stateChanged = false;`
+
+수정:
+- uploadStateToR2 시작 직전에:
+  - `const v = this.stateVersion;` 를 저장
+- 업로드 성공 후 stateChanged=false 처리할 때:
+  - `if (this.stateVersion === v) this.stateChanged = false;`
+  - (버전이 달라졌으면 false로 덮지 말고 유지)
 
 ================================================================================
-[2] 백엔드: winner timeout 구간에 stateChanged=true 중복 2회 (정리 + 실수 방지)
+[5] 백엔드: R2 cache-control 완화 (재검증 빈도↓ → 비용↓)
 ================================================================================
 파일: egg-backend/src/gameDO.ts
 
-현상:
-winner timeout 처리(우승자가 입력 안 해서 리셋되는 흐름) 쪽에
-`this.stateChanged = true;`가 같은 블록 안에 2번 연속 들어가 있고, 들여쓰기도 깨져 있음.
+앵커 E(필수):
+- `this.env.STATE_BUCKET.put(` 호출 부분을 찾아라.
+- 그 객체 옵션에 아래가 있을 것이다:
+  - `cacheControl: "public, max-age=5, stale-while-revalidate=30"`
 
-수정 요구:
-- 동일 블록 내 연속 중복 1개를 제거하고 들여쓰기를 정상화.
-- 남는 1개는 유지.
-
-정확한 앵커:
-`// winnerTimeoutEndAt` 또는 `winnerTimeoutEndAt`을 다루는 if 블록,
-혹은 `this.gameState.winnerTimeoutEndAt`을 0으로 만들고 status를 PLAYING으로 되돌리는 구간.
-그 블록 안에서 연속으로 있는 stateChanged 2줄 중 하나만 남겨라.
-
-================================================================================
-[3] 정책 선택: "친구당 1번(영구)" 보상 유지 (reset-round에서 invites 삭제 금지)
-================================================================================
-파일: egg-backend/src/gameDO.ts
-
-현상:
-admin/reset-round에서 `DELETE FROM invites;`를 수행하면
-초대 보상이 “라운드마다 1번”이 되어버림.
-
-내 요구사항:
-- 초대 보상은 “친구(=to_user)당 1번”을 영구로 유지.
-- 따라서 reset-round에서 invites 테이블을 삭제하면 안 됨.
-
-수정 요구:
-- admin/reset-round 핸들러 내부에서 `DELETE FROM invites;`를 제거.
-- (선택) 주석으로 “영구 1회 정책이라 삭제하지 않는다” 설명을 추가.
-
-정확한 앵커:
-`if (url.pathname === "/admin/reset-round" && request.method === "POST") { ... }`
-블록 내부에서 invites 관련 DELETE를 찾아 제거.
-
-================================================================================
-[4] 프론트 UX: 플레이어가 꽉 차도 대기열이 남으면 '대기열 참가' 버튼이 떠야 함
-================================================================================
-파일: egg-breaker/src/App.jsx
-
-현상:
-JOIN 오버레이 버튼 표시 조건이
-`serverState.onlinePlayers < 1000` AND `serverState.queueLength < 1000` 이라서
-플레이어가 1000으로 꽉 찼지만 대기열은 남아있는(예: queue=500) 상황에서
-유저가 대기열에 들어갈 수가 없음.
-(문구는 대기 가능이라고 떠도 실제 행동이 막힘)
-
-내 요구사항:
-- 플레이어가 꽉 차도, queueLength < MAX_QUEUE 이면
-  "대기열 참가(Join Queue)" 버튼/오버레이가 표시되어야 함.
-- 즉 JOIN 표시 조건을:
-  (onlinePlayers < MAX_PLAYERS) OR (queueLength < MAX_QUEUE)
-  형태로 바꿔라.
-- 숫자 1000 하드코딩은 가능하면 serverState.maxPlayers/maxQueue를 우선 사용하고,
-  없으면 1000으로 폴백.
-
-정확한 앵커:
-App.jsx에서 Join 오버레이 렌더링을 찾고(대략 아래와 같은 if/조건 렌더링)
-`serverState.onlinePlayers < 1000 && serverState.queueLength < 1000`
-부분을 위 OR 조건으로 수정해라.
-
-추가 요구(권장):
-- Join 버튼 텍스트가 상황에 따라 바뀌면 좋다:
-  - onlinePlayers >= MAX_PLAYERS && queueLength < MAX_QUEUE -> "대기열 참가"
-  - onlinePlayers < MAX_PLAYERS -> "참가하기"
-이건 가능하면 반영하고, 어려우면 조건만 고쳐도 됨.
+수정:
+- 아래로 변경(권장):
+  - `cacheControl: "public, max-age=20, stale-while-revalidate=120"`
+(프론트 폴링을 45초로 올리는 조건과 잘 맞음)
 
 ================================================================================
 [산출물/검증]
 ================================================================================
-1) 변경된 파일 리스트
-2) 각 변경의 diff 요약(핵심 라인 중심)
-3) 아래 시나리오 수동 테스트 체크리스트 제공:
+1) 변경된 파일 목록
+2) 각 변경의 핵심 diff 요약(수정 전/후 라인 중심)
+3) 수동 테스트 체크리스트:
 
-A. 관리자에서 fakePlayers=1000, fakeQueue=500:
-  - 가이드 문구가 대기 가능으로 보임
-  - Join 버튼이 "대기열 참가" 또는 유사 의미로 노출되고 실제로 join 시도 가능
+A. 관전 폴링
+- visible에서 pollingMode가 active이고, 요청 간격이 45초 근처인지
+- hidden 10분 후 3분, 60분 후 5분으로 느려지는지
+- hidden 2시간 후 paused(절전)로 전환되는지
+- visible로 돌아오면 1회 즉시 fetch 후 active로 복귀하는지
+- visible 상태에서 2시간 무인터랙션이어도 즉시 paused 되지 않고(8시간 기준) 유지되는지
 
-B. fakePlayers=1000, fakeQueue=1000:
-  - 가이드 문구가 “꽉참(관전중)”으로 보임
-  - Join 버튼은 숨겨짐
+B. 서버 cleanup 반영
+- 대기열 유휴 30분 / 플레이어 유휴 10분 시 정리되는지
+- 정리 직후 관전자 화면에 onlinePlayers/queueLength가 늦지 않게 반영되는지(broadcastState 포함)
 
-C. 초대 보상:
-  - 친구가 링크로 1회 접속 -> 800P 1회만 지급
-  - reset-round를 해도 같은 친구(to_user)로는 재지급되지 않음(영구 1회)
+C. stateChanged 경합
+- 업로드 직전/직후 상태 변경이 연속으로 일어나도 R2 state.json 갱신이 누락되지 않는지(stateVersion으로 보호)
 
-D. 관전자 갱신:
-  - 우승 처리 직후 관전자가 보는 state.json이 늦지 않게 갱신됨
-  - winner timeout 리셋 시 상태도 정상 갱신
-
-작업 완료 후, 빌드/타입스크립트 에러 없는지 확인하고 마무리해.
+변경 완료 후 타입스크립트/빌드 에러 없는지 확인해.

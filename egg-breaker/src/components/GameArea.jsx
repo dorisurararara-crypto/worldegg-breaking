@@ -15,7 +15,15 @@ const TOOL_EMOJIS = {
     fist: '👊'
 };
 
-const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '🎀', '🎵', '🐇'];
+const CUTE_PARTICLES = ['✨', '💖', '🌸', '🍭', '⭐', '🌈', '🍦', '🎀', '🎵', '🐇', '🦋', '🌺', '💕', '🍡', '🧁'];
+
+// 럭키 이벤트 설정
+const LUCKY_EVENTS = [
+    { name: '🍀 럭키 보너스!', chance: 0.02, reward: 100, msg: '행운이 찾아왔어요! +100P' },
+    { name: '💎 다이아몬드!', chance: 0.005, reward: 500, msg: '다이아몬드 발견! +500P' },
+    { name: '🌟 슈퍼스타!', chance: 0.001, reward: 2000, msg: '슈퍼스타 등장! +2000P' },
+    { name: '🦄 유니콘!', chance: 0.0005, reward: 5000, msg: '전설의 유니콘! +5000P' },
+];
 
 // --- 깨지는 알 SVG 컴포넌트 ---
 // React 19: forwardRef is not needed. ref is passed as a prop.
@@ -85,20 +93,31 @@ const CrackedEgg = memo(({ hp, maxHp, tool, onEggClick, ref }) => {
             <svg viewBox="0 0 200 250" className="egg-svg" style={{ overflow: 'visible' }}>
                 <defs>
                     <radialGradient id="eggGradient" cx="40%" cy="30%" r="80%">
-                        <stop offset="0%" stopColor={isCritical ? "#800000" : "#ffdde1"} />
-                        <stop offset="100%" stopColor={isCritical ? "#200000" : "#ff9a9e"} />
+                        <stop offset="0%" stopColor={isCritical ? "#ff6b6b" : isBroken ? "#ddd" : "#fff5f8"} />
+                        <stop offset="50%" stopColor={isCritical ? "#ee5a5a" : isBroken ? "#ccc" : "#ffd1dc"} />
+                        <stop offset="100%" stopColor={isCritical ? "#cc4444" : isBroken ? "#aaa" : "#ffb6c1"} />
                     </radialGradient>
-                    {/* [Opt] Removed Heavy SVG Filters (Glow/Blur) for Mobile Performance */}
+                    {/* 반짝이 효과 */}
+                    <radialGradient id="sparkle" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stopColor="white" stopOpacity="0.8" />
+                        <stop offset="100%" stopColor="white" stopOpacity="0" />
+                    </radialGradient>
                 </defs>
 
                 {/* 알 본체 */}
-                <ellipse 
-                    cx="100" cy="125" rx="80" ry="110" 
-                    fill="url(#eggGradient)" 
-                    /* filter removed */
+                <ellipse
+                    cx="100" cy="125" rx="80" ry="110"
+                    fill="url(#eggGradient)"
                     onPointerDown={onEggClick}
-                    style={{ cursor: 'pointer', touchAction: 'none', transition: 'all 0.3s' }} 
+                    style={{ cursor: 'pointer', touchAction: 'none', transition: 'all 0.3s' }}
                 />
+                {/* 반짝이는 하이라이트 */}
+                {!isBroken && (
+                    <>
+                        <ellipse cx="65" cy="70" rx="20" ry="15" fill="url(#sparkle)" style={{ pointerEvents: 'none' }} />
+                        <ellipse cx="50" cy="95" rx="8" ry="6" fill="white" opacity="0.6" style={{ pointerEvents: 'none' }} />
+                    </>
+                )}
                 
                 {/* 얼굴 */}
                 <g className="egg-face" style={{ transition: 'all 0.1s', pointerEvents: 'none' }}>
@@ -927,7 +946,7 @@ const GameArea = ({
              let cColor = '#ff4081';
              if (nextCombo === 100) { comboText = "100 COMBO!!"; cColor = '#00e676'; }
              if (nextCombo === 1000) { comboText = "1000 COMBO!!!"; cColor = '#ffea00'; }
-             
+
              if (onComboReward && nextCombo >= 100) onComboReward(nextCombo === 100 ? 50 : 700, `${comboText} +${nextCombo === 100 ? 50 : 700}P`);
 
              effectsRef.current.push({
@@ -942,6 +961,45 @@ const GameArea = ({
                 vy: 1,
                 rotation: 0
             });
+        }
+
+        // 5. 럭키 이벤트 시스템
+        const luckyRoll = Math.random();
+        let cumChance = 0;
+        for (const event of LUCKY_EVENTS) {
+            cumChance += event.chance;
+            if (luckyRoll < cumChance) {
+                // 럭키 이벤트 발생!
+                if (onComboReward) onComboReward(event.reward, event.msg);
+
+                // 특별 이펙트 표시
+                effectsRef.current.push({
+                    type: 'text',
+                    text: event.name,
+                    x: x,
+                    y: y - 80,
+                    val: event.reward,
+                    color: '#ffd700',
+                    size: 36,
+                    life: 1500,
+                    vy: 1.5,
+                    rotation: 0
+                });
+
+                // 추가 파티클
+                for (let i = 0; i < 5; i++) {
+                    effectsRef.current.push({
+                        type: 'emoji',
+                        text: CUTE_PARTICLES[Math.floor(Math.random() * CUTE_PARTICLES.length)],
+                        x: x + (Math.random() * 100 - 50),
+                        y: y + (Math.random() * 100 - 50),
+                        size: 25 + Math.random() * 15,
+                        life: 800,
+                        vy: 2 + Math.random() * 2
+                    });
+                }
+                break;
+            }
         }
     };
 

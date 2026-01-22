@@ -58,18 +58,17 @@ export function useGameState() {
   const latestPoints = useRef(0);
   const latestTotalClicks = useRef(0);
   
-  // Persist Client ID across reloads/tabs
-  const clientIdRef = useRef(() => {
+  // Persist Client ID across reloads/tabs (간소화된 패턴)
+  const clientIdRef = useRef(null);
+  if (clientIdRef.current === null) {
       let stored = localStorage.getItem('egg_game_client_id');
       if (!stored) {
           stored = crypto.randomUUID();
           localStorage.setItem('egg_game_client_id', stored);
       }
-      return stored;
-  });
-  
-  const clientId = typeof clientIdRef.current === 'function' ? clientIdRef.current() : clientIdRef.current;
-  clientIdRef.current = clientId; 
+      clientIdRef.current = stored;
+  }
+  const clientId = clientIdRef.current; 
 
   const countryRef = useRef("UN");
   const roundRef = useRef(1); // [New] Track round
@@ -165,20 +164,29 @@ export function useGameState() {
                   r2FailCount.current = 0; 
                   consecFailures.current = 0;
                   
-                  // Dynamic Polling Interval Logic
+                  // Dynamic Polling Interval Logic (월 5만원 목표 - 라운드 기반 최적화)
+                  // 라운드가 FINISHED면 매우 긴 간격, PLAYING이면 적절한 간격
+                  const isRoundActive = data.status === 'PLAYING';
+
                   if (isHidden) {
-                      const hiddenTime = idleTime; // Approx
-                      if (hiddenTime < 10 * 60 * 1000) {
-                          nextDelay = 60000; // 0-10m: 60s
-                      } else if (hiddenTime < 60 * 60 * 1000) {
-                          nextDelay = 180000; // 10-60m: 3m
+                      // 숨겨진 탭: 라운드 상관없이 긴 간격
+                      const hiddenTime = idleTime;
+                      if (hiddenTime < 5 * 60 * 1000) {
+                          nextDelay = isRoundActive ? 120000 : 600000; // 활성: 2분, 비활성: 10분
+                      } else if (hiddenTime < 30 * 60 * 1000) {
+                          nextDelay = isRoundActive ? 300000 : 900000; // 활성: 5분, 비활성: 15분
                       } else {
-                          nextDelay = 300000; // 60m+: 5m
+                          nextDelay = 1800000; // 30분+: 30분 (거의 정지)
                       }
                   } else if (!role || role === 'spectator') {
-                      nextDelay = 45000; // Slower for spectators
+                      // 구경꾼: 라운드 상태에 따라 다름
+                      if (isRoundActive) {
+                          nextDelay = 120000; // 활성 라운드: 2분
+                      } else {
+                          nextDelay = 600000; // 비활성 라운드: 10분 (다음 라운드 대기)
+                      }
                   } else {
-                      nextDelay = 10000; // Normal
+                      nextDelay = 30000; // 플레이어/대기자 폴링 (WebSocket 끊어졌을 때): 30초
                   }
               } else {
                   // API Success. Keep slow polling.
@@ -234,6 +242,15 @@ export function useGameState() {
   const connect = useCallback(() => {
     // If connecting, wait.
     if (wsRef.current && wsRef.current.readyState === WebSocket.CONNECTING) {
+        return;
+    }
+
+    // [비용 최적화] 서버가 FULL이면 WebSocket 연결 시도 안 함
+    const maxSlots = (serverState.maxPlayers || 1000) + (serverState.maxQueue || 1000);
+    const currentOccupancy = (serverState.onlinePlayers || 0) + (serverState.queueLength || 0);
+    if (currentOccupancy >= maxSlots) {
+        console.log("[WS] Server is FULL, skipping connection attempt");
+        setError('FULL');
         return;
     }
 
