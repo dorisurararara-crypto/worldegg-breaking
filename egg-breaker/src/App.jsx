@@ -16,13 +16,22 @@ function App() {
   const [route, setRoute] = useState(window.location.hash);
   
   // Custom Hook for API State
-  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken, winStartTime, prizeSecretImageUrl, connect, rewardEvent } = useGameState(); 
+  const { serverState, API_URL, error: serverError, role, queuePos, etaSec, addClick, connected, clientId, winningToken, winStartTime, prizeSecretImageUrl, connect, rewardEvent, isPollingPaused, resumePolling, disconnectReason } = useGameState(); 
   
   // Custom Hook for Push Notifications
   usePushNotifications(API_URL, clientId);
   
   // Local HP for Optimistic Updates
   const [hp, setHp] = useState(1000000);
+
+  // [New] Handle Auto-Disconnect Notifications
+  useEffect(() => {
+      if (disconnectReason === 'idle_queue') {
+          showNotification("오래 활동이 없어 대기열에서 자동으로 나왔어요.");
+      } else if (disconnectReason === 'hidden_player') {
+          showNotification("장시간 비활성 상태로 접속이 종료되었습니다.");
+      }
+  }, [disconnectReason]);
 
   // [Performance] Batch Updates Refs
   const accumulatedDamage = useRef(0);
@@ -848,8 +857,32 @@ function App() {
               onComboReward={handleComboReward}
             />
 
+            {/* RESUME POLLING OVERLAY */}
+            {isPollingPaused && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'rgba(255, 255, 255, 0.8)', 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    zIndex: 1100, 
+                    backdropFilter: 'blur(3px)'
+                }}>
+                    <h3 style={{color: '#5d4037', marginBottom: '15px'}}>💤 절전 모드</h3>
+                    <button 
+                        onClick={resumePolling}
+                        className="pulse-btn"
+                        style={{
+                            padding: '12px 30px', fontSize: '1.2rem', fontWeight: 'bold',
+                            background: '#ff6f61', color: 'white', border: 'none', borderRadius: '30px',
+                            cursor: 'pointer', boxShadow: '0 5px 15px rgba(255, 111, 97, 0.4)'
+                        }}
+                    >
+                        화면 켜기
+                    </button>
+                </div>
+            )}
+
             {/* JOIN BUTTON OVERLAY (When NOT connected and PLAYING) */}
-            {!connected && serverState.status === 'PLAYING' && ((serverState.onlinePlayers < (serverState.maxPlayers || 1000)) || ((serverState.queueLength || 0) < (serverState.maxQueue || 1000))) && (
+            {!connected && !isPollingPaused && serverState.status === 'PLAYING' && ((serverState.onlinePlayers < (serverState.maxPlayers || 1000)) || ((serverState.queueLength || 0) < (serverState.maxQueue || 1000))) && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
                     background: 'transparent', 

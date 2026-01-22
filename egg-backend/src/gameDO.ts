@@ -69,11 +69,13 @@ export class GameDO extends DurableObject {
   MAX_QUEUE = 1000; 
   BROADCAST_INTERVAL_MS = 2000; 
   SAVE_INTERVAL_MS = 20000; 
+  CLEANUP_INTERVAL_MS = 60000; // [New]
   
   // Loop Handles
   broadcastInterval: any = null;
   saveInterval: any = null;
   saveToR2Interval: any = null; // [New] R2 Upload Loop
+  cleanupInterval: any = null; // [New]
   
   // Optimization
   lastBroadcastHp: number = -1;
@@ -210,6 +212,57 @@ export class GameDO extends DurableObject {
               }
           }, 5000);
       }
+      // [New] Cleanup Loop
+      if (!this.cleanupInterval) {
+          this.cleanupInterval = setInterval(() => this.cleanupInactiveSessions(), this.CLEANUP_INTERVAL_MS);
+      }
+  }
+
+  // [New] Cleanup Inactive Sessions
+  cleanupInactiveSessions() {
+      const now = Date.now();
+      let changed = false;
+
+      for (const [ws, session] of this.sessions.entries()) {
+          const idleTime = now - session.lastSeen;
+          let shouldRemove = false;
+
+          if (session.role === 'player') {
+              // Players: 10 min hard limit (even if connected, if no ping/activity)
+              if (idleTime > 10 * 60 * 1000) {
+                  shouldRemove = true;
+                  try {
+                      ws.send(JSON.stringify({ type: 'error', code: 'IDLE_TIMEOUT', message: 'Disconnected due to inactivity.' }));
+                      ws.close(1000, "Idle Timeout");
+                  } catch (e) {}
+              }
+          } else if (session.queueToken) {
+              // Queue: 30 min limit
+              if (idleTime > 30 * 60 * 1000) {
+                  shouldRemove = true;
+                  try {
+                      ws.send(JSON.stringify({ type: 'error', code: 'IDLE_TIMEOUT', message: 'Removed from queue due to inactivity.' }));
+                      ws.close(1000, "Idle Timeout");
+                  } catch (e) {}
+              }
+          } else {
+              // Spectators: 60 min limit (save server memory)
+              if (idleTime > 60 * 60 * 1000) {
+                  shouldRemove = true;
+                  ws.close(1000, "Idle Timeout");
+              }
+          }
+
+          if (shouldRemove) {
+              this.cleanupSession(ws);
+              changed = true;
+          }
+      }
+
+      if (changed) {
+          this.broadcastQueueUpdate(); // If queue changed
+          this.stateChanged = true;
+      }
   }
   
   // [New] Helper to build safe public state
@@ -257,8 +310,8 @@ export class GameDO extends DurableObject {
           await this.env.STATE_BUCKET.put("state.json", JSON.stringify(publicState), {
               httpMetadata: {
                   contentType: "application/json",
-                  // Cache: Public 5s, Stale 30s
-                  cacheControl: "public, max-age=5, stale-while-revalidate=30",
+                  // Cache: Public 20s, Stale 120s
+                  cacheControl: "public, max-age=20, stale-while-revalidate=120",
               }
           });
           this.stateChanged = false; // Reset flag after successful upload attempt

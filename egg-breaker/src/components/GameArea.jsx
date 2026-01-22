@@ -182,12 +182,12 @@ const GameArea = ({
 
     // Priority 1: Already in Queue
     if (isQueueActive) {
-        guideText = "대기자니까 다음 게임에 참가할수 있습니다!";
+        guideText = "현재 '대기자' 입니다. 다음 게임에 참가할수 있습니다!";
     } 
     // Priority 2: Server Full but Queue Open (Spectator Mode but can join queue)
     else if (serverState.onlinePlayers >= MAX_PLAYERS && !connected) {
          if (queueLen < MAX_QUEUE) {
-             guideText = "대기자니까 다음 게임에 참가할수 있습니다!";
+             guideText = "현재 '대기자' 입니다. 다음 게임에 참가할수 있습니다";
          } else {
              guideText = "현재 참가자와 대기자가 꽉차 있습니다! (관전중)";
          }

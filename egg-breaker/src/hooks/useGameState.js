@@ -77,18 +77,63 @@ export function useGameState() {
   const r2FailCount = useRef(0);
   const consecFailures = useRef(0); // For exponential backoff
 
+  // [New] Interaction & Idle Tracking
+  const lastInteractionAt = useRef(Date.now());
+  const [isPollingPaused, setIsPollingPaused] = useState(false);
+  const [disconnectReason, setDisconnectReason] = useState(null); // 'idle_queue', 'hidden_player'
+
+  useEffect(() => {
+      const updateInteraction = () => {
+          lastInteractionAt.current = Date.now();
+          if (isPollingPaused) resumePolling(); // Auto-resume on interaction
+      };
+      
+      window.addEventListener('mousemove', updateInteraction);
+      window.addEventListener('keydown', updateInteraction);
+      window.addEventListener('touchstart', updateInteraction);
+      window.addEventListener('scroll', updateInteraction);
+      window.addEventListener('click', updateInteraction);
+      
+      return () => {
+          window.removeEventListener('mousemove', updateInteraction);
+          window.removeEventListener('keydown', updateInteraction);
+          window.removeEventListener('touchstart', updateInteraction);
+          window.removeEventListener('scroll', updateInteraction);
+          window.removeEventListener('click', updateInteraction);
+      };
+  }, [isPollingPaused]);
+
   // Update roundRef whenever serverState changes
   useEffect(() => {
       if (serverState.round) roundRef.current = serverState.round;
   }, [serverState.round]);
 
+  const resumePolling = useCallback(() => {
+      setIsPollingPaused(false);
+      setDisconnectReason(null);
+      fetchState();
+  }, []);
+
   // --- 1. Polling Logic (Dynamic with Backoff) ---
   const fetchState = useCallback(async () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+      if (isPollingPaused) return; // Stop if paused
 
       let nextDelay = 10000; // Default 10s
       let usedR2 = false;
       const jitter = Math.floor(Math.random() * 3000); // 0~3000ms Jitter
+
+      // [New] Adaptive Backoff Calculation
+      const now = Date.now();
+      const idleTime = now - lastInteractionAt.current;
+      const isHidden = document.hidden;
+      
+      // Hard Stop Check: Hidden > 2h OR Idle > 2h
+      if (idleTime > 2 * 60 * 60 * 1000 || (isHidden && idleTime > 2 * 60 * 60 * 1000)) {
+          console.log("[Polling] Hard stop due to inactivity.");
+          setIsPollingPaused(true);
+          return;
+      }
 
       try {
           // Determine Target URL
@@ -119,9 +164,16 @@ export function useGameState() {
                   r2FailCount.current = 0; 
                   consecFailures.current = 0;
                   
-                  // Dynamic Polling Interval
-                  if (document.hidden) {
-                      nextDelay = 60000; // Slowest when hidden
+                  // Dynamic Polling Interval Logic
+                  if (isHidden) {
+                      const hiddenTime = idleTime; // Approx
+                      if (hiddenTime < 10 * 60 * 1000) {
+                          nextDelay = 60000; // 0-10m: 60s
+                      } else if (hiddenTime < 60 * 60 * 1000) {
+                          nextDelay = 180000; // 10-60m: 3m
+                      } else {
+                          nextDelay = 300000; // 60m+: 5m
+                      }
                   } else if (!role || role === 'spectator') {
                       nextDelay = 20000; // Slower for spectators
                   } else {
@@ -153,14 +205,15 @@ export function useGameState() {
           nextDelay = Math.max(30000, backoff);
       }
 
-      // Add jitter to prevent thundering herd
-      nextDelay += jitter;
+      // Add jitter to prevent thundering herd (Reduced if long interval)
+      const finalJitter = nextDelay > 60000 ? Math.floor(Math.random() * (nextDelay * 0.1)) : jitter;
+      nextDelay += finalJitter;
 
       // Schedule Next Poll
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
           pollingTimeoutRef.current = setTimeout(fetchState, nextDelay);
       }
-  }, [API_URL]);
+  }, [API_URL, isPollingPaused, role]);
 
   useEffect(() => {
       // Start polling if NOT connected
@@ -283,6 +336,76 @@ export function useGameState() {
       }
   }, []);
 
+  // --- [New] Heartbeat & Auto-Disconnect Logic ---
+  useEffect(() => {
+      if (!connected) return;
+
+      const timer = setInterval(() => {
+          if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+          const now = Date.now();
+          const idleTime = now - lastInteractionAt.current;
+          const isHidden = document.hidden;
+
+          // 1. Heartbeat (Ping) every 30s roughly (timer is 10s, so every 3rd tick, or just always send ping if interval is 30s. 
+          // Let's make a separate interval for ping or just check time.)
+          // We'll use a simple approach: Send ping every execution if it's been 30s. 
+          // Actually, let's just make the interval 30s for ping, and check disconnect logic there too?
+          // No, disconnect needs faster check maybe? 10s is fine.
+          
+          // Send Ping
+          // To avoid flooding, let's use a ref or modulo.
+          // Or just separate intervals. Let's use separate intervals for clarity.
+      }, 10000); // Placeholder, will replace with separate effects below.
+      
+      return () => clearInterval(timer);
+  }, [connected]);
+
+  // Actual Heartbeat (30s)
+  useEffect(() => {
+      if (!connected) return;
+      const pingTimer = setInterval(() => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({ type: 'ping' }));
+          }
+      }, 30000);
+      return () => clearInterval(pingTimer);
+  }, [connected]);
+
+  // Actual Auto-Disconnect (Check every 10s)
+  useEffect(() => {
+      if (!connected) return;
+      const checkTimer = setInterval(() => {
+          const now = Date.now();
+          const idleTime = now - lastInteractionAt.current;
+          const isHidden = document.hidden; // Note: closure capture might be stale? No, document is global.
+          
+          // Queue Auto-Leave (30m)
+          if (queuePos !== null) {
+               if (idleTime > 30 * 60 * 1000 || (isHidden && idleTime > 30 * 60 * 1000)) {
+                   console.log("[WS] Auto-leaving queue due to inactivity.");
+                   if (wsRef.current) wsRef.current.close();
+                   setDisconnectReason('idle_queue');
+               }
+          } 
+          // Player Auto-Disconnect (Hidden > 10m)
+          // Note: idleTime is not used for players, only hidden state for safety.
+          else if (role === 'player') {
+               // We need to track how long it's been hidden. 
+               // Since we don't have a specific "hiddenStart" ref easily without more state,
+               // we can use lastInteractionAt as a proxy if we assume hidden implies no interaction.
+               // But background audio/network might keep it "active"? No, interaction is user input.
+               // So if hidden AND idle > 10m, it's safe to say they are gone.
+               if (isHidden && idleTime > 10 * 60 * 1000) {
+                   console.log("[WS] Auto-disconnecting player due to hidden.");
+                   if (wsRef.current) wsRef.current.close();
+                   setDisconnectReason('hidden_player');
+               }
+          }
+      }, 10000);
+      return () => clearInterval(checkTimer);
+  }, [connected, queuePos, role]);
+
   // --- 3. Click Sender ---
   useEffect(() => {
     const interval = setInterval(() => {
@@ -333,6 +456,9 @@ export function useGameState() {
       winningToken,
       winStartTime, // [New]
       prizeSecretImageUrl,
-      rewardEvent
+      rewardEvent,
+      isPollingPaused, // [New]
+      resumePolling,   // [New]
+      disconnectReason // [New]
   };
 }
