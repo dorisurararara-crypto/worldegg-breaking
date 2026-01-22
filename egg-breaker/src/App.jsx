@@ -146,9 +146,7 @@ function App() {
   }, [hp, lang]);
 
   // Data from Server State
-  const announcement = serverState.nextPrizeName 
-    ? `🎁 이번 라운드 상품: ${serverState.nextPrizeName}` 
-    : (serverState.announcement || "");
+  const announcement = serverState.announcement || "";
   const prize = serverState.prize || "";
   const prizeUrl = serverState.prizeUrl || "";
   const adUrl = serverState.adUrl || "";
@@ -281,16 +279,17 @@ function App() {
           if (!url) return;
           const params = new URLSearchParams(new URL(url).search);
           const referrer = params.get('referrer');
-          console.log(`[App] Ref: ${referrer}, Me: ${clientId}`);
+          const currentRound = serverState.round || 1;
+          console.log(`[App] Ref: ${referrer}, Me: ${clientId}, Round: ${currentRound}`);
           
           // Remove client-side check to allow round resets to work
           if (referrer && referrer !== clientId) {
-              // [New] Local duplication check to prevent 400 errors on refresh
-              const checkKey = `egg_invite_checked_${referrer}`;
+              // [New] Local duplication check scoped by Round
+              const checkKey = `egg_invite_checked_${referrer}_r${currentRound}`;
               const lastChecked = localStorage.getItem(checkKey);
-              // If checked within last 24 hours, skip
-              if (lastChecked && (Date.now() - parseInt(lastChecked, 10) < 24 * 60 * 60 * 1000)) {
-                  console.log("[App] Invite already checked locally (skipping).");
+              
+              if (lastChecked) {
+                  console.log("[App] Invite already checked locally for this round (skipping).");
                   return;
               }
 
@@ -301,21 +300,18 @@ function App() {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ from: referrer, to: clientId })
                   });
-                  const json = await res.json();
-                  console.log(`[App] Resp: ${res.status} ${JSON.stringify(json)}`);
+                  // ...
                   
-                  // If success or duplicate/invalid (400), mark as checked to avoid retry
+                  // If success or duplicate/invalid (400), mark as checked for this round
                   if (res.ok || res.status === 400) {
                       localStorage.setItem(checkKey, Date.now().toString());
                   }
 
                   if (res.ok) {
                       console.log("Invite verified by server!");
-                      // Optional: mark locally if needed for UI, but rely on server for logic
                   }
               } catch (e) {
                   console.error("Invite check failed", e);
-                  console.log(`[App] Err: ${e.message}`);
               }
           } else {
               console.log("[App] No valid referrer");
@@ -332,7 +328,7 @@ function App() {
               });
           });
       }
-  }, [clientId, API_URL]);
+  }, [clientId, API_URL, serverState.round]);
 
   // Handle Reward Events (Invites)
   useEffect(() => {
@@ -343,10 +339,8 @@ function App() {
         localStorage.setItem('saved_points', (currentStored + rewardEvent.amount).toString());
 
         let msg = rewardEvent.msg;
-        if (msg === "INVITE_REWARD_MSG") {
+        if (msg === "INVITE_REWARD_MSG" || msg === "INVITE_REWARD_WELCOME") {
             msg = lang.inviteSuccess || "Friend joined! +800P";
-        } else if (msg === "INVITE_REWARD_WELCOME") {
-            msg = `${lang.welcomeBack || "Welcome back!"} +${rewardEvent.amount}P`;
         }
 
         showNotification(msg);

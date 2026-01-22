@@ -47,7 +47,8 @@ export const TRANSLATIONS = {
     savePrizeBtn: "💾 상품 이미지 저장", prizeReceivedBtn: "✅ 상품 수령 완료",
     retryTitle: "다시 도전하시겠습니까?", retryBtn: "🔄 재입장하기",
     tapToClose: "(탭하여 없애기)",
-    maxAtkTitle: "최고 공격력", maxPointTitle: "최고 포인트", maxClickTitle: "최고 클릭수", serverStatusTitle: "서버 현황", participants: "참여자", queueLabel: "대기자", spectators: "구경꾼", totalOnline: "Total Online",
+    maxAtkTitle: "최고 공격력", maxPointTitle: "최고 포인트", maxClickTitle: "최고 클릭수", serverStatusTitle: "서버 현황", participants: "참여자", queueLabel: "대기자", spectators: "구경꾼", totalOnline: "현재 접속자수",
+    joinGame: "게임 참여하기", joinQueue: "대기열 참여", fullServer: "만원",
     soundOn: "효과음", bgmOn: "배경음", vibrationOn: "진동",
     gameStarted: "게임이 이미 시작되었습니다!", tryNextRound: "다음 라운드에 다시 도전해주세요.", reloading: "새로고침 중...",
     eggFacts: [
