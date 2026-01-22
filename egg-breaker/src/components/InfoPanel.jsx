@@ -49,30 +49,6 @@ const InfoPanel = ({ lang, recentWinners, prize, prizeUrl, isOpen, toggleMobileP
       </div>
       
       <div className="scroll-box">
-        {/* --- Current Prize Section --- */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <h4 style={{ margin: '15px 0 10px', color: '#ff6f61' }}>🎁 {lang.prizeTitle}</h4>
-            <div style={{ 
-                background: 'rgba(255, 255, 255, 0.8)', 
-                padding: '20px', 
-                borderRadius: '20px',
-                boxShadow: '0 8px 20px rgba(255, 105, 180, 0.15)',
-                border: '3px solid #ffb6c1'
-            }}>
-                <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#ff4081', marginBottom: '5px' }}>
-                    {prize || "Secret Prize"}
-                </div>
-                {prizeUrl && (
-                    <a href={prizeUrl} target="_blank" rel="noopener noreferrer" style={{
-                        display: 'inline-block', marginTop: '10px', padding: '8px 20px',
-                        background: '#ff6f61', color: 'white', borderRadius: '20px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem'
-                    }}>
-                        Check Details
-                    </a>
-                )}
-            </div>
-        </div>
-
         <h4 style={{ margin: '15px 0 10px', color: '#ff6f61', textAlign: 'center' }}>📅 {lang.recentPrizes}</h4>
         
         {recentWinners && recentWinners.length > 0 ? (

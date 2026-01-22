@@ -72,9 +72,15 @@ export function useGameState() {
   clientIdRef.current = clientId; 
 
   const countryRef = useRef("UN");
+  const roundRef = useRef(1); // [New] Track round
   const pollingTimeoutRef = useRef(null);
   const r2FailCount = useRef(0);
   const consecFailures = useRef(0); // For exponential backoff
+
+  // Update roundRef whenever serverState changes
+  useEffect(() => {
+      if (serverState.round) roundRef.current = serverState.round;
+  }, [serverState.round]);
 
   // --- 1. Polling Logic (Dynamic with Backoff) ---
   const fetchState = useCallback(async () => {
@@ -282,6 +288,7 @@ export function useGameState() {
                 points: latestPoints.current,
                 totalClicks: latestTotalClicks.current,
                 country: countryRef.current,
+                round: roundRef.current, // [New]
                 ts: now
             }));
             clickAccumulator.current = 0;

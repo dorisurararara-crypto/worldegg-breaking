@@ -611,15 +611,9 @@ function App() {
         // Artificial delay to mimic process
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // 2. Reward
-        const reward = 800;
-        setMyPoints(prev => prev + reward);
+        // 2. Reward Removed (Only given when friend joins)
         setShareCount(prev => prev + 1);
         
-        // Persist reward
-        const currentStored = parseInt(localStorage.getItem('saved_points') || '0', 10);
-        localStorage.setItem('saved_points', (currentStored + reward).toString());
-
         // 3. Inform user
         showNotification(`${lang.shareSuccess} (${shareCount + 1}/5)`);
     } catch (e) {

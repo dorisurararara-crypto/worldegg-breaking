@@ -231,6 +231,27 @@ function Admin() {
       }
   };
 
+  const updateWinner = async (id, currentPrize) => {
+      const newPrize = prompt("수정할 상품명을 입력하세요:", currentPrize);
+      if (newPrize === null || newPrize === currentPrize) return;
+
+      try {
+          const res = await fetch(`${API_URL}/api/admin/update-winner-prize`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-key': password },
+              body: JSON.stringify({ id, prize: newPrize })
+          });
+          if (res.ok) {
+              fetchWinners();
+              alert("수정되었습니다.");
+          } else {
+              alert("수정 실패");
+          }
+      } catch (e) {
+          alert("오류 발생");
+      }
+  };
+
     const callAdminApi = async (endpoint, body = {}) => {
       if (!confirm(`정말로 '${endpoint}' 명령을 실행하시겠습니까?`)) return;
   
@@ -543,6 +564,7 @@ function Admin() {
                             <td style={{ padding: '10px' }}>{w.prize || '-'}</td>
                             <td style={{ padding: '10px', color: '#aaa' }}>{new Date(w.created_at).toLocaleString()}</td>
                             <td style={{ padding: '10px', textAlign: 'center' }}>
+                                <button onClick={() => updateWinner(w.id, w.prize)} style={{ background: '#007bff', border: 'none', borderRadius: '5px', padding: '5px 10px', color: 'white', cursor: 'pointer', fontSize: '0.8rem', marginRight: '5px' }}>수정</button>
                                 <button onClick={() => deleteWinner(w.id)} style={{ background: '#555', border: 'none', borderRadius: '5px', padding: '5px 10px', color: 'white', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
                             </td>
                         </tr>

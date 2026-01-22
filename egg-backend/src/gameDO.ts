@@ -576,18 +576,20 @@ export class GameDO extends DurableObject {
               this.gameState.hp = Math.max(0, this.gameState.hp - delta);
               this.gameState.clicksByCountry[session.country] = (this.gameState.clicksByCountry[session.country] || 0) + delta;
               
-              // [Sync] Max Atk Logic
+          // [Sync] Max Atk Logic
               if (userAtk > this.gameState.maxAtk) {
                   this.gameState.maxAtk = userAtk;
                   this.gameState.maxAtkCountry = session.country;
               }
               
-              // [Sync] Max Points & Clicks
-              if (userPoints > this.gameState.maxPoints) {
-                  this.gameState.maxPoints = userPoints;
-              }
-              if (userTotalClicks > this.gameState.maxClicks) {
-                  this.gameState.maxClicks = userTotalClicks;
+              // [Sync] Max Points & Clicks (Only if round matches to prevent carry-over)
+              if (msg.round === this.gameState.round) {
+                  if (userPoints > this.gameState.maxPoints) {
+                      this.gameState.maxPoints = userPoints;
+                  }
+                  if (userTotalClicks > this.gameState.maxClicks) {
+                      this.gameState.maxClicks = userTotalClicks;
+                  }
               }
 
               this.gameState.lastUpdatedAt = now;
@@ -897,6 +899,24 @@ export class GameDO extends DurableObject {
               if (this.gameState.prize === "Mystery Prize") {
                   await this.loadCurrentPrize();
               }
+          }
+
+      } else if (action === "update-winner-prize" && request.method === "POST") {
+          const body: any = await request.json();
+          if (!body.id || !body.prize) return new Response("Missing id or prize", { status: 400 });
+          
+          try {
+              await this.env.DB.prepare("UPDATE winners SET prize = ? WHERE id = ?").bind(body.prize, body.id).run();
+              details = `Updated winner ${body.id} prize to ${body.prize}`;
+              
+              // Refresh recent winners cache
+              const { results } = await this.env.DB.prepare(
+                  "SELECT round, prize, created_at as date FROM winners ORDER BY id DESC LIMIT 5"
+              ).all();
+              if (results) this.gameState.recentWinners = results;
+              this.broadcastState();
+          } catch(e) {
+              return new Response("DB Error: " + e, { status: 500 });
           }
 
       } else if (action.startsWith("prize-pool/") && request.method === "DELETE") {
