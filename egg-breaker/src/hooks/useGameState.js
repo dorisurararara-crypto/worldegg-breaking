@@ -118,7 +118,15 @@ export function useGameState() {
               if (usedR2) {
                   r2FailCount.current = 0; 
                   consecFailures.current = 0;
-                  nextDelay = 10000; // Normal polling 10s
+                  
+                  // Dynamic Polling Interval
+                  if (document.hidden) {
+                      nextDelay = 60000; // Slowest when hidden
+                  } else if (!role || role === 'spectator') {
+                      nextDelay = 20000; // Slower for spectators
+                  } else {
+                      nextDelay = 10000; // Normal
+                  }
               } else {
                   // API Success. Keep slow polling.
                   consecFailures.current = 0;

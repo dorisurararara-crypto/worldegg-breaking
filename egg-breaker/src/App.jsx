@@ -284,6 +284,13 @@ function App() {
           
           // Remove client-side check to allow round resets to work
           if (referrer && referrer !== clientId) {
+              // [Policy Note]
+              // Current Policy: "Permanent 1-time Reward per Friend"
+              // Enforced by: Backend 'invites' table UNIQUE constraint (from_user, to_user).
+              // To switch to "Round-based Reward":
+              // 1. In Backend (gameDO.ts), enable 'DELETE FROM invites' in 'reset-round' action.
+              // 2. Here in Frontend, include 'currentRound' in the 'checkKey' below (Already done: _r${currentRound}).
+              
               // [New] Local duplication check scoped by Round
               const checkKey = `egg_invite_checked_${referrer}_${clientId}_r${currentRound}`;
               const lastChecked = localStorage.getItem(checkKey);

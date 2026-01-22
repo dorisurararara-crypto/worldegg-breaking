@@ -180,20 +180,24 @@ const GameArea = ({
     const MAX_QUEUE = serverState.maxQueue || 1000;
     const queueLen = serverState.queueLength || 0;
 
+    // Priority 1: Already in Queue
     if (isQueueActive) {
-        guideText = "다음 게임에 참가할수 있습니다!";
-    } else if (serverState.onlinePlayers >= MAX_PLAYERS && !connected) {
+        guideText = "대기자니까 다음 게임에 참가할수 있습니다!";
+    } 
+    // Priority 2: Server Full but Queue Open (Spectator Mode but can join queue)
+    else if (serverState.onlinePlayers >= MAX_PLAYERS && !connected) {
          if (queueLen < MAX_QUEUE) {
              guideText = "대기자니까 다음 게임에 참가할수 있습니다!";
          } else {
              guideText = "현재 참가자와 대기자가 꽉차 있습니다! (관전중)";
          }
-    } else if (isRoleSpectator || isSpectating) {
+    } 
+    // Priority 3: Just Spectating (Game in progress or finished, not full)
+    else if (isRoleSpectator || isSpectating) {
          guideText = "현재 게임 진행 중... (관전)";
-    } else if (!connected) {
-         // Not full, not connected -> Just waiting for join
-         // guideText = "Join button is below"; // Or keep "touchGuide" if join button covers
-         // But "Full" button is removed, so we should rely on "Join" button being visible
+    } 
+    else if (!connected) {
+         // Not full, not connected -> "Join" button visible
     }
 
     // [Fix A] Update Winner Lock

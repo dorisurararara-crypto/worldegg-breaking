@@ -79,6 +79,7 @@ export class GameDO extends DurableObject {
   lastBroadcastHp: number = -1;
   lastBroadcastTime: number = 0;
   lastBroadcastPlayers: number = -1;
+  stateChanged: boolean = false; // [New] Track changes for R2 upload
 
   constructor(state: DurableObjectState, env: any) {
     super(state, env);
@@ -158,11 +159,14 @@ export class GameDO extends DurableObject {
           if (nextPrize) {
                if (this.gameState.nextPrizeName !== nextPrize.name) {
                    this.gameState.nextPrizeName = nextPrize.name;
+                   this.stateChanged = true;
                }
           } else {
-               this.gameState.nextPrizeName = undefined;
+               if (this.gameState.nextPrizeName !== undefined) {
+                   this.gameState.nextPrizeName = undefined;
+                   this.stateChanged = true;
+               }
           }
-          this.stateChanged = true;
       } catch (e) {}
   }
 
@@ -196,20 +200,21 @@ export class GameDO extends DurableObject {
       if (!this.saveInterval) {
           this.saveInterval = setInterval(() => this.saveState(), this.SAVE_INTERVAL_MS);
       }
-      // [New] R2 Upload Loop (3s throttle)
+      // [New] R2 Upload Loop (Adjusted to 5s, checking stateChanged)
       if (!this.saveToR2Interval) {
           // Upload immediately on start
           this.uploadStateToR2().catch(() => {});
-          this.saveToR2Interval = setInterval(() => this.uploadStateToR2(), 3000);
+          this.saveToR2Interval = setInterval(() => {
+              if (this.stateChanged) {
+                  this.uploadStateToR2();
+              }
+          }, 5000);
       }
   }
-
-  // [New] Upload Public State Snapshot to R2
-  async uploadStateToR2() {
-      if (!this.env.STATE_BUCKET) return; // Skip if no bucket binding
-
-      // [Security Fix] Whitelist safe fields. Do NOT spread entire gameState.
-      const publicState = {
+  
+  // [New] Helper to build safe public state
+  buildPublicState() {
+      return {
           hp: this.gameState.hp,
           maxHp: this.gameState.maxHp,
           round: this.gameState.round,
@@ -235,8 +240,17 @@ export class GameDO extends DurableObject {
           onlinePlayers: (this.gameState.fakePlayers && this.gameState.fakePlayers > 0) ? this.gameState.fakePlayers : this.players.size,
           onlineSpectatorsApprox: this.sessions.size - this.players.size,
           queueLength: (this.gameState.fakeQueue && this.gameState.fakeQueue > 0) ? this.gameState.fakeQueue : this.queue.length,
+          maxPlayers: this.MAX_PLAYERS, // [New]
+          maxQueue: this.MAX_QUEUE, // [New]
           serverTs: Date.now()
       };
+  }
+
+  // [New] Upload Public State Snapshot to R2
+  async uploadStateToR2() {
+      if (!this.env.STATE_BUCKET) return; // Skip if no bucket binding
+      
+      const publicState = this.buildPublicState();
       
       try {
           // Upload 'state.json'
@@ -247,6 +261,7 @@ export class GameDO extends DurableObject {
                   cacheControl: "public, max-age=5, stale-while-revalidate=30",
               }
           });
+          this.stateChanged = false; // Reset flag after successful upload attempt
       } catch (e) {
           console.error("R2 Upload Failed:", e);
       }
@@ -458,12 +473,7 @@ export class GameDO extends DurableObject {
     
     if (url.pathname === "/state") {
         const totalUsers = this.sessions.size;
-        return new Response(JSON.stringify({
-            ...this.gameState,
-            onlinePlayers: this.players.size,
-            onlineSpectatorsApprox: this.sessions.size - this.players.size,
-            serverTs: Date.now()
-        }), { 
+        return new Response(JSON.stringify(this.buildPublicState()), { 
             headers: { 
                 "Content-Type": "application/json",
                 "X-Online-Users": totalUsers.toString() // [New] For caching logic
@@ -488,11 +498,9 @@ export class GameDO extends DurableObject {
         const country = msg.country || "UN";
         const realIp = (ws as any)._ip || "unknown";
         
-        // [Modified] Allow Winner to Reconnect
         if (this.gameState.status !== 'PLAYING') {
-             // If we are checking winner, and this IS the winner, let them in.
              if (this.gameState.status === 'WINNER_CHECK' && clientId === this.gameState.winningClientId) {
-                 // Proceed to join logic below...
+                 // OK
              } else {
                  ws.send(JSON.stringify({ type: 'error', code: 'ROUND_NOT_STARTED', message: 'Round not started yet.' }));
                  ws.close(1008, "Round not started");
@@ -541,14 +549,13 @@ export class GameDO extends DurableObject {
             buildId: "v1.0.0"
         }));
 
-        // [New] If this is the winner reconnecting, resend the win message
         if (this.gameState.status === 'WINNER_CHECK' && clientId === this.gameState.winningClientId) {
              ws.send(JSON.stringify({
                   type: 'you_won',
                   token: this.gameState.winningToken,
                   round: this.gameState.round,
                   prizeSecretUrl: this.gameState.prizeSecretUrl,
-                  startTime: this.gameState.winnerCheckStartTime // [Sync] Send timestamp
+                  startTime: this.gameState.winnerCheckStartTime
              }));
         }
         
@@ -557,7 +564,7 @@ export class GameDO extends DurableObject {
             ws.send(JSON.stringify({
                 type: 'invite_reward',
                 amount: pending,
-                msg: "INVITE_REWARD_WELCOME" // [Sync] Use code
+                msg: "INVITE_REWARD_WELCOME"
             }));
             this.pendingRewards.delete(clientId);
             this.state.storage.put("pendingRewards", this.pendingRewards);
@@ -597,13 +604,10 @@ export class GameDO extends DurableObject {
           session.lastDeltaTime = now;
 
           const delta = Number(msg.delta);
-          const userAtk = Number(msg.atk || 1); // [Sync]
+          const userAtk = Number(msg.atk || 1);
           const userPoints = Number(msg.points || 0);
           const userTotalClicks = Number(msg.totalClicks || 0);
           
-          // console.log(`[DEBUG] Delta:${delta} Atk:${userAtk} Pts:${userPoints} Clicks:${userTotalClicks}`);
-
-          // [Fix] Increased limit to prevent false positives for high-level players
           if (isNaN(delta) || delta <= 0 || delta > 100000) { 
               ws.send(JSON.stringify({ type: 'error', code: 'BAD_DELTA', message: 'Invalid delta' }));
               return;
@@ -613,13 +617,11 @@ export class GameDO extends DurableObject {
               this.gameState.hp = Math.max(0, this.gameState.hp - delta);
               this.gameState.clicksByCountry[session.country] = (this.gameState.clicksByCountry[session.country] || 0) + delta;
               
-          // [Sync] Max Atk Logic
               if (userAtk > this.gameState.maxAtk) {
                   this.gameState.maxAtk = userAtk;
                   this.gameState.maxAtkCountry = session.country;
               }
               
-              // [Sync] Max Points & Clicks (Only if round matches to prevent carry-over)
               if (msg.round === this.gameState.round) {
                   if (userPoints > this.gameState.maxPoints) {
                       this.gameState.maxPoints = userPoints;
@@ -630,6 +632,7 @@ export class GameDO extends DurableObject {
               }
 
               this.gameState.lastUpdatedAt = now;
+              this.stateChanged = true;
               
               if (this.gameState.hp === 0) {
                   this.gameState.status = 'WINNER_CHECK';
@@ -637,7 +640,6 @@ export class GameDO extends DurableObject {
                   this.gameState.winningClientId = session.clientId;
                   this.gameState.winningToken = crypto.randomUUID();
 
-                  // [New] Pre-fetch prize from pool
                   try {
                       const prizeData: any = await this.env.DB.prepare(
                           "SELECT id, name, secret_url FROM prize_pool WHERE is_used = 0 ORDER BY id ASC LIMIT 1"
@@ -646,10 +648,6 @@ export class GameDO extends DurableObject {
                       if (prizeData) {
                           this.gameState.prize = prizeData.name;
                           this.gameState.prizeSecretUrl = prizeData.secret_url;
-                          // Note: We don't mark it used yet, only on claim.
-                          // But to prevent race conditions or double allocation if server crashes,
-                          // we might want to mark it "reserved"? 
-                          // For simplicity, we assume single thread DO will handle claim soon.
                       }
                   } catch (e) {
                       console.error("Failed to fetch prize pool", e);
@@ -659,7 +657,7 @@ export class GameDO extends DurableObject {
                       type: 'you_won',
                       token: this.gameState.winningToken,
                       round: this.gameState.round,
-                      prizeSecretUrl: this.gameState.prizeSecretUrl, // Send the fetched secret!
+                      prizeSecretUrl: this.gameState.prizeSecretUrl,
                       startTime: this.gameState.winnerCheckStartTime
                   }));
                   
@@ -692,7 +690,6 @@ export class GameDO extends DurableObject {
       }
   }
 
-  // [Fix] Removed Recursion
   promoteFromQueue() {
       while (this.queue.length > 0) {
           const next = this.queue.shift();
@@ -713,16 +710,15 @@ export class GameDO extends DurableObject {
                 }));
               }
               this.broadcastQueueUpdate();
-              return; // Success, stop loop
+              return;
           }
-          // If session is gone, loop continues to next
       }
   }
 
   kickAllPlayers() {
       for (const p of this.players.values()) {
           try {
-              p.ws.send(JSON.stringify({ type: 'error', code: 'GAME_OVER', message: 'Round finished. Thanks for playing!' })); // [Sync] Message
+              p.ws.send(JSON.stringify({ type: 'error', code: 'GAME_OVER', message: 'Round finished. Thanks for playing!' }));
               p.ws.close(1000, "Round Finished");
           } catch(e) {}
       }
@@ -752,6 +748,8 @@ export class GameDO extends DurableObject {
               this.gameState.winningClientId = undefined;
               this.gameState.winningToken = undefined;
               this.gameState.lastUpdatedAt = Date.now();
+          this.stateChanged = true;
+              this.stateChanged = true;
               this.saveState();
               this.kickAllPlayers();
               // Continue to broadcast the FINISHED state to anyone remaining (though kicked)
@@ -776,29 +774,7 @@ export class GameDO extends DurableObject {
 
       const payload = JSON.stringify({
           type: 'state',
-          hp: this.gameState.hp,
-          maxHp: this.gameState.maxHp,
-          round: this.gameState.round,
-          status: this.gameState.status,
-          winnerInfo: this.gameState.winnerInfo,
-          winningClientId: this.gameState.winningClientId,
-          onlinePlayers: (this.gameState.fakePlayers && this.gameState.fakePlayers > 0) ? this.gameState.fakePlayers : this.players.size,
-          onlineSpectatorsApprox: this.sessions.size - this.players.size,
-          queueLength: (this.gameState.fakeQueue && this.gameState.fakeQueue > 0) ? this.gameState.fakeQueue : this.queue.length, // [Sync]
-          maxPlayers: this.MAX_PLAYERS, // [New]
-          maxQueue: this.MAX_QUEUE, // [New]
-          maxAtk: this.gameState.maxAtk, // [Sync]
-          maxAtkCountry: this.gameState.maxAtkCountry, // [Sync]
-          maxPoints: this.gameState.maxPoints,
-          maxClicks: this.gameState.maxClicks,
-          nextPrizeName: this.gameState.nextPrizeName, // [New]
-          announcement: this.gameState.announcement,
-          prize: this.gameState.prize,
-          prizeUrl: this.gameState.prizeUrl,
-          adUrl: this.gameState.adUrl,
-          recentWinners: this.gameState.recentWinners, 
-          rev: this.gameState.rev,
-          lastUpdatedAt: this.gameState.lastUpdatedAt
+          ...this.buildPublicState()
       });
       for (const ws of this.sessions.keys()) {
           try { ws.send(payload); } catch(e) { this.cleanupSession(ws); }
@@ -828,6 +804,7 @@ export class GameDO extends DurableObject {
           this.gameState.status = 'PLAYING';
           this.gameState.winnerInfo = null;
           this.gameState.lastUpdatedAt = Date.now();
+          this.stateChanged = true;
           
           // Clear invites table for the new round
           let clearMsg = "";
@@ -862,6 +839,7 @@ export class GameDO extends DurableObject {
           const body: any = await request.json();
           this.gameState.round = body.round;
           this.gameState.lastUpdatedAt = Date.now();
+          this.stateChanged = true;
           details = `Set Round to ${body.round}`;
           await this.saveState();
           this.broadcastState();
@@ -872,6 +850,7 @@ export class GameDO extends DurableObject {
           this.gameState.status = 'PLAYING';
           this.gameState.winnerInfo = null;
           this.gameState.lastUpdatedAt = Date.now();
+          this.stateChanged = true;
           details = `Set HP to ${body.hp}`;
           await this.saveState();
           this.broadcastState();
@@ -887,6 +866,7 @@ export class GameDO extends DurableObject {
           if (body.fakePlayers !== undefined) this.gameState.fakePlayers = Number(body.fakePlayers);
           if (body.fakeQueue !== undefined) this.gameState.fakeQueue = Number(body.fakeQueue);
           this.gameState.lastUpdatedAt = Date.now();
+          this.stateChanged = true;
           details = `Config Updated`;
           await this.saveState();
           this.broadcastState();
