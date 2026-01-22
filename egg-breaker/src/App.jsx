@@ -805,6 +805,7 @@ function App() {
               lang={lang}
               hp={hp}
               role={role} // [New] Pass role
+              queuePos={queuePos} // [New] Pass queuePos
               clickPower={clickPower}
               myPoints={myPoints}
               isWinner={isWinner}
@@ -837,7 +838,7 @@ function App() {
             />
 
             {/* JOIN BUTTON OVERLAY (When NOT connected and PLAYING) */}
-            {!connected && serverState.status === 'PLAYING' && (
+            {!connected && serverState.status === 'PLAYING' && (serverState.onlinePlayers < 1000 && (serverState.queueLength || 0) < 1000) && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
                     background: 'transparent', 
@@ -849,15 +850,12 @@ function App() {
                     <button 
                         onClick={connect}
                         className="pulse-btn"
-                        disabled={serverState.onlinePlayers >= 1000 && (serverState.queueLength || 0) >= 1000}
                         style={{
                             pointerEvents: 'auto', 
                             padding: '15px 40px', fontSize: '1.5rem', fontWeight: '900', // [Mod] Slightly smaller
-                            background: (serverState.onlinePlayers >= 1000 && (serverState.queueLength || 0) >= 1000) 
-                                ? 'rgba(153, 153, 153, 0.9)' // [Mod] Semi-transparent
-                                : 'linear-gradient(45deg, #ff6f61, #ff9a9e)',
+                            background: 'linear-gradient(45deg, #ff6f61, #ff9a9e)',
                             color: 'white', border: 'none', borderRadius: '50px',
-                            cursor: (serverState.onlinePlayers >= 1000 && (serverState.queueLength || 0) >= 1000) ? 'not-allowed' : 'pointer', 
+                            cursor: 'pointer', 
                             boxShadow: '0 10px 30px rgba(255, 111, 97, 0.5)',
                             transform: 'scale(1)', transition: 'transform 0.2s',
                             textShadow: '0 2px 4px rgba(0,0,0,0.2)'
@@ -865,8 +863,7 @@ function App() {
                     >
                         {
                             serverState.onlinePlayers < 1000 ? `⚔️ ${lang.joinGame || "JOIN GAME"}` :
-                            (serverState.queueLength || 0) < 1000 ? `⏳ ${lang.joinQueue || "Join Queue"}` :
-                            `🚫 ${lang.fullServer || "Full"}`
+                            `⏳ ${lang.joinQueue || "Join Queue"}`
                         }
                     </button>
                 </div>

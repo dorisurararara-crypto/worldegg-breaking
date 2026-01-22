@@ -137,7 +137,7 @@ const GameArea = ({
     setWinnerEmail, submitWinnerEmail, handleClick, currentTool, buyItem, notification, handleAdWatch, adWatchCount, showGuide,
     winnerCountdown, exitCountdown, loserCountdown, showLoserMessage, isSpectating, showRetry, handleRetry,
     clientId, serverState, API_URL, myCountry, winningToken, prizeSecretImageUrl, connected,
-    onComboReward, role // [New]
+    onComboReward, role, queuePos // [New]
 }) => {
     // [Performance] Canvas Effects System
     const canvasRef = useRef(null);
@@ -165,16 +165,28 @@ const GameArea = ({
     const isMyWin = isWinner || serverState?.winningClientId === clientId;
     const isWinnerCheck = serverState?.status === 'WINNER_CHECK';
     const isFinished = serverState?.status === 'FINISHED';
+    
     // [Fix] Accurate Queue/Spectator Check
+    // If we are NOT connected, we are effectively a spectator (passive)
     // If role is explicitly 'spectator' OR we have a positive queue position
     const isRoleSpectator = role === 'spectator';
-    const isQueueActive = (connected && (isRoleSpectator || (serverState.queueLength > 0 && role === null))); 
-    // Note: role is null during polling/waiting or if not assigned yet.
-    // If connected is true, role should be assigned eventually.
+    const isQueueActive = (queuePos !== undefined && queuePos !== null && queuePos > 0);
     
-    // Simplification: Check props passed from App (isInQueue logic there was based on queuePos)
-    // Actually GameArea doesn't receive queuePos. We need to rely on `role` and `isSpectating` prop.
-    const isPassiveMode = role === 'spectator' || isSpectating;
+    const isPassiveMode = !connected || isRoleSpectator || isSpectating || isQueueActive;
+    
+    // Guide Text Logic
+    let guideText = lang.touchGuide;
+    if (isQueueActive) {
+        guideText = "다음 게임에 참가할수 있습니다!";
+    } else if (serverState.onlinePlayers >= 1000 && !connected) {
+         guideText = "현재 참가자와 대기자가 꽉차 있습니다! (관전중)";
+    } else if (isRoleSpectator || isSpectating) {
+         guideText = "현재 게임 진행 중... (관전)";
+    } else if (!connected) {
+         // Not full, not connected -> Just waiting for join
+         // guideText = "Join button is below"; // Or keep "touchGuide" if join button covers
+         // But "Full" button is removed, so we should rely on "Join" button being visible
+    }
 
     // [Fix A] Update Winner Lock
     useEffect(() => {
@@ -1043,7 +1055,7 @@ const GameArea = ({
                         border: '2px solid #ffb6c1',
                         whiteSpace: 'nowrap'
                     }}>
-                        {isPassiveMode ? "현재 게임 진행 중..." : lang.touchGuide}
+                        {guideText}
                     </div>
                 )}
                 
