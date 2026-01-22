@@ -128,8 +128,9 @@ export function useGameState() {
       const idleTime = now - lastInteractionAt.current;
       const isHidden = document.hidden;
       
-      // Hard Stop Check: Hidden > 2h OR Idle > 2h
-      if (idleTime > 2 * 60 * 60 * 1000 || (isHidden && idleTime > 2 * 60 * 60 * 1000)) {
+      // Hard Stop Check: Hidden > 2h OR Idle > 8h (Visible)
+      const hardStopMs = isHidden ? 2 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
+      if (idleTime > hardStopMs) {
           console.log("[Polling] Hard stop due to inactivity.");
           setIsPollingPaused(true);
           return;
@@ -175,7 +176,7 @@ export function useGameState() {
                           nextDelay = 300000; // 60m+: 5m
                       }
                   } else if (!role || role === 'spectator') {
-                      nextDelay = 20000; // Slower for spectators
+                      nextDelay = 45000; // Slower for spectators
                   } else {
                       nextDelay = 10000; // Normal
                   }

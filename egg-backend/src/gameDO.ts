@@ -82,6 +82,13 @@ export class GameDO extends DurableObject {
   lastBroadcastTime: number = 0;
   lastBroadcastPlayers: number = -1;
   stateChanged: boolean = false; // [New] Track changes for R2 upload
+  private stateVersion = 0; // [New] For R2 race condition prevention
+
+  touchState() {
+      this.stateVersion++;
+      this.stateChanged = true;
+      this.gameState.lastUpdatedAt = Date.now();
+  }
 
   constructor(state: DurableObjectState, env: any) {
     super(state, env);
@@ -261,7 +268,8 @@ export class GameDO extends DurableObject {
 
       if (changed) {
           this.broadcastQueueUpdate(); // If queue changed
-          this.stateChanged = true;
+          this.touchState();
+          this.broadcastState();
       }
   }
   
@@ -302,7 +310,9 @@ export class GameDO extends DurableObject {
   // [New] Upload Public State Snapshot to R2
   async uploadStateToR2() {
       if (!this.env.STATE_BUCKET) return; // Skip if no bucket binding
-      
+      if (!this.stateChanged) return; // Optimization
+
+      const currentVersion = this.stateVersion;
       const publicState = this.buildPublicState();
       
       try {
@@ -314,7 +324,11 @@ export class GameDO extends DurableObject {
                   cacheControl: "public, max-age=20, stale-while-revalidate=120",
               }
           });
-          this.stateChanged = false; // Reset flag after successful upload attempt
+          
+          // Only reset if version hasn't changed (no new writes during upload)
+          if (this.stateVersion === currentVersion) {
+              this.stateChanged = false; 
+          }
       } catch (e) {
           console.error("R2 Upload Failed:", e);
       }
@@ -685,8 +699,7 @@ export class GameDO extends DurableObject {
                   }
               }
 
-              this.gameState.lastUpdatedAt = now;
-              this.stateChanged = true;
+              this.touchState();
               
               if (this.gameState.hp === 0) {
                   this.gameState.status = 'WINNER_CHECK';
